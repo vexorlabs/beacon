@@ -13,25 +13,25 @@
 ### Tasks
 
 **Backend**
-- [ ] Initialize `backend/` with `pyproject.toml`, FastAPI, SQLAlchemy, pydantic-settings
-- [ ] Implement `database.py` (SQLite engine, session factory, `init_db()`)
-- [ ] Implement `models.py` (Trace, Span, ReplayRun ORM models)
-- [ ] Implement `schemas.py` (Pydantic v2 schemas for all API shapes)
-- [ ] Implement `POST /v1/spans` endpoint (span ingestion + trace upsert)
-- [ ] Implement `GET /health` endpoint
-- [ ] Write pytest tests for span ingestion (using in-memory SQLite)
+- [x] Initialize `backend/` with `pyproject.toml`, FastAPI, SQLAlchemy, pydantic-settings
+- [x] Implement `database.py` (SQLite engine, session factory, `init_db()`)
+- [x] Implement `models.py` (Trace, Span, ReplayRun ORM models)
+- [x] Implement `schemas.py` (Pydantic v2 schemas for all API shapes)
+- [x] Implement `POST /v1/spans` endpoint (span ingestion + trace upsert)
+- [x] Implement `GET /health` endpoint
+- [x] Write pytest tests for span ingestion (using in-memory SQLite)
 
 **SDK**
-- [ ] Initialize `sdk/` with `pyproject.toml`
-- [ ] Implement `models.py` (Span dataclass, SpanType enum)
-- [ ] Implement `context.py` (ContextVar-based trace context)
-- [ ] Implement `tracer.py` (BeaconTracer: `start_span()`, `end_span()`)
-- [ ] Implement `exporters.py` (HttpSpanExporter with graceful failure)
-- [ ] Implement `decorators.py` (`@observe` decorator, sync + async)
-- [ ] Implement `__init__.py` (public API: `init()`, `observe`, `get_current_span`)
+- [x] Initialize `sdk/` with `pyproject.toml`
+- [x] Implement `models.py` (Span dataclass, SpanType enum)
+- [x] Implement `context.py` (ContextVar-based trace context)
+- [x] Implement `tracer.py` (BeaconTracer: `start_span()`, `end_span()`)
+- [x] Implement `exporters.py` (HttpSpanExporter with graceful failure)
+- [x] Implement `decorators.py` (`@observe` decorator, sync + async)
+- [x] Implement `__init__.py` (public API: `init()`, `observe`, `get_current_span`)
 
 **Validation**
-- [ ] Write a test script (`sdk/examples/hello_world.py`) that:
+- [x] Write a test script (`sdk/examples/hello_world.py`) that:
   1. Calls `beacon_sdk.init()`
   2. Decorates a simple function with `@observe`
   3. Runs the function
@@ -49,30 +49,30 @@ Running `python sdk/examples/hello_world.py` with the backend running produces a
 ### Tasks
 
 **Backend**
-- [ ] Implement `GET /v1/traces` (trace list with pagination)
-- [ ] Implement `GET /v1/traces/{trace_id}` (trace detail with all spans)
-- [ ] Implement `GET /v1/traces/{trace_id}/graph` (React Flow nodes + edges)
-- [ ] Implement `GET /v1/spans/{span_id}` (single span detail)
-- [ ] Implement WebSocket endpoint `WS /ws/live` with `ConnectionManager`
-- [ ] Broadcast new spans to WebSocket clients in `POST /v1/spans` handler
+- [x] Implement `GET /v1/traces` (trace list with pagination)
+- [x] Implement `GET /v1/traces/{trace_id}` (trace detail with all spans)
+- [x] Implement `GET /v1/traces/{trace_id}/graph` (React Flow nodes + edges)
+- [x] Implement `GET /v1/spans/{span_id}` (single span detail)
+- [x] Implement WebSocket endpoint `WS /ws/live` with `ConnectionManager`
+- [x] Broadcast new spans to WebSocket clients in `POST /v1/spans` handler
 
 **SDK: LangChain Integration**
-- [ ] Implement `integrations/langchain.py` (`BeaconCallbackHandler`)
-- [ ] Implement all LangChain callbacks: chain, llm, tool, agent events
-- [ ] Write example: `sdk/examples/langchain_agent.py`
+- [x] Implement `integrations/langchain.py` (`BeaconCallbackHandler`)
+- [x] Implement all LangChain callbacks: chain, llm, tool, agent events
+- [x] Write example: `sdk/examples/langchain_agent.py`
 
 **Frontend**
-- [ ] Initialize `frontend/` with Vite, React 18, TypeScript
-- [ ] Configure Tailwind CSS + shadcn/ui (`init`)
-- [ ] Add required shadcn components: Button, Badge, Separator, ScrollArea
-- [ ] Implement `lib/types.ts` (all TypeScript interfaces)
-- [ ] Implement `lib/api.ts` (getTraces, getTrace, getTraceGraph, getSpan)
-- [ ] Implement `lib/ws.ts` (WebSocket client with auto-reconnect)
-- [ ] Implement `store/trace.ts` (Zustand store)
-- [ ] Implement `TraceList` component (list view)
-- [ ] Implement `TraceGraph` component (React Flow graph, basic layout with dagre)
-- [ ] Implement `SpanNode` custom React Flow node (color by span_type)
-- [ ] Implement `App.tsx` with the three-panel layout (TraceList + TraceGraph + placeholder SpanDetail)
+- [x] Initialize `frontend/` with Vite, React 18, TypeScript
+- [x] Configure Tailwind CSS + shadcn/ui (`init`)
+- [x] Add required shadcn components: Button, Badge, Separator, ScrollArea
+- [x] Implement `lib/types.ts` (all TypeScript interfaces)
+- [x] Implement `lib/api.ts` (getTraces, getTrace, getTraceGraph, getSpan)
+- [x] Implement `lib/ws.ts` (WebSocket client with auto-reconnect)
+- [x] Implement `store/trace.ts` (Zustand store)
+- [x] Implement `TraceList` component (list view)
+- [x] Implement `TraceGraph` component (React Flow graph, basic layout with dagre)
+- [x] Implement `SpanNode` custom React Flow node (color by span_type)
+- [x] Implement `App.tsx` with the three-panel layout (TraceList + TraceGraph + placeholder SpanDetail)
 
 ### Done Condition
 Run a LangChain agent → open `http://localhost:5173` → see the trace appear in the list → click it → see a graph of spans with colored nodes.
