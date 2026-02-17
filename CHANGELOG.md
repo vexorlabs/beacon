@@ -9,9 +9,18 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- fix(frontend): surface replay errors to user instead of silently swallowing them
+- fix(frontend): key ReplayPanel by span_id to prevent stale content when switching spans
+- fix(frontend): guard `.toFixed()` on potentially undefined cost value in ReplayPanel
+- fix(frontend): validate URL protocol in BrowserDetail to prevent javascript: XSS
+- fix(frontend): use switch statement in SpanDetail dispatcher for maintainability
+- fix(backend): document OPENAI_API_KEY and ANTHROPIC_API_KEY in .env.example
+
 ### Changed
 - docs: mark Phase 1, Phase 2, and Phase 3 as complete in roadmap
 - docs: update README status banner and roadmap summary
+- test(backend): add Anthropic provider replay test
 
 ### Added
 - feat(frontend): Type-specific SpanDetail panel — `LlmCallDetail` (prompt/completion/tokens/cost), `ToolUseDetail` (input/output JSON), `BrowserDetail` (action/URL/selector), `GenericDetail` (grouped attributes)
