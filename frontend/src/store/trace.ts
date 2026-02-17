@@ -22,6 +22,7 @@ interface TraceStore {
   timeTravelIndex: number | null;
   replayResult: ReplayResult | null;
   isReplaying: boolean;
+  replayError: string | null;
 
   loadTraces: () => Promise<void>;
   selectTrace: (traceId: string) => Promise<void>;
@@ -48,6 +49,7 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
   timeTravelIndex: null,
   replayResult: null,
   isReplaying: false,
+  replayError: null,
 
   loadTraces: async () => {
     set({ isLoadingTraces: true });
@@ -101,22 +103,24 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
   },
 
   runReplay: async (spanId, modifiedAttributes) => {
-    set({ isReplaying: true, replayResult: null });
+    set({ isReplaying: true, replayResult: null, replayError: null });
     try {
       const result = await postReplay({
         span_id: spanId,
         modified_attributes: modifiedAttributes,
       });
       set({ replayResult: result });
-    } catch {
-      set({ replayResult: null });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Replay failed";
+      set({ replayResult: null, replayError: message });
     } finally {
       set({ isReplaying: false });
     }
   },
 
   clearReplay: () => {
-    set({ replayResult: null });
+    set({ replayResult: null, replayError: null });
   },
 
   appendSpan: (span: Span) => {

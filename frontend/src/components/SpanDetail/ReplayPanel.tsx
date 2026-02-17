@@ -22,6 +22,7 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
   const clearReplay = useTraceStore((s) => s.clearReplay);
   const replayResult = useTraceStore((s) => s.replayResult);
   const isReplaying = useTraceStore((s) => s.isReplaying);
+  const replayError = useTraceStore((s) => s.replayError);
 
   const rawPrompt = span.attributes["llm.prompt"];
   const [editedPrompt, setEditedPrompt] = useState(formatPrompt(rawPrompt));
@@ -50,6 +51,13 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
           </Button>
         )}
       </div>
+
+      {/* Error feedback */}
+      {replayError && (
+        <div className="text-xs text-red-500 bg-red-950/20 border border-red-900/30 rounded p-2">
+          Replay failed: {replayError}
+        </div>
+      )}
 
       {/* Diff View */}
       {replayResult && (
@@ -87,7 +95,9 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
             <div className="bg-muted rounded p-2">
               <div className="text-muted-foreground">New cost</div>
               <div className="font-medium">
-                ${replayResult.new_output["llm.cost_usd"].toFixed(4)}
+                {typeof replayResult.new_output["llm.cost_usd"] === "number"
+                  ? `$${replayResult.new_output["llm.cost_usd"].toFixed(4)}`
+                  : "—"}
               </div>
             </div>
           </div>
