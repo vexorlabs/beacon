@@ -44,24 +44,24 @@ All of it appears as a single, interactive execution graph. Click any node to in
 
 ## Quick Start
 
-> Coming soon. Setup instructions will be added when the MVP is ready.
-
 ```bash
-# Install the SDK
-pip install beacon-sdk
+# Clone and start the platform
+git clone https://github.com/vexorlabs/beacon.git
+cd beacon
+make install          # Create venv, install all deps
+make dev              # Start backend (7474) + frontend (5173)
+```
 
+Open **http://localhost:5173** to see the UI.
+
+```python
 # Instrument your agent (one line)
-from beacon import observe
+from beacon_sdk import observe
 
 @observe
 def run_agent(query: str):
     # your agent code here
     ...
-
-# Start the Beacon UI
-beacon serve
-
-# Open http://localhost:7474
 ```
 
 ---

@@ -10,6 +10,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat: root Makefile for dev workflow (install, dev, stop, test, lint, format, clean, db-reset)
 - feat(frontend): Vite + React 19 + TypeScript frontend with three-panel layout (TraceList, TraceGraph, SpanDetail)
 - feat(frontend): React Flow graph visualization with dagre auto-layout, color-coded span nodes by type, time-travel dimming
 - feat(frontend): Zustand store for trace/span state management, WebSocket client with exponential-backoff reconnect
