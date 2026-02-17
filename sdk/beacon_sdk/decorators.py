@@ -42,9 +42,7 @@ def observe(
 
     def decorator(fn: F) -> F:
         resolved_name = name or fn.__qualname__
-        resolved_type = (
-            SpanType(span_type) if isinstance(span_type, str) else span_type
-        )
+        resolved_type = SpanType(span_type) if isinstance(span_type, str) else span_type
 
         if inspect.iscoroutinefunction(fn):
 

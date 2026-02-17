@@ -81,9 +81,7 @@ class BeaconTracer:
             try:
                 self._exporter.export([span])
             except Exception as exc:
-                logger.debug(
-                    "Beacon: span export failed (non-fatal): %s", exc
-                )
+                logger.debug("Beacon: span export failed (non-fatal): %s", exc)
 
     @contextmanager
     def span(
@@ -93,14 +91,10 @@ class BeaconTracer:
         attributes: dict[str, Any] | None = None,
     ) -> Generator[Span, None, None]:
         """Context manager for spans."""
-        span, token = self.start_span(
-            name, span_type=span_type, attributes=attributes
-        )
+        span, token = self.start_span(name, span_type=span_type, attributes=attributes)
         try:
             yield span
             self.end_span(span, token, status=SpanStatus.OK)
         except Exception as exc:
-            self.end_span(
-                span, token, status=SpanStatus.ERROR, error_message=str(exc)
-            )
+            self.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
             raise

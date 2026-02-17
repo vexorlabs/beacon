@@ -123,19 +123,19 @@ Run a LangChain agent → open `http://localhost:5173` → see the trace appear 
 ### Tasks
 
 **SDK: Computer-Use Instrumentation**
-- [ ] Implement `integrations/playwright.py` (monkey-patch Page methods)
-- [ ] Implement OpenAI auto-patch (`integrations/openai.py`)
-- [ ] Implement Anthropic auto-patch (`integrations/anthropic.py`)
-- [ ] Implement `os`/`subprocess` auto-patch for file/shell tracing
-- [ ] Write example: `sdk/examples/browser_agent.py` (Playwright agent end-to-end)
+- [x] Implement `integrations/playwright.py` (monkey-patch Page methods)
+- [x] Implement OpenAI auto-patch (`integrations/openai.py`)
+- [x] Implement Anthropic auto-patch (`integrations/anthropic.py`)
+- [x] Implement `os`/`subprocess` auto-patch for file/shell tracing
+- [x] Write example: `sdk/examples/browser_agent.py` (Playwright agent end-to-end)
 
 **Frontend: Polish**
-- [ ] Add loading skeletons to TraceList and TraceGraph
-- [ ] Add error states (backend unreachable banner)
-- [ ] Add screenshot display in `BrowserDetail`
-- [ ] Add cost + token summary bar at top of TraceGraph
-- [ ] Add trace search/filter in TraceList (by status, date range)
-- [ ] Make the three panels resizable (drag to resize)
+- [x] Add loading skeletons to TraceList and TraceGraph
+- [x] Add error states (backend unreachable banner)
+- [x] Add screenshot display in `BrowserDetail`
+- [x] Add cost + token summary bar at top of TraceGraph
+- [x] Add trace search/filter in TraceList (by status, date range)
+- [x] Make the three panels resizable (drag to resize)
 
 **Docs + Launch**
 - [ ] Write `sdk/README.md` (quickstart in 5 minutes)

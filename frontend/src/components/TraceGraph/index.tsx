@@ -7,6 +7,7 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
 import SpanNode from "./SpanNode";
 import { useGraphLayout } from "./useGraphLayout";
@@ -67,8 +68,19 @@ export default function TraceGraph() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-        Loading graph...
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-4">
+          <Skeleton className="h-12 w-40 rounded-md" />
+          <div className="flex gap-8">
+            <Skeleton className="h-12 w-36 rounded-md" />
+            <Skeleton className="h-12 w-36 rounded-md" />
+          </div>
+          <div className="flex gap-8">
+            <Skeleton className="h-12 w-32 rounded-md" />
+            <Skeleton className="h-12 w-32 rounded-md" />
+            <Skeleton className="h-12 w-32 rounded-md" />
+          </div>
+        </div>
       </div>
     );
   }

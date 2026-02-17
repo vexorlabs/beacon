@@ -29,6 +29,7 @@ _tracer: BeaconTracer | None = None
 
 def init(
     backend_url: str | None = None,
+    auto_patch: bool | None = None,
     enabled: bool | None = None,
 ) -> None:
     """Initialize the Beacon SDK. Call once at the top of your script."""
@@ -57,6 +58,13 @@ def init(
 
     logger.debug("Beacon: initialized, sending spans to %s", resolved_url)
 
+    if auto_patch is None:
+        env_auto = os.environ.get("BEACON_AUTO_PATCH", "true").lower()
+        auto_patch = env_auto != "false"
+
+    if auto_patch:
+        _apply_auto_patches()
+
 
 def get_tracer() -> BeaconTracer | None:
     """Get the global BeaconTracer instance."""
@@ -74,3 +82,17 @@ def get_current_span() -> Span | None:
     if ctx is None or ctx.span_id is None:
         return None
     return get_active_span(ctx.span_id)
+
+
+def _apply_auto_patches() -> None:
+    """Try to monkey-patch all supported libraries. Silently skip if not installed."""
+    from beacon_sdk.integrations import anthropic as _anthropic_patch
+    from beacon_sdk.integrations import openai as _openai_patch
+    from beacon_sdk.integrations import playwright as _playwright_patch
+    from beacon_sdk.integrations import subprocess_patch as _subprocess_patch
+
+    for mod in [_openai_patch, _anthropic_patch, _playwright_patch, _subprocess_patch]:
+        try:
+            mod.patch()
+        except Exception:
+            logger.debug("Beacon: auto-patch failed for %s", mod.__name__)
