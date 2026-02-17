@@ -34,6 +34,18 @@ class ConnectionManager:
             except Exception:
                 self.disconnect(ws)
 
+    async def broadcast_trace_created(
+        self, trace_dict: dict[str, Any]
+    ) -> None:
+        """Broadcast a trace_created event to all unfiltered clients."""
+        for ws in list(self.active_connections):
+            try:
+                await ws.send_json(
+                    {"event": "trace_created", "trace": trace_dict}
+                )
+            except Exception:
+                self.disconnect(ws)
+
 
 ws_manager = ConnectionManager()
 

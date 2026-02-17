@@ -62,6 +62,60 @@ class SpanResponse(BaseModel):
     attributes: dict[str, Any]
 
 
+# --- Trace schemas (Phase 2) ---
+
+
+class TraceSummary(BaseModel):
+    trace_id: str
+    name: str
+    start_time: float
+    end_time: float | None
+    duration_ms: float | None
+    span_count: int
+    status: SpanStatus
+    total_cost_usd: float
+    total_tokens: int
+    tags: dict[str, str]
+
+
+class TraceDetailResponse(TraceSummary):
+    spans: list[SpanResponse]
+
+
+class GraphNodeData(BaseModel):
+    span_id: str
+    span_type: SpanType
+    name: str
+    status: SpanStatus
+    duration_ms: float | None
+    cost_usd: float | None
+
+
+class GraphNode(BaseModel):
+    id: str
+    type: str
+    data: GraphNodeData
+    position: dict[str, float]
+
+
+class GraphEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+
+
+class GraphData(BaseModel):
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+
+
+class TracesResponse(BaseModel):
+    traces: list[TraceSummary]
+    total: int
+    limit: int
+    offset: int
+
+
 # --- Health ---
 
 
