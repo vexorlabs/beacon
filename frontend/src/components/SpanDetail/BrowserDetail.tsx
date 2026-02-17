@@ -64,7 +64,7 @@ export default function BrowserDetail({ span }: BrowserDetailProps) {
         </div>
       )}
 
-      {/* Screenshot */}
+      {/* Screenshot — safe to narrow: typeof guard above confirms string type */}
       {typeof span.attributes["browser.screenshot"] === "string" &&
         (span.attributes["browser.screenshot"] as string).length > 0 && (
           <div>

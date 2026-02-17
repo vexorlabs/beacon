@@ -19,6 +19,7 @@ export default function TraceFilter() {
       <select
         value={traceFilter.status}
         onChange={(e) =>
+          // Safe: values come from hardcoded <option> elements below
           setTraceFilter({ status: e.target.value as FilterStatus })
         }
         className="bg-background border border-input rounded-sm px-1 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
