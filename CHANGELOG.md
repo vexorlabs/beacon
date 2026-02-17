@@ -23,6 +23,20 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 - test(backend): add Anthropic provider replay test
 
 ### Added
+- feat(sdk): OpenAI auto-instrumentation (`integrations/openai.py`) — patches `Completions.create` to create LLM spans with token/cost tracking
+- feat(sdk): Anthropic auto-instrumentation (`integrations/anthropic.py`) — patches `Messages.create` with prefix-based cost estimation
+- feat(sdk): Playwright auto-instrumentation (`integrations/playwright.py`) — patches Page methods (goto, click, fill, type, screenshot, wait_for_selector) to create browser_action spans
+- feat(sdk): Subprocess auto-instrumentation (`integrations/subprocess_patch.py`) — patches `subprocess.run` and `check_output` to create shell_command spans
+- feat(sdk): `auto_patch` parameter on `beacon_sdk.init()` with `BEACON_AUTO_PATCH` env var support
+- feat(sdk): Optional dependency extras in pyproject.toml (`beacon-sdk[openai]`, `[anthropic]`, `[playwright]`, `[all]`)
+- feat(sdk): `browser_agent.py` example demonstrating Playwright auto-instrumentation end-to-end
+- test(sdk): 40 new integration tests across OpenAI, Anthropic, Playwright, and subprocess integrations
+- feat(frontend): Loading skeletons for TraceList and TraceGraph during data fetch
+- feat(frontend): Backend-unreachable error banner with dismiss button
+- feat(frontend): Screenshot display in BrowserDetail (base64 PNG rendering)
+- feat(frontend): Cost/token summary bar above TraceGraph (name, tokens, cost, duration, span count)
+- feat(frontend): Trace search/filter by name and status (all/ok/error/running)
+- feat(frontend): Resizable three-panel layout with drag handles (`useResizablePanels` hook)
 - feat(frontend): Type-specific SpanDetail panel — `LlmCallDetail` (prompt/completion/tokens/cost), `ToolUseDetail` (input/output JSON), `BrowserDetail` (action/URL/selector), `GenericDetail` (grouped attributes)
 - feat(frontend): Prompt Editor with Monaco Editor (`@monaco-editor/react`) for editing LLM prompts in JSON mode
 - feat(frontend): Replay UI — edit prompt, click Replay, see side-by-side diff of original vs replayed completion with token/cost comparison
