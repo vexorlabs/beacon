@@ -9,6 +9,10 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- docs: mark Phase 1 and Phase 2 as complete in roadmap (35 tasks checked off)
+- docs: update README status banner, roadmap summary, and contributing section
+
 ### Added
 - feat: root Makefile for dev workflow (install, dev, stop, test, lint, format, clean, db-reset)
 - feat(frontend): Vite + React 19 + TypeScript frontend with three-panel layout (TraceList, TraceGraph, SpanDetail)
