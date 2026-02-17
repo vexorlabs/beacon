@@ -21,15 +21,22 @@ export default function TraceGraph() {
 
   const nodeTypes: NodeTypes = useMemo(() => ({ spanNode: SpanNode }), []);
 
-  const rawNodes = graphData?.nodes ?? [];
-  const rawEdges = graphData?.edges ?? [];
+  const rawNodes = useMemo(() => graphData?.nodes ?? [], [graphData?.nodes]);
+  const rawEdges = useMemo(() => graphData?.edges ?? [], [graphData?.edges]);
   const { nodes: laidOutNodes, edges } = useGraphLayout(rawNodes, rawEdges);
+
+  // Map from span_id to chronological index (rawNodes preserve backend start_time order)
+  const chronoIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    rawNodes.forEach((n, i) => map.set(n.id, i));
+    return map;
+  }, [rawNodes]);
 
   // Apply time-travel dimming and selection highlighting
   const styledNodes = useMemo(() => {
-    return laidOutNodes.map((node, index) => {
-      const isFuture =
-        timeTravelIndex !== null && index >= timeTravelIndex;
+    return laidOutNodes.map((node) => {
+      const idx = chronoIndex.get(node.id) ?? 0;
+      const isFuture = timeTravelIndex !== null && idx >= timeTravelIndex;
       const isSelected = node.id === selectedSpanId;
       return {
         ...node,
@@ -41,7 +48,7 @@ export default function TraceGraph() {
         },
       };
     });
-  }, [laidOutNodes, timeTravelIndex, selectedSpanId]);
+  }, [laidOutNodes, chronoIndex, timeTravelIndex, selectedSpanId]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {

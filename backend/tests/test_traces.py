@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
+
+from starlette.testclient import TestClient
 
 
-def _make_span(**overrides):
+def _make_span(**overrides: Any) -> dict[str, Any]:
     """Build a valid span dict with sensible defaults."""
-    defaults = {
+    defaults: dict[str, Any] = {
         "span_id": str(uuid.uuid4()),
         "trace_id": str(uuid.uuid4()),
         "parent_span_id": None,
@@ -23,7 +26,7 @@ def _make_span(**overrides):
     return defaults
 
 
-def _ingest_span(client, **overrides):
+def _ingest_span(client: TestClient, **overrides: Any) -> dict[str, Any]:
     """Helper: ingest a single span and return its dict."""
     span = _make_span(**overrides)
     client.post("/v1/spans", json={"spans": [span]})

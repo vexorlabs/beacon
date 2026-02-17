@@ -1,6 +1,10 @@
 import type { WsEvent } from "./types";
 
-const WS_URL = "ws://localhost:7474/ws/live";
+function getWsUrl(): string {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.host}/ws/live`;
+}
+
 const INITIAL_DELAY_MS = 1000;
 const MAX_DELAY_MS = 30000;
 
@@ -25,7 +29,7 @@ export class BeaconWebSocket {
 
   connect(): void {
     this.intentionalClose = false;
-    this.ws = new WebSocket(WS_URL);
+    this.ws = new WebSocket(getWsUrl());
 
     this.ws.onopen = () => {
       this.reconnectDelay = INITIAL_DELAY_MS;
@@ -36,6 +40,7 @@ export class BeaconWebSocket {
       const eventHandlers = this.handlers[data.event];
       if (eventHandlers) {
         for (const handler of eventHandlers) {
+          // Safe: handler is narrowed by data.event key but TS can't infer this
           (handler as (data: WsEvent) => void)(data);
         }
       }

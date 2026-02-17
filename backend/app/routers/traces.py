@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas import GraphData, TraceDetailResponse, TracesResponse
+from app.schemas import GraphData, SpanStatus, TraceDetailResponse, TracesResponse
 from app.services import trace_service
 
 router = APIRouter(prefix="/traces", tags=["traces"])
@@ -19,7 +19,7 @@ async def list_traces(
     db: Annotated[Session, Depends(get_db)],
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    status: str | None = Query(default=None),
+    status: SpanStatus | None = Query(default=None),
 ) -> TracesResponse:
     return trace_service.list_traces(
         db, limit=limit, offset=offset, status=status

@@ -15,9 +15,13 @@ The Vite proxy will forward /v1/* requests to this server on port 7474.
 from __future__ import annotations
 
 import json
+import logging
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any
+
+logging.basicConfig(level=logging.INFO, format="[mock] %(message)s")
+logger = logging.getLogger(__name__)
 
 # --- Mock Data ---
 
@@ -466,20 +470,19 @@ class MockHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
-    def log_message(self, format: str, *args: Any) -> None:
-        # Shorter log format
-        print(f"[mock] {args[0]}" if args else "")
+    def log_message(self, fmt: str, *args: Any) -> None:
+        logger.info(fmt, *args)
 
 
 def main() -> None:
     port = 7474
     server = HTTPServer(("localhost", port), MockHandler)
-    print(f"Mock server running at http://localhost:{port}")
-    print("Press Ctrl+C to stop")
+    logger.info("Mock server running at http://localhost:%d", port)
+    logger.info("Press Ctrl+C to stop")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nShutting down")
+        logger.info("Shutting down")
         server.server_close()
 
 

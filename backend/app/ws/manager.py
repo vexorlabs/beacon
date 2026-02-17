@@ -1,11 +1,21 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+logger = logging.getLogger(__name__)
+
 
 class ConnectionManager:
+    """Manages WebSocket connections and trace-level subscriptions.
+
+    Clients start in ``active_connections`` (receive all events).
+    On ``subscribe_trace``, they move to ``trace_subscriptions`` (filtered).
+    On ``unsubscribe_trace``, they move back to ``active_connections``.
+    """
+
     def __init__(self) -> None:
         self.active_connections: set[WebSocket] = set()
         self.trace_subscriptions: dict[str, set[WebSocket]] = {}
@@ -20,30 +30,52 @@ class ConnectionManager:
             sockets.discard(ws)
 
     async def broadcast_span(self, span_dict: dict[str, Any]) -> None:
-        """Broadcast a span event to all connections watching this trace."""
+        """Send span_created to unsubscribed clients + clients watching this trace."""
         trace_id = span_dict.get("trace_id", "")
-        targets = (
-            self.trace_subscriptions.get(trace_id, set())
-            | self.active_connections
+        targets = self._targets_for_trace(trace_id)
+        await self._send_to(
+            targets, {"event": "span_created", "span": span_dict}
         )
-        for ws in list(targets):
-            try:
-                await ws.send_json(
-                    {"event": "span_created", "span": span_dict}
-                )
-            except Exception:
-                self.disconnect(ws)
+
+    async def broadcast_span_updated(
+        self,
+        span_id: str,
+        trace_id: str,
+        updates: dict[str, Any],
+    ) -> None:
+        """Send span_updated to relevant clients."""
+        targets = self._targets_for_trace(trace_id)
+        await self._send_to(
+            targets,
+            {"event": "span_updated", "span_id": span_id, "updates": updates},
+        )
 
     async def broadcast_trace_created(
         self, trace_dict: dict[str, Any]
     ) -> None:
-        """Broadcast a trace_created event to all unfiltered clients."""
-        for ws in list(self.active_connections):
+        """Send trace_created to all unfiltered clients."""
+        await self._send_to(
+            set(self.active_connections),
+            {"event": "trace_created", "trace": trace_dict},
+        )
+
+    def _targets_for_trace(self, trace_id: str) -> set[WebSocket]:
+        """Return unsubscribed clients + clients subscribed to this trace."""
+        return set(self.active_connections) | self.trace_subscriptions.get(
+            trace_id, set()
+        )
+
+    async def _send_to(
+        self, targets: set[WebSocket], payload: dict[str, Any]
+    ) -> None:
+        for ws in list(targets):
             try:
-                await ws.send_json(
-                    {"event": "trace_created", "trace": trace_dict}
-                )
+                await ws.send_json(payload)
             except Exception:
+                logger.debug(
+                    "WebSocket send failed, disconnecting client",
+                    exc_info=True,
+                )
                 self.disconnect(ws)
 
 
@@ -66,6 +98,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             if action == "subscribe_trace":
                 trace_id = data.get("trace_id")
                 if trace_id:
+                    ws_manager.active_connections.discard(websocket)
                     ws_manager.trace_subscriptions.setdefault(
                         trace_id, set()
                     ).add(websocket)
@@ -75,5 +108,6 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                     ws_manager.trace_subscriptions[trace_id].discard(
                         websocket
                     )
+                    ws_manager.active_connections.add(websocket)
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)

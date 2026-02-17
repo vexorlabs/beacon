@@ -44,6 +44,8 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
     try {
       const res = await getTraces({ limit: 50 });
       set({ traces: res.traces });
+    } catch {
+      // API error — keep stale traces so the UI doesn't flash empty
     } finally {
       set({ isLoadingTraces: false });
     }
@@ -63,6 +65,8 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
         getTraceGraph(traceId),
       ]);
       set({ selectedTrace: traceDetail, graphData });
+    } catch {
+      set({ selectedTrace: null, graphData: null });
     } finally {
       set({ isLoadingTrace: false });
     }

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import models
@@ -26,7 +26,7 @@ def list_traces(
     *,
     limit: int = 50,
     offset: int = 0,
-    status: str | None = None,
+    status: SpanStatus | None = None,
 ) -> TracesResponse:
     """Return paginated trace list, newest first."""
     query = select(models.Trace).order_by(models.Trace.created_at.desc())
