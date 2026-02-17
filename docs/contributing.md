@@ -9,7 +9,7 @@
 ## Getting Started
 
 ```bash
-git clone https://github.com/anthropics/beacon
+git clone https://github.com/vexorlabs/beacon
 cd beacon
 make install   # creates venv, installs backend + SDK + frontend deps
 make dev       # starts backend (:7474) and frontend (:5173)

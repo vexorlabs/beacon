@@ -1,6 +1,6 @@
 # beacon-sdk
 
-Instrumentation SDK for [Beacon](https://github.com/anthropics/beacon) — Chrome DevTools for AI Agents.
+Instrumentation SDK for [Beacon](https://github.com/vexorlabs/beacon) — Chrome DevTools for AI Agents.
 
 Add tracing to your AI agent in 2 lines of code. See every LLM call, tool use, and browser action in an interactive graph UI.
 
@@ -34,7 +34,7 @@ run_agent("What is the capital of France?")
 Start the Beacon backend and UI, then open [http://localhost:5173](http://localhost:5173):
 
 ```bash
-git clone https://github.com/anthropics/beacon && cd beacon
+git clone https://github.com/vexorlabs/beacon && cd beacon
 make install && make dev
 ```
 
