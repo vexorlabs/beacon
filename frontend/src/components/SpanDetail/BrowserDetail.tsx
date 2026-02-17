@@ -22,14 +22,20 @@ export default function BrowserDetail({ span }: BrowserDetailProps) {
       {typeof url === "string" && (
         <div>
           <h4 className="text-xs font-semibold mb-1">URL</h4>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-blue-500 hover:underline break-all"
-          >
-            {url}
-          </a>
+          {url.startsWith("http://") || url.startsWith("https://") ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-500 hover:underline break-all"
+            >
+              {url}
+            </a>
+          ) : (
+            <span className="text-xs text-muted-foreground break-all">
+              {url}
+            </span>
+          )}
         </div>
       )}
 
