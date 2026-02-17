@@ -94,6 +94,49 @@ export interface ReplayResult {
   };
 }
 
+// --- Settings types ---
+
+export interface ApiKeyStatus {
+  provider: string;
+  configured: boolean;
+  masked_key: string | null;
+}
+
+// --- Playground types ---
+
+export interface PlaygroundMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+export interface PlaygroundChatMetrics {
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number;
+  latency_ms: number;
+}
+
+export interface PlaygroundChatResponse {
+  conversation_id: string;
+  trace_id: string;
+  message: PlaygroundMessage;
+  metrics: PlaygroundChatMetrics;
+}
+
+export interface CompareResultItem {
+  model: string;
+  provider: string;
+  completion: string;
+  metrics: PlaygroundChatMetrics;
+}
+
+export interface PlaygroundCompareResponse {
+  trace_id: string;
+  results: CompareResultItem[];
+}
+
+// --- WebSocket types ---
+
 export type WsEvent =
   | { event: "span_created"; span: Span }
   | {

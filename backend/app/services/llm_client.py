@@ -1,0 +1,191 @@
+"""Shared LLM API client for OpenAI and Anthropic.
+
+Extracted from replay_service so both replay and playground can reuse
+the same calling logic and price table.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import httpx
+
+# Price table: (input_cost_per_1M, output_cost_per_1M)
+PRICE_TABLE: dict[str, tuple[float, float]] = {
+    # OpenAI — latest
+    "gpt-4.1": (2.00, 8.00),
+    "gpt-4.1-mini": (0.40, 1.60),
+    "gpt-4.1-nano": (0.10, 0.40),
+    "gpt-4o": (2.50, 10.00),
+    "gpt-4o-mini": (0.15, 0.60),
+    "o3": (2.00, 8.00),
+    "o3-mini": (1.10, 4.40),
+    "o4-mini": (1.10, 4.40),
+    # OpenAI — legacy
+    "gpt-4-turbo": (10.00, 30.00),
+    "gpt-4": (30.00, 60.00),
+    "gpt-3.5-turbo": (0.50, 1.50),
+    # Anthropic — latest
+    "claude-opus-4-6": (5.00, 25.00),
+    "claude-sonnet-4-6": (3.00, 15.00),
+    "claude-haiku-4-5-20251001": (1.00, 5.00),
+    # Anthropic — legacy
+    "claude-sonnet-4-5-20250929": (3.00, 15.00),
+    "claude-sonnet-4-20250514": (3.00, 15.00),
+    "claude-3-5-sonnet-20241022": (3.00, 15.00),
+    "claude-3-5-haiku-20241022": (1.00, 5.00),
+    "claude-3-opus-20240229": (15.00, 75.00),
+    "claude-3-haiku-20240307": (0.25, 1.25),
+}
+
+# Model → provider mapping
+MODEL_PROVIDER: dict[str, str] = {
+    # OpenAI
+    "gpt-4.1": "openai",
+    "gpt-4.1-mini": "openai",
+    "gpt-4.1-nano": "openai",
+    "gpt-4o": "openai",
+    "gpt-4o-mini": "openai",
+    "o3": "openai",
+    "o3-mini": "openai",
+    "o4-mini": "openai",
+    "gpt-4-turbo": "openai",
+    "gpt-4": "openai",
+    "gpt-3.5-turbo": "openai",
+    # Anthropic
+    "claude-opus-4-6": "anthropic",
+    "claude-sonnet-4-6": "anthropic",
+    "claude-haiku-4-5-20251001": "anthropic",
+    "claude-sonnet-4-5-20250929": "anthropic",
+    "claude-sonnet-4-20250514": "anthropic",
+    "claude-3-5-sonnet-20241022": "anthropic",
+    "claude-3-5-haiku-20241022": "anthropic",
+    "claude-3-opus-20240229": "anthropic",
+    "claude-3-haiku-20240307": "anthropic",
+}
+
+
+def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
+    """Estimate cost in USD using per-million-token pricing."""
+    prices = PRICE_TABLE.get(model)
+    if prices is None:
+        return 0.0
+    input_cost, output_cost = prices
+    return (input_tokens / 1_000_000) * input_cost + (output_tokens / 1_000_000) * output_cost
+
+
+def provider_for_model(model: str) -> str:
+    """Return 'openai' or 'anthropic' based on the model name."""
+    if model in MODEL_PROVIDER:
+        return MODEL_PROVIDER[model]
+    if model.startswith(("gpt", "o1", "o3", "o4")):
+        return "openai"
+    if model.startswith("claude"):
+        return "anthropic"
+    raise ValueError(f"Unknown model: {model}")
+
+
+async def call_openai(
+    api_key: str,
+    model: str,
+    messages: list[dict[str, str]],
+    temperature: float = 1.0,
+    max_tokens: int | None = None,
+) -> tuple[str, int, int]:
+    """Call OpenAI chat completions API.
+
+    Returns (completion, input_tokens, output_tokens).
+    """
+    if not api_key:
+        raise ValueError("OpenAI API key is not configured")
+
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+    }
+    if max_tokens is not None:
+        payload["max_tokens"] = max_tokens
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+        if not response.is_success:
+            error_body = response.text
+            raise ValueError(
+                f"OpenAI API error {response.status_code}: {error_body}"
+            )
+        data = response.json()
+
+    completion_text: str = data["choices"][0]["message"]["content"]
+    usage = data.get("usage", {})
+    input_tokens: int = usage.get("prompt_tokens", 0)
+    output_tokens: int = usage.get("completion_tokens", 0)
+    return completion_text, input_tokens, output_tokens
+
+
+async def call_anthropic(
+    api_key: str,
+    model: str,
+    messages: list[dict[str, str]],
+    temperature: float = 1.0,
+    max_tokens: int | None = None,
+) -> tuple[str, int, int]:
+    """Call Anthropic messages API.
+
+    Returns (completion, input_tokens, output_tokens).
+    """
+    if not api_key:
+        raise ValueError("Anthropic API key is not configured")
+
+    # Extract system message from the messages list
+    system_text: str | None = None
+    anthropic_messages: list[dict[str, str]] = []
+    for msg in messages:
+        if msg.get("role") == "system":
+            system_text = msg.get("content", "")
+        else:
+            anthropic_messages.append(msg)
+
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": anthropic_messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens or 4096,
+    }
+    if system_text is not None:
+        payload["system"] = system_text
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+        if not response.is_success:
+            error_body = response.text
+            raise ValueError(
+                f"Anthropic API error {response.status_code}: {error_body}"
+            )
+        data = response.json()
+
+    content_blocks: list[dict[str, Any]] = data.get("content", [])
+    completion_text = ""
+    for block in content_blocks:
+        if block.get("type") == "text":
+            completion_text += block.get("text", "")
+
+    usage = data.get("usage", {})
+    input_tokens: int = usage.get("input_tokens", 0)
+    output_tokens: int = usage.get("output_tokens", 0)
+    return completion_text, input_tokens, output_tokens
