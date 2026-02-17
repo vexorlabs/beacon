@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { KeyRound, Check, Trash2, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,16 @@ export default function ApiKeyDialog({ open, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Document-level Escape key handler
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose],
+  );
+
   useEffect(() => {
     if (open) {
       getApiKeys()
@@ -30,8 +40,12 @@ export default function ApiKeyDialog({ open, onClose }: Props) {
       setEditingProvider(null);
       setKeyInput("");
       setError(null);
+      document.addEventListener("keydown", handleKeyDown);
+      // Focus trap: focus the dialog on open
+      requestAnimationFrame(() => dialogRef.current?.focus());
+      return () => document.removeEventListener("keydown", handleKeyDown);
     }
-  }, [open]);
+  }, [open, handleKeyDown]);
 
   if (!open) return null;
 
@@ -70,12 +84,16 @@ export default function ApiKeyDialog({ open, onClose }: Props) {
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
-        role="button"
-        tabIndex={-1}
-        aria-label="Close dialog"
+        aria-hidden="true"
       />
-      <div className="relative bg-card border border-border rounded-lg shadow-lg w-full max-w-md p-6">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="API Keys"
+        tabIndex={-1}
+        className="relative bg-card border border-border rounded-lg shadow-lg w-full max-w-md p-6 focus:outline-none"
+      >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <KeyRound size={18} className="text-muted-foreground" />

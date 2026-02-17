@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 _CONFIG_PATH = Path.home() / ".beacon" / "config.json"
 
@@ -14,12 +18,17 @@ _SUPPORTED_PROVIDERS = ("openai", "anthropic")
 def _read_config() -> dict[str, Any]:
     if not _CONFIG_PATH.exists():
         return {}
-    return json.loads(_CONFIG_PATH.read_text())  # type: ignore[no-any-return]
+    try:
+        return json.loads(_CONFIG_PATH.read_text())  # type: ignore[no-any-return]
+    except (json.JSONDecodeError, OSError):
+        logger.warning("Corrupt or unreadable config at %s, resetting", _CONFIG_PATH)
+        return {}
 
 
 def _write_config(config: dict[str, Any]) -> None:
     _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     _CONFIG_PATH.write_text(json.dumps(config, indent=2))
+    os.chmod(_CONFIG_PATH, 0o600)
 
 
 def get_api_key(provider: str) -> str | None:

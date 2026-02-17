@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.schemas import ReplayDiff, ReplayResponse
+from app.services import settings_service
 from app.services.llm_client import call_anthropic, call_openai, estimate_cost
 
 
@@ -41,14 +42,14 @@ async def replay_llm_call(
         int(max_tokens_raw) if max_tokens_raw is not None else None
     )
 
-    # Use env-var keys for replay (backward compatible)
+    # Use env-var keys first, fall back to config.json keys
     if provider == "openai":
-        api_key = os.environ.get("OPENAI_API_KEY", "")
+        api_key = os.environ.get("OPENAI_API_KEY", "") or settings_service.get_api_key("openai") or ""
         new_completion, input_tokens, output_tokens = await call_openai(
             api_key, model, messages, temperature, max_tokens
         )
     elif provider == "anthropic":
-        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "") or settings_service.get_api_key("anthropic") or ""
         new_completion, input_tokens, output_tokens = await call_anthropic(
             api_key, model, messages, temperature, max_tokens
         )

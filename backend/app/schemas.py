@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -169,7 +169,7 @@ class ApiKeyStatus(BaseModel):
 
 
 class PlaygroundMessage(BaseModel):
-    role: str
+    role: Literal["system", "user", "assistant"]
     content: str
 
 

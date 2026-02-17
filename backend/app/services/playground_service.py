@@ -152,9 +152,44 @@ async def chat(
     await _broadcast_span(db, llm_span_start)
 
     # Call the LLM
-    completion, in_tok, out_tok, latency_ms = await _call_model(
-        provider, api_key, request.model, messages_dicts
-    )
+    try:
+        completion, in_tok, out_tok, latency_ms = await _call_model(
+            provider, api_key, request.model, messages_dicts
+        )
+    except Exception as exc:
+        end_time = time.time()
+        # Mark spans as ERROR so they don't stay in UNSET forever
+        error_span = SpanCreate(
+            span_id=llm_span_id,
+            trace_id=trace_id,
+            parent_span_id=parent_span_id,
+            span_type=SpanType.LLM_CALL,
+            name=f"{request.model}",
+            status=SpanStatus.ERROR,
+            error_message=str(exc)[:200],
+            start_time=now,
+            end_time=end_time,
+            attributes={
+                "llm.provider": provider,
+                "llm.model": request.model,
+                "llm.prompt": json.dumps(messages_dicts),
+            },
+        )
+        await _broadcast_span(db, error_span)
+        parent_err = SpanCreate(
+            span_id=parent_span_id,
+            trace_id=trace_id,
+            parent_span_id=None,
+            span_type=SpanType.AGENT_STEP,
+            name=f"Playground: {request.model}",
+            status=SpanStatus.ERROR,
+            error_message=str(exc)[:200],
+            start_time=now,
+            end_time=end_time,
+            attributes={"playground": True},
+        )
+        await _broadcast_span(db, parent_err)
+        raise
 
     cost_usd = estimate_cost(request.model, in_tok, out_tok)
     end_time = time.time()

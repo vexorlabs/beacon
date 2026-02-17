@@ -117,13 +117,16 @@ async def call_openai(
             json=payload,
         )
         if not response.is_success:
-            error_body = response.text
+            error_body = response.text[:200]  # Truncate to avoid leaking sensitive info
             raise ValueError(
                 f"OpenAI API error {response.status_code}: {error_body}"
             )
         data = response.json()
 
-    completion_text: str = data["choices"][0]["message"]["content"]
+    choices = data.get("choices")
+    if not choices or not isinstance(choices, list):
+        raise ValueError("OpenAI returned an empty or invalid response (no choices)")
+    completion_text: str = choices[0].get("message", {}).get("content", "")
     usage = data.get("usage", {})
     input_tokens: int = usage.get("prompt_tokens", 0)
     output_tokens: int = usage.get("completion_tokens", 0)
@@ -173,7 +176,7 @@ async def call_anthropic(
             json=payload,
         )
         if not response.is_success:
-            error_body = response.text
+            error_body = response.text[:200]  # Truncate to avoid leaking sensitive info
             raise ValueError(
                 f"Anthropic API error {response.status_code}: {error_body}"
             )

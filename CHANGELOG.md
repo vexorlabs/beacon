@@ -10,6 +10,14 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): Playground tab — multi-turn chat interface with model selector, system prompt, inline cost/token/latency metrics
+- feat(frontend): Multi-model comparison view — send one prompt to 2+ models, see side-by-side results with metrics
+- feat(frontend): API Key management dialog — store/update/delete keys per provider with masked display
+- feat(backend): `POST /v1/playground/chat` — chat with any OpenAI/Anthropic model, auto-creates traces visible in Debugger
+- feat(backend): `POST /v1/playground/compare` — parallel multi-model comparison with per-model spans
+- feat(backend): `GET/PUT/DELETE /v1/settings/api-keys` — API key management stored in `~/.beacon/config.json`
+- feat(backend): `llm_client.py` — shared LLM calling logic with price table for cost estimation
+- test(backend): 22 new tests for llm_client, settings service/router, and playground service/router
 - docs(sdk): `sdk/README.md` with quickstart, integrations table, configuration, and API reference
 - docs: `docs/contributing.md` with prerequisites, dev setup, code style, and PR guidelines
 
