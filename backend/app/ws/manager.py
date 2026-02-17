@@ -45,13 +45,18 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     await ws_manager.connect(websocket)
     try:
         while True:
-            data = await websocket.receive_json()
+            try:
+                data = await websocket.receive_json()
+            except ValueError:
+                await websocket.send_json({"error": "Invalid JSON"})
+                continue
             action = data.get("action")
             if action == "subscribe_trace":
                 trace_id = data.get("trace_id")
                 if trace_id:
-                    self = ws_manager.trace_subscriptions
-                    self.setdefault(trace_id, set()).add(websocket)
+                    ws_manager.trace_subscriptions.setdefault(
+                        trace_id, set()
+                    ).add(websocket)
             elif action == "unsubscribe_trace":
                 trace_id = data.get("trace_id")
                 if trace_id and trace_id in ws_manager.trace_subscriptions:
