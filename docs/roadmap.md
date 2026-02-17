@@ -86,28 +86,28 @@ Run a LangChain agent → open `http://localhost:5173` → see the trace appear 
 ### Tasks
 
 **Backend**
-- [ ] Implement `POST /v1/replay` (re-run an LLM call with modified prompt)
-- [ ] Implement `replay_service.py` (call OpenAI/Anthropic API, build diff)
-- [ ] Store replay result in `replay_runs` table
+- [x] Implement `POST /v1/replay` (re-run an LLM call with modified prompt)
+- [x] Implement `replay_service.py` (call OpenAI/Anthropic API, build diff)
+- [x] Store replay result in `replay_runs` table
 
 **Frontend: SpanDetail Panel**
-- [ ] Implement `SpanDetail/index.tsx` (right panel, dispatch to sub-components)
-- [ ] Implement `LlmCallDetail.tsx` (show prompt, completion, tokens, cost, model)
-- [ ] Implement `ToolUseDetail.tsx` (show tool name, input JSON, output JSON)
-- [ ] Implement `BrowserDetail.tsx` (show action, URL, selector, screenshot)
-- [ ] Implement generic attributes view for other span types
-- [ ] Wire: clicking a node in `TraceGraph` sets `store.selectedSpanId` → `SpanDetail` shows
+- [x] Implement `SpanDetail/index.tsx` (right panel, dispatch to sub-components)
+- [x] Implement `LlmCallDetail.tsx` (show prompt, completion, tokens, cost, model)
+- [x] Implement `ToolUseDetail.tsx` (show tool name, input JSON, output JSON)
+- [x] Implement `BrowserDetail.tsx` (show action, URL, selector, screenshot)
+- [x] Implement generic attributes view for other span types
+- [x] Wire: clicking a node in `TraceGraph` sets `store.selectedSpanId` → `SpanDetail` shows
 
 **Frontend: Prompt Editor + Replay**
-- [ ] Add `@monaco-editor/react` dependency
-- [ ] Implement `PromptEditor.tsx` with Monaco Editor (json mode)
-- [ ] Implement `ReplayPanel.tsx` (Replay button + diff view)
-- [ ] Wire replay: edit prompt → POST /v1/replay → show diff in `ReplayPanel`
+- [x] Add `@monaco-editor/react` dependency
+- [x] Implement `PromptEditor.tsx` with Monaco Editor (json mode)
+- [x] Implement `ReplayPanel.tsx` (Replay button + diff view)
+- [x] Wire replay: edit prompt → POST /v1/replay → show diff in `ReplayPanel`
 
 **Frontend: Time-Travel**
-- [ ] Implement `TimeTravel/index.tsx` (horizontal slider + step counter)
-- [ ] Add keyboard support: Left/Right arrows to step through
-- [ ] Wire: slider moves → `store.setTimeTravelIndex(n)` → `TraceGraph` grays out future nodes
+- [x] Implement `TimeTravel/index.tsx` (horizontal slider + step counter)
+- [x] Add keyboard support: Left/Right arrows to step through
+- [x] Wire: slider moves → `store.setTimeTravelIndex(n)` → `TraceGraph` grays out future nodes
 
 ### Done Condition
 1. Click an LLM call node → see prompt + completion in right panel

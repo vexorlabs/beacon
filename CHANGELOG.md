@@ -10,10 +10,17 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
-- docs: mark Phase 1 and Phase 2 as complete in roadmap (35 tasks checked off)
-- docs: update README status banner, roadmap summary, and contributing section
+- docs: mark Phase 1, Phase 2, and Phase 3 as complete in roadmap
+- docs: update README status banner and roadmap summary
 
 ### Added
+- feat(frontend): Type-specific SpanDetail panel — `LlmCallDetail` (prompt/completion/tokens/cost), `ToolUseDetail` (input/output JSON), `BrowserDetail` (action/URL/selector), `GenericDetail` (grouped attributes)
+- feat(frontend): Prompt Editor with Monaco Editor (`@monaco-editor/react`) for editing LLM prompts in JSON mode
+- feat(frontend): Replay UI — edit prompt, click Replay, see side-by-side diff of original vs replayed completion with token/cost comparison
+- feat(frontend): Time-Travel debugging slider with keyboard support (Left/Right arrows), auto-selects span at current step
+- feat(backend): `POST /v1/replay` endpoint — replays LLM calls via OpenAI/Anthropic HTTP APIs with modified prompts
+- feat(backend): `replay_service.py` with cost estimation price table, diff generation, and replay result persistence
+- test(backend): 4 pytest tests for replay (validation, mock LLM call, DB persistence)
 - feat: root Makefile for dev workflow (install, dev, stop, test, lint, format, clean, db-reset)
 - feat(frontend): Vite + React 19 + TypeScript frontend with three-panel layout (TraceList, TraceGraph, SpanDetail)
 - feat(frontend): React Flow graph visualization with dagre auto-layout, color-coded span nodes by type, time-travel dimming

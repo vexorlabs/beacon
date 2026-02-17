@@ -1,4 +1,9 @@
 import { useTraceStore } from "@/store/trace";
+import { Badge } from "@/components/ui/badge";
+import LlmCallDetail from "./LlmCallDetail";
+import ToolUseDetail from "./ToolUseDetail";
+import BrowserDetail from "./BrowserDetail";
+import GenericDetail from "./GenericDetail";
 
 export default function SpanDetail() {
   const selectedSpan = useTraceStore((s) => s.selectedSpan);
@@ -11,27 +16,46 @@ export default function SpanDetail() {
     );
   }
 
+  const duration =
+    selectedSpan.end_time !== null
+      ? `${((selectedSpan.end_time - selectedSpan.start_time) * 1000).toFixed(0)}ms`
+      : "running...";
+
   return (
     <div className="p-4 overflow-auto h-full">
+      {/* Header — shared across all span types */}
       <h3 className="font-semibold text-sm">{selectedSpan.name}</h3>
-      <div className="mt-2 text-xs text-muted-foreground space-y-1">
-        <div>Type: {selectedSpan.span_type}</div>
-        <div>Status: {selectedSpan.status}</div>
-        {selectedSpan.error_message && (
-          <div className="text-red-500">Error: {selectedSpan.error_message}</div>
-        )}
-        <div>
-          Duration:{" "}
-          {selectedSpan.end_time !== null
-            ? `${((selectedSpan.end_time - selectedSpan.start_time) * 1000).toFixed(0)}ms`
-            : "running..."}
-        </div>
+      <div className="mt-2 flex items-center gap-2 flex-wrap">
+        <Badge variant="outline">{selectedSpan.span_type}</Badge>
+        <Badge
+          variant={selectedSpan.status === "error" ? "destructive" : "secondary"}
+        >
+          {selectedSpan.status}
+        </Badge>
+        <span className="text-xs text-muted-foreground">{duration}</span>
       </div>
+      {selectedSpan.error_message && (
+        <div className="mt-2 text-xs text-red-500">
+          Error: {selectedSpan.error_message}
+        </div>
+      )}
+
+      {/* Type-specific detail */}
       <div className="mt-4">
-        <h4 className="text-xs font-semibold mb-1">Attributes</h4>
-        <pre className="text-xs bg-muted rounded p-2 overflow-auto max-h-[400px]">
-          {JSON.stringify(selectedSpan.attributes, null, 2)}
-        </pre>
+        {selectedSpan.span_type === "llm_call" && (
+          <LlmCallDetail span={selectedSpan} />
+        )}
+        {selectedSpan.span_type === "tool_use" && (
+          <ToolUseDetail span={selectedSpan} />
+        )}
+        {selectedSpan.span_type === "browser_action" && (
+          <BrowserDetail span={selectedSpan} />
+        )}
+        {selectedSpan.span_type !== "llm_call" &&
+          selectedSpan.span_type !== "tool_use" &&
+          selectedSpan.span_type !== "browser_action" && (
+            <GenericDetail span={selectedSpan} />
+          )}
       </div>
     </div>
   );

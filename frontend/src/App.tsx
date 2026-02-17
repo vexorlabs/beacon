@@ -3,6 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import TraceList from "@/components/TraceList";
 import TraceGraph from "@/components/TraceGraph";
 import SpanDetail from "@/components/SpanDetail";
+import TimeTravel from "@/components/TimeTravel";
 import { BeaconWebSocket } from "@/lib/ws";
 import { useTraceStore } from "@/store/trace";
 
@@ -44,8 +45,11 @@ export default function App() {
         <TraceList />
       </div>
       <Separator orientation="vertical" />
-      <div className="flex-1 min-w-0">
-        <TraceGraph />
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-h-0">
+          <TraceGraph />
+        </div>
+        <TimeTravel />
       </div>
       <Separator orientation="vertical" />
       <div className="w-[380px] flex-none border-l border-border">

@@ -109,6 +109,27 @@ class GraphData(BaseModel):
     edges: list[GraphEdge]
 
 
+# --- Replay schemas ---
+
+
+class ReplayRequest(BaseModel):
+    span_id: str
+    modified_attributes: dict[str, Any]
+
+
+class ReplayDiff(BaseModel):
+    old_completion: str
+    new_completion: str
+    changed: bool
+
+
+class ReplayResponse(BaseModel):
+    replay_id: str
+    original_span_id: str
+    new_output: dict[str, Any]
+    diff: ReplayDiff
+
+
 class TracesResponse(BaseModel):
     traces: list[TraceSummary]
     total: int
