@@ -6,9 +6,15 @@ import type {
   GraphNode,
   ReplayResult,
   Span,
+  SpanStatus,
   TraceSummary,
   TraceDetail,
 } from "@/lib/types";
+
+export interface TraceFilter {
+  status: "all" | SpanStatus;
+  nameQuery: string;
+}
 
 interface TraceStore {
   traces: TraceSummary[];
@@ -23,6 +29,8 @@ interface TraceStore {
   replayResult: ReplayResult | null;
   isReplaying: boolean;
   replayError: string | null;
+  backendError: string | null;
+  traceFilter: TraceFilter;
 
   loadTraces: () => Promise<void>;
   selectTrace: (traceId: string) => Promise<void>;
@@ -35,6 +43,8 @@ interface TraceStore {
   clearReplay: () => void;
   appendSpan: (span: Span) => void;
   prependTrace: (trace: TraceSummary) => void;
+  clearBackendError: () => void;
+  setTraceFilter: (filter: Partial<TraceFilter>) => void;
 }
 
 export const useTraceStore = create<TraceStore>((set, get) => ({
@@ -50,14 +60,21 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
   replayResult: null,
   isReplaying: false,
   replayError: null,
+  backendError: null,
+  traceFilter: { status: "all", nameQuery: "" },
 
   loadTraces: async () => {
     set({ isLoadingTraces: true });
     try {
       const res = await getTraces({ limit: 50 });
-      set({ traces: res.traces });
-    } catch {
-      // API error — keep stale traces so the UI doesn't flash empty
+      set({ traces: res.traces, backendError: null });
+    } catch (err) {
+      // Only show error when we have no traces to display
+      if (get().traces.length === 0) {
+        const msg =
+          err instanceof Error ? err.message : "Backend unreachable";
+        set({ backendError: msg });
+      }
     } finally {
       set({ isLoadingTraces: false });
     }
@@ -182,5 +199,13 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
 
   prependTrace: (trace: TraceSummary) => {
     set({ traces: [trace, ...get().traces] });
+  },
+
+  clearBackendError: () => {
+    set({ backendError: null });
+  },
+
+  setTraceFilter: (filter: Partial<TraceFilter>) => {
+    set({ traceFilter: { ...get().traceFilter, ...filter } });
   },
 }));

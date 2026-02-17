@@ -54,7 +54,9 @@ def test_set_attribute_truncates_long_prompt():
     long_text = "x" * (TRUNCATION_LIMITS["llm.prompt"] + 100)
     span.set_attribute("llm.prompt", long_text)
     assert span.attributes["llm.prompt"].endswith("[TRUNCATED]")
-    assert len(span.attributes["llm.prompt"]) == TRUNCATION_LIMITS["llm.prompt"] + len("[TRUNCATED]")
+    assert len(span.attributes["llm.prompt"]) == TRUNCATION_LIMITS["llm.prompt"] + len(
+        "[TRUNCATED]"
+    )
 
 
 def test_set_attribute_does_not_truncate_short_text():
@@ -72,8 +74,14 @@ def test_set_attribute_drops_oversized_screenshot():
 
 def test_span_type_enum_values_match_spec():
     expected = {
-        "llm_call", "tool_use", "agent_step", "browser_action",
-        "file_operation", "shell_command", "chain", "custom",
+        "llm_call",
+        "tool_use",
+        "agent_step",
+        "browser_action",
+        "file_operation",
+        "shell_command",
+        "chain",
+        "custom",
     }
     actual = {t.value for t in SpanType}
     assert actual == expected

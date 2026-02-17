@@ -6,12 +6,12 @@ import pytest
 
 from beacon_sdk.context import (
     TraceContext,
+    get_active_span,
     get_context,
     register_span,
     reset_context,
     set_context,
     unregister_span,
-    get_active_span,
 )
 from beacon_sdk.models import Span
 

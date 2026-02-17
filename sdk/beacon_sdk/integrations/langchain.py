@@ -17,8 +17,8 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
 from beacon_sdk import get_tracer
@@ -69,7 +69,9 @@ class BeaconCallbackHandler(BaseCallbackHandler):
             )
             self._run_to_span[str(run_id)] = span.span_id
         except Exception:
-            logger.debug("BeaconCallbackHandler: error in on_chain_start", exc_info=True)
+            logger.debug(
+                "BeaconCallbackHandler: error in on_chain_start", exc_info=True
+            )
 
     def on_chain_end(
         self,
@@ -107,7 +109,9 @@ class BeaconCallbackHandler(BaseCallbackHandler):
                     error_message=str(error),
                 )
         except Exception:
-            logger.debug("BeaconCallbackHandler: error in on_chain_error", exc_info=True)
+            logger.debug(
+                "BeaconCallbackHandler: error in on_chain_error", exc_info=True
+            )
 
     # --- LLM callbacks ---
 
@@ -131,7 +135,11 @@ class BeaconCallbackHandler(BaseCallbackHandler):
                 span_type="llm_call",
                 parent_span_id=parent_span_id,
                 attributes={
-                    "llm.provider": serialized.get("id", ["unknown"])[0] if serialized.get("id") else "unknown",
+                    "llm.provider": (
+                        serialized.get("id", ["unknown"])[0]
+                        if serialized.get("id")
+                        else "unknown"
+                    ),
                     "llm.model": str(model),
                     "llm.prompt": json.dumps(prompts, default=str)[:50000],
                 },
@@ -281,7 +289,9 @@ class BeaconCallbackHandler(BaseCallbackHandler):
             )
             self._run_to_span[str(run_id)] = span.span_id
         except Exception:
-            logger.debug("BeaconCallbackHandler: error in on_agent_action", exc_info=True)
+            logger.debug(
+                "BeaconCallbackHandler: error in on_agent_action", exc_info=True
+            )
 
     def on_agent_finish(
         self,
@@ -297,10 +307,12 @@ class BeaconCallbackHandler(BaseCallbackHandler):
                     span_id=span_id,
                     status="ok",
                     attributes={
-                        "agent.output": json.dumps(
-                            finish.return_values, default=str
-                        )[:50000],
+                        "agent.output": json.dumps(finish.return_values, default=str)[
+                            :50000
+                        ],
                     },
                 )
         except Exception:
-            logger.debug("BeaconCallbackHandler: error in on_agent_finish", exc_info=True)
+            logger.debug(
+                "BeaconCallbackHandler: error in on_agent_finish", exc_info=True
+            )

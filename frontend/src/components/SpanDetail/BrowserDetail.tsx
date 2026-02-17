@@ -64,10 +64,18 @@ export default function BrowserDetail({ span }: BrowserDetailProps) {
         </div>
       )}
 
-      {/* Screenshot placeholder */}
-      <div className="text-xs text-muted-foreground italic">
-        Screenshot display coming in Phase 4
-      </div>
+      {/* Screenshot */}
+      {typeof span.attributes["browser.screenshot"] === "string" &&
+        (span.attributes["browser.screenshot"] as string).length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold mb-1">Screenshot</h4>
+            <img
+              src={`data:image/png;base64,${span.attributes["browser.screenshot"] as string}`}
+              alt="Browser screenshot"
+              className="w-full rounded border border-border object-contain max-h-64"
+            />
+          </div>
+        )}
     </div>
   );
 }
