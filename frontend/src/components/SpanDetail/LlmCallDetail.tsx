@@ -133,7 +133,7 @@ export default function LlmCallDetail({ span }: LlmCallDetailProps) {
       )}
 
       <Separator />
-      <ReplayPanel span={span} />
+      <ReplayPanel key={span.span_id} span={span} />
     </div>
   );
 }
