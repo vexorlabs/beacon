@@ -42,20 +42,18 @@ export default function SpanDetail() {
 
       {/* Type-specific detail */}
       <div className="mt-4">
-        {selectedSpan.span_type === "llm_call" && (
-          <LlmCallDetail span={selectedSpan} />
-        )}
-        {selectedSpan.span_type === "tool_use" && (
-          <ToolUseDetail span={selectedSpan} />
-        )}
-        {selectedSpan.span_type === "browser_action" && (
-          <BrowserDetail span={selectedSpan} />
-        )}
-        {selectedSpan.span_type !== "llm_call" &&
-          selectedSpan.span_type !== "tool_use" &&
-          selectedSpan.span_type !== "browser_action" && (
-            <GenericDetail span={selectedSpan} />
-          )}
+        {(() => {
+          switch (selectedSpan.span_type) {
+            case "llm_call":
+              return <LlmCallDetail span={selectedSpan} />;
+            case "tool_use":
+              return <ToolUseDetail span={selectedSpan} />;
+            case "browser_action":
+              return <BrowserDetail span={selectedSpan} />;
+            default:
+              return <GenericDetail span={selectedSpan} />;
+          }
+        })()}
       </div>
     </div>
   );
