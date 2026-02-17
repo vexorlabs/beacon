@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { getTrace, getTraceGraph, getTraces } from "@/lib/api";
+import { getTrace, getTraceGraph, getTraces, postReplay } from "@/lib/api";
 import type {
   GraphData,
   GraphEdge,
   GraphNode,
+  ReplayResult,
   Span,
   TraceSummary,
   TraceDetail,
@@ -19,11 +20,19 @@ interface TraceStore {
   selectedSpanId: string | null;
   selectedSpan: Span | null;
   timeTravelIndex: number | null;
+  replayResult: ReplayResult | null;
+  isReplaying: boolean;
+  replayError: string | null;
 
   loadTraces: () => Promise<void>;
   selectTrace: (traceId: string) => Promise<void>;
   selectSpan: (spanId: string) => void;
   setTimeTravelIndex: (index: number | null) => void;
+  runReplay: (
+    spanId: string,
+    modifiedAttributes: Record<string, unknown>,
+  ) => Promise<void>;
+  clearReplay: () => void;
   appendSpan: (span: Span) => void;
   prependTrace: (trace: TraceSummary) => void;
 }
@@ -38,6 +47,9 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
   selectedSpanId: null,
   selectedSpan: null,
   timeTravelIndex: null,
+  replayResult: null,
+  isReplaying: false,
+  replayError: null,
 
   loadTraces: async () => {
     set({ isLoadingTraces: true });
@@ -81,6 +93,34 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
 
   setTimeTravelIndex: (index: number | null) => {
     set({ timeTravelIndex: index });
+    const { graphData, selectedTrace } = get();
+    if (index !== null && graphData && index < graphData.nodes.length) {
+      const nodeAtIndex = graphData.nodes[index];
+      const span =
+        selectedTrace?.spans.find((s) => s.span_id === nodeAtIndex.id) ?? null;
+      set({ selectedSpanId: nodeAtIndex.id, selectedSpan: span });
+    }
+  },
+
+  runReplay: async (spanId, modifiedAttributes) => {
+    set({ isReplaying: true, replayResult: null, replayError: null });
+    try {
+      const result = await postReplay({
+        span_id: spanId,
+        modified_attributes: modifiedAttributes,
+      });
+      set({ replayResult: result });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Replay failed";
+      set({ replayResult: null, replayError: message });
+    } finally {
+      set({ isReplaying: false });
+    }
+  },
+
+  clearReplay: () => {
+    set({ replayResult: null, replayError: null });
   },
 
   appendSpan: (span: Span) => {

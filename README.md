@@ -2,7 +2,7 @@
 
 **The open-source debugger for AI agents.** Beacon gives you a unified, interactive view of your agent's entire execution — from LLM reasoning to browser clicks to file operations — so you can stop guessing and start debugging.
 
-> **Status:** Early development (Phase 2 complete). Under active development. Not yet ready for production use.
+> **Status:** Early development (Phase 3 complete). Under active development. Not yet ready for production use.
 
 ---
 
@@ -111,7 +111,7 @@ See [`docs/roadmap.md`](docs/roadmap.md) for the detailed implementation plan.
 
 - ~~**Phase 1 (Weeks 1–2):** Backend + SQLite + OTEL schema + basic SDK~~ **Done**
 - ~~**Phase 2 (Weeks 3–4):** React UI + trace list + basic graph~~ **Done**
-- **Phase 3 (Weeks 5–6):** Interactive graph + prompt editor + replay
+- ~~**Phase 3 (Weeks 5–6):** Interactive graph + prompt editor + replay~~ **Done**
 - **Phase 4 (Weeks 7–8):** Computer-use tracing + polish + launch
 
 ---

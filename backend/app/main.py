@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db
-from app.routers import spans, traces
+from app.routers import replay, spans, traces
 from app.ws.manager import ws_router
 
 
@@ -33,6 +33,7 @@ app.add_middleware(
 
 app.include_router(spans.router, prefix="/v1")
 app.include_router(traces.router, prefix="/v1")
+app.include_router(replay.router, prefix="/v1")
 app.include_router(ws_router)
 
 

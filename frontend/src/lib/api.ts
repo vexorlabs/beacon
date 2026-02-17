@@ -1,4 +1,10 @@
-import type { GraphData, Span, TraceDetail, TracesResponse } from "./types";
+import type {
+  GraphData,
+  ReplayResult,
+  Span,
+  TraceDetail,
+  TracesResponse,
+} from "./types";
 
 const BASE_URL = "/v1";
 
@@ -39,4 +45,15 @@ export function getTraceGraph(traceId: string): Promise<GraphData> {
 
 export function getSpan(spanId: string): Promise<Span> {
   return apiFetch<Span>(`/spans/${spanId}`);
+}
+
+export function postReplay(request: {
+  span_id: string;
+  modified_attributes: Record<string, unknown>;
+}): Promise<ReplayResult> {
+  return apiFetch<ReplayResult>("/replay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
 }
