@@ -138,9 +138,9 @@ Run a LangChain agent → open `http://localhost:5173` → see the trace appear 
 - [x] Make the three panels resizable (drag to resize)
 
 **Docs + Launch**
-- [ ] Write `sdk/README.md` (quickstart in 5 minutes)
-- [ ] Write `docs/contributing.md` (development setup, PR guidelines)
-- [ ] Create `sdk/examples/` folder with 3 working examples
+- [x] Write `sdk/README.md` (quickstart in 5 minutes)
+- [x] Write `docs/contributing.md` (development setup, PR guidelines)
+- [x] Create `sdk/examples/` folder with 3 working examples
 - [ ] Record a 2-minute demo video (screen recording)
 - [ ] Publish `beacon-sdk` to PyPI
 - [ ] Push everything to GitHub with a proper Release tag
