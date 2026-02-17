@@ -9,6 +9,14 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- docs(sdk): `sdk/README.md` with quickstart, integrations table, configuration, and API reference
+- docs: `docs/contributing.md` with prerequisites, dev setup, code style, and PR guidelines
+
+### Changed
+- refactor(sdk): simplify `langchain_agent.py` example from 99 to 47 lines using `create_tool_calling_agent`
+- docs: mark sdk/README.md, contributing.md, and examples as complete in roadmap
+
 ### Fixed
 - fix(frontend): surface replay errors to user instead of silently swallowing them
 - fix(frontend): key ReplayPanel by span_id to prevent stale content when switching spans
