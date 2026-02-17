@@ -6,9 +6,9 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
+from app.config import settings as app_settings
 from app.database import init_db
-from app.routers import replay, spans, traces
+from app.routers import playground, replay, settings, spans, traces
 from app.ws.manager import ws_router
 
 
@@ -34,6 +34,8 @@ app.add_middleware(
 app.include_router(spans.router, prefix="/v1")
 app.include_router(traces.router, prefix="/v1")
 app.include_router(replay.router, prefix="/v1")
+app.include_router(settings.router, prefix="/v1")
+app.include_router(playground.router, prefix="/v1")
 app.include_router(ws_router)
 
 
@@ -42,5 +44,5 @@ async def health() -> dict[str, str]:
     return {
         "status": "ok",
         "version": "0.1.0",
-        "db_path": str(settings.db_path),
+        "db_path": str(app_settings.db_path),
     }

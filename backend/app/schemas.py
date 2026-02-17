@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -144,3 +144,69 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     db_path: str
+
+
+# --- Settings schemas ---
+
+
+class ApiKeySetRequest(BaseModel):
+    provider: str  # "openai" | "anthropic"
+    api_key: str
+
+
+class ApiKeySetResponse(BaseModel):
+    provider: str
+    configured: bool
+
+
+class ApiKeyStatus(BaseModel):
+    provider: str
+    configured: bool
+    masked_key: str | None
+
+
+# --- Playground schemas ---
+
+
+class PlaygroundMessage(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str
+
+
+class PlaygroundChatMetrics(BaseModel):
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    latency_ms: float
+
+
+class PlaygroundChatRequest(BaseModel):
+    conversation_id: str | None = None
+    model: str
+    system_prompt: str | None = None
+    messages: list[PlaygroundMessage]
+
+
+class PlaygroundChatResponse(BaseModel):
+    conversation_id: str
+    trace_id: str
+    message: PlaygroundMessage
+    metrics: PlaygroundChatMetrics
+
+
+class PlaygroundCompareRequest(BaseModel):
+    messages: list[PlaygroundMessage]
+    system_prompt: str | None = None
+    models: list[str]
+
+
+class CompareResultItem(BaseModel):
+    model: str
+    provider: str
+    completion: str
+    metrics: PlaygroundChatMetrics
+
+
+class PlaygroundCompareResponse(BaseModel):
+    trace_id: str
+    results: list[CompareResultItem]

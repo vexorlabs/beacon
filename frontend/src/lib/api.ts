@@ -1,5 +1,9 @@
 import type {
+  ApiKeyStatus,
   GraphData,
+  PlaygroundChatResponse,
+  PlaygroundCompareResponse,
+  PlaygroundMessage,
   ReplayResult,
   Span,
   TraceDetail,
@@ -52,6 +56,56 @@ export function postReplay(request: {
   modified_attributes: Record<string, unknown>;
 }): Promise<ReplayResult> {
   return apiFetch<ReplayResult>("/replay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+// --- Settings ---
+
+export function getApiKeys(): Promise<ApiKeyStatus[]> {
+  return apiFetch<ApiKeyStatus[]>("/settings/api-keys");
+}
+
+export function setApiKey(
+  provider: string,
+  apiKey: string,
+): Promise<{ provider: string; configured: boolean }> {
+  return apiFetch("/settings/api-keys", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ provider, api_key: apiKey }),
+  });
+}
+
+export function deleteApiKey(
+  provider: string,
+): Promise<{ provider: string; configured: boolean }> {
+  return apiFetch(`/settings/api-keys/${provider}`, { method: "DELETE" });
+}
+
+// --- Playground ---
+
+export function playgroundChat(request: {
+  conversation_id: string | null;
+  model: string;
+  system_prompt?: string;
+  messages: PlaygroundMessage[];
+}): Promise<PlaygroundChatResponse> {
+  return apiFetch<PlaygroundChatResponse>("/playground/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export function playgroundCompare(request: {
+  messages: PlaygroundMessage[];
+  system_prompt?: string;
+  models: string[];
+}): Promise<PlaygroundCompareResponse> {
+  return apiFetch<PlaygroundCompareResponse>("/playground/compare", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
