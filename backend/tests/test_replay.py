@@ -47,6 +47,28 @@ def _make_llm_span(**overrides: object) -> dict[str, object]:
     return _make_span(span_type="llm_call", attributes=attrs, **overrides)
 
 
+def _make_anthropic_llm_span(**overrides: object) -> dict[str, object]:
+    """Build an llm_call span with Anthropic provider attributes."""
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"},
+    ]
+    attrs: dict[str, object] = {
+        "llm.provider": "anthropic",
+        "llm.model": "claude-3-5-sonnet-20241022",
+        "llm.prompt": json.dumps(messages),
+        "llm.temperature": 0.7,
+        "llm.max_tokens": 100,
+        "llm.completion": "Hi there! How can I help you?",
+        "llm.tokens.total": 50,
+        "llm.cost_usd": 0.001,
+    }
+    extra_attrs = overrides.pop("attributes", {}) if "attributes" in overrides else {}
+    assert isinstance(extra_attrs, dict)
+    attrs.update(extra_attrs)
+    return _make_span(span_type="llm_call", attributes=attrs, **overrides)
+
+
 def _mock_openai_response(
     content: str = "New response from OpenAI",
 ) -> httpx.Response:
@@ -161,3 +183,57 @@ def test_replay_stores_in_db(
     assert "old_completion" in stored_diff
     assert "new_completion" in stored_diff
     assert "changed" in stored_diff
+
+
+def _mock_anthropic_response(
+    content: str = "New response from Anthropic",
+) -> httpx.Response:
+    """Create a mock httpx.Response matching Anthropic messages format."""
+    return httpx.Response(
+        status_code=200,
+        json={
+            "content": [{"type": "text", "text": content}],
+            "usage": {
+                "input_tokens": 15,
+                "output_tokens": 8,
+            },
+        },
+        request=httpx.Request(
+            "POST", "https://api.anthropic.com/v1/messages"
+        ),
+    )
+
+
+@patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"})
+@patch("httpx.AsyncClient.post", new_callable=AsyncMock)
+def test_replay_anthropic_provider(mock_post: AsyncMock, client) -> None:
+    """Replay an Anthropic llm_call span with mocked response.
+
+    Verifies system message extraction: the system message should be passed
+    as a top-level 'system' field, not in the messages array.
+    """
+    mock_post.return_value = _mock_anthropic_response("New response from Anthropic")
+
+    span = _make_anthropic_llm_span()
+    client.post("/v1/spans", json={"spans": [span]})
+
+    response = client.post(
+        "/v1/replay",
+        json={
+            "span_id": span["span_id"],
+            "modified_attributes": {"llm.temperature": 0.0},
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["original_span_id"] == span["span_id"]
+    assert data["new_output"]["llm.completion"] == "New response from Anthropic"
+    assert data["new_output"]["llm.tokens.input"] == 15
+    assert data["new_output"]["llm.tokens.output"] == 8
+    assert "llm.cost_usd" in data["new_output"]
+    assert data["diff"]["changed"] is True
+
+    # Verify the mock was called with Anthropic API URL
+    call_args = mock_post.call_args
+    assert "anthropic.com" in str(call_args)
