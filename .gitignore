@@ -1,0 +1,58 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+*.pyo
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ─── Node / Frontend ──────────────────────────────────────
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# ─── Environment & Secrets ────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ─── Beacon Runtime Data ──────────────────────────────────
+# The live database lives at ~/.beacon/traces.db — never commit it
+*.db
+*.db-shm
+*.db-wal
+
+# ─── macOS ────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V7
+.Trashes
+
+# ─── Editor ───────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Detect-secrets ───────────────────────────────────────
+# .secrets.baseline is committed intentionally (it's a safe whitelist)
+
+# ─── Misc ─────────────────────────────────────────────────
+*.log
+.local/

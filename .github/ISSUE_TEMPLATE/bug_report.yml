@@ -1,0 +1,89 @@
+name: Bug Report
+description: Something isn't working
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Fill out every section — incomplete reports slow down fixes.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence. What is broken?
+      placeholder: "The trace graph doesn't show browser_action spans when Playwright is used."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: The shortest deterministic path to trigger the issue. Numbered steps only.
+      placeholder: |
+        1. Install beacon-sdk 0.1.0
+        2. Run `python examples/browser_agent.py`
+        3. Open http://localhost:5173
+        4. Click the trace — browser_action nodes are missing from the graph
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens? Include error messages verbatim.
+    validations:
+      required: true
+
+  - type: input
+    id: beacon_version
+    attributes:
+      label: Beacon Version
+      placeholder: "0.1.0 or commit SHA"
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python Version
+      placeholder: "3.11.4"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "macOS 15.3, Ubuntu 24.04, Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Error Output
+      description: Paste relevant logs here. Backend logs from `uvicorn` or SDK debug output.
+      render: shell
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (blocks all usage)
+        - High (blocks a core feature)
+        - Medium (workaround exists)
+        - Low (minor inconvenience)
+    validations:
+      required: true

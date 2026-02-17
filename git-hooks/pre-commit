@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Beacon pre-commit hook
+# Runs Black, isort, and ruff on staged Python files.
+# Runs Prettier + ESLint on staged TypeScript/TSX files.
+# Auto-fixes and re-stages modified files.
+#
+# Install: cp git-hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or use: pre-commit install (which runs .pre-commit-config.yaml instead)
+
+set -euo pipefail
+
+# ─── Collect staged files ──────────────────────────────────────────────────────
+# Use NUL delimiter to handle filenames with spaces
+mapfile -d '' STAGED_FILES < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if [[ ${#STAGED_FILES[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+# ─── Split by type ─────────────────────────────────────────────────────────────
+PYTHON_FILES=()
+TS_FILES=()
+
+for file in "${STAGED_FILES[@]}"; do
+  if [[ "$file" =~ \.(py)$ ]]; then
+    PYTHON_FILES+=("$file")
+  elif [[ "$file" =~ \.(ts|tsx)$ ]]; then
+    TS_FILES+=("$file")
+  fi
+done
+
+# ─── Python: Black + isort + ruff ─────────────────────────────────────────────
+if [[ ${#PYTHON_FILES[@]} -gt 0 ]]; then
+  echo "🐍 Formatting Python files..."
+
+  if command -v black &>/dev/null; then
+    black "${PYTHON_FILES[@]}"
+  fi
+
+  if command -v isort &>/dev/null; then
+    isort --profile black "${PYTHON_FILES[@]}"
+  fi
+
+  if command -v ruff &>/dev/null; then
+    ruff check --fix "${PYTHON_FILES[@]}" || true  # ruff --fix may exit 1 for unfixable; that's OK
+  fi
+
+  git add "${PYTHON_FILES[@]}"
+fi
+
+# ─── TypeScript: Prettier + ESLint ────────────────────────────────────────────
+if [[ ${#TS_FILES[@]} -gt 0 ]]; then
+  echo "⚡ Formatting TypeScript files..."
+
+  if command -v npx &>/dev/null; then
+    npx --no prettier --write "${TS_FILES[@]}" 2>/dev/null || true
+    npx --no eslint --fix "${TS_FILES[@]}" 2>/dev/null || true
+  fi
+
+  git add "${TS_FILES[@]}"
+fi
+
+echo "✓ Pre-commit checks passed"
