@@ -36,7 +36,7 @@ app.include_router(ws_router)
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+async def health() -> dict[str, str]:
     return {
         "status": "ok",
         "version": "0.1.0",
