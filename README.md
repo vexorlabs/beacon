@@ -46,7 +46,7 @@ All of it appears as a single, interactive execution graph. Click any node to in
 
 ```bash
 # Clone and start the platform
-git clone https://github.com/anthropics/beacon.git
+git clone https://github.com/vexorlabs/beacon.git
 cd beacon
 make install          # Create venv, install all deps
 make dev              # Start backend (7474) + frontend (5173)

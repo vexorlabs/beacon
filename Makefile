@@ -4,7 +4,6 @@
 
 PYTHON       := python3
 VENV         := backend/.venv
-PY           := $(VENV)/bin/python
 PIP          := $(VENV)/bin/pip
 BACKEND_DIR  := backend
 FRONTEND_DIR := frontend
@@ -80,8 +79,8 @@ dev-frontend:
 
 stop:
 	@echo "Stopping processes on ports $(BACKEND_PORT) and $(FRONTEND_PORT) ..."
-	@lsof -ti :$(BACKEND_PORT) | xargs kill -9 2>/dev/null || true
-	@lsof -ti :$(FRONTEND_PORT) | xargs kill -9 2>/dev/null || true
+	@lsof -ti :$(BACKEND_PORT) | xargs kill 2>/dev/null || true
+	@lsof -ti :$(FRONTEND_PORT) | xargs kill 2>/dev/null || true
 	@echo "Done."
 
 # -----------------------------------------------------------------------------
