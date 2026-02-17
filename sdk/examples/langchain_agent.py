@@ -10,6 +10,8 @@ Usage:
     3. Open http://localhost:5173 to see the trace
 """
 
+from __future__ import annotations
+
 import beacon_sdk
 from beacon_sdk.integrations.langchain import BeaconCallbackHandler
 
