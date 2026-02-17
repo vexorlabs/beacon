@@ -199,18 +199,11 @@ Do not change these without updating `docs/architecture.md`:
 ## Running the Project
 
 ```bash
-# Backend
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 7474
-
-# Frontend
-cd frontend
-npm run dev   # http://localhost:5173
-
-# SDK (development)
-cd sdk
-pip install -e ".[dev]"
+make install          # Create venv, install all dependencies (first time)
+make dev              # Start backend + frontend (Ctrl-C to stop both)
+make stop             # Kill servers on ports 7474 and 5173
+make test             # Run all tests
+make help             # See all available targets
 ```
 
 Backend auto-docs: `http://localhost:7474/docs`

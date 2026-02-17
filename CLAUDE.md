@@ -13,8 +13,8 @@
 
 **Backend port:** 7474 · **Frontend port:** 5173
 
-**Run backend:** `cd backend && uvicorn app.main:app --reload --port 7474`
-**Run frontend:** `cd frontend && npm run dev`
+**Run everything:** `make dev` (or `make help` for all targets)
+**Install deps:** `make install` · **Stop servers:** `make stop` · **Run tests:** `make test`
 
 ---
 
