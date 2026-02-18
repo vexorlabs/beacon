@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
 import SpanNode from "./SpanNode";
 import { useGraphLayout } from "./useGraphLayout";
-import type { SpanType } from "@/lib/types";
+import type { SpanNodeData, SpanType } from "@/lib/types";
 
 const SPAN_TYPE_COLORS: Record<SpanType, string> = {
   llm_call: "#3b82f6",
@@ -109,10 +109,8 @@ function TraceGraphInner() {
     [fitView],
   );
 
-  const miniMapNodeColor = useCallback((node: Node) => {
-    const spanType = (node.data as Record<string, unknown>)
-      .span_type as SpanType;
-    return SPAN_TYPE_COLORS[spanType] ?? "#71717a";
+  const miniMapNodeColor = useCallback((node: Node<SpanNodeData>) => {
+    return SPAN_TYPE_COLORS[node.data.span_type] ?? "#71717a";
   }, []);
 
   if (!selectedTraceId) {
