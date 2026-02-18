@@ -1,18 +1,36 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ReactFlow,
   Background,
   MiniMap,
+  Controls,
   type NodeTypes,
   type NodeMouseHandler,
+  type OnNodesChange,
+  type Node,
+  applyNodeChanges,
+  useReactFlow,
+  ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
 import SpanNode from "./SpanNode";
 import { useGraphLayout } from "./useGraphLayout";
+import type { SpanNodeData, SpanType } from "@/lib/types";
 
-export default function TraceGraph() {
+const SPAN_TYPE_COLORS: Record<SpanType, string> = {
+  llm_call: "#3b82f6",
+  tool_use: "#10b981",
+  browser_action: "#f97316",
+  file_operation: "#f59e0b",
+  shell_command: "#a855f7",
+  agent_step: "#71717a",
+  chain: "#71717a",
+  custom: "#71717a",
+};
+
+function TraceGraphInner() {
   const graphData = useTraceStore((s) => s.graphData);
   const isLoading = useTraceStore((s) => s.isLoadingTrace);
   const selectedTraceId = useTraceStore((s) => s.selectedTraceId);
@@ -20,11 +38,16 @@ export default function TraceGraph() {
   const selectSpan = useTraceStore((s) => s.selectSpan);
   const timeTravelIndex = useTraceStore((s) => s.timeTravelIndex);
 
+  const { fitView } = useReactFlow();
+
   const nodeTypes: NodeTypes = useMemo(() => ({ spanNode: SpanNode }), []);
 
   const rawNodes = useMemo(() => graphData?.nodes ?? [], [graphData?.nodes]);
   const rawEdges = useMemo(() => graphData?.edges ?? [], [graphData?.edges]);
-  const { nodes: laidOutNodes, edges } = useGraphLayout(rawNodes, rawEdges);
+  const { nodes: laidOutNodes, edges: layoutEdges } = useGraphLayout(
+    rawNodes,
+    rawEdges,
+  );
 
   // Map from span_id to chronological index (rawNodes preserve backend start_time order)
   const chronoIndex = useMemo(() => {
@@ -33,7 +56,7 @@ export default function TraceGraph() {
     return map;
   }, [rawNodes]);
 
-  // Apply time-travel dimming and selection highlighting
+  // Apply time-travel dimming, selection highlighting, and animated edges
   const styledNodes = useMemo(() => {
     return laidOutNodes.map((node) => {
       const idx = chronoIndex.get(node.id) ?? 0;
@@ -51,12 +74,44 @@ export default function TraceGraph() {
     });
   }, [laidOutNodes, chronoIndex, timeTravelIndex, selectedSpanId]);
 
+  const styledEdges = useMemo(() => {
+    return layoutEdges.map((edge) => ({
+      ...edge,
+      animated: true,
+      style: { stroke: "#525252", strokeWidth: 1.5 },
+    }));
+  }, [layoutEdges]);
+
+  // Local node state so React Flow can handle dragging
+  const [localNodes, setLocalNodes] = useState<Node[]>([]);
+
+  // Sync store-derived nodes into local state when layout/styling changes
+  useEffect(() => {
+    setLocalNodes(styledNodes);
+  }, [styledNodes]);
+
+  const onNodesChange: OnNodesChange = useCallback((changes) => {
+    setLocalNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
+
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
       selectSpan(node.id);
     },
     [selectSpan],
   );
+
+  // Center + zoom on a node when double-clicked
+  const onNodeDoubleClick: NodeMouseHandler = useCallback(
+    (_event, node) => {
+      fitView({ nodes: [{ id: node.id }], duration: 300, padding: 0.5 });
+    },
+    [fitView],
+  );
+
+  const miniMapNodeColor = useCallback((node: Node<SpanNodeData>) => {
+    return SPAN_TYPE_COLORS[node.data.span_type] ?? "#71717a";
+  }, []);
 
   if (!selectedTraceId) {
     return (
@@ -87,10 +142,12 @@ export default function TraceGraph() {
 
   return (
     <ReactFlow
-      nodes={styledNodes}
-      edges={edges}
+      nodes={localNodes}
+      edges={styledEdges}
       nodeTypes={nodeTypes}
+      onNodesChange={onNodesChange}
       onNodeClick={onNodeClick}
+      onNodeDoubleClick={onNodeDoubleClick}
       fitView
       fitViewOptions={{ padding: 0.2 }}
       minZoom={0.1}
@@ -99,11 +156,26 @@ export default function TraceGraph() {
       proOptions={{ hideAttribution: true }}
     >
       <Background />
+      <Controls
+        showInteractive={false}
+        position="bottom-left"
+        className="!bg-zinc-900 !border-zinc-700 !rounded-md !shadow-lg [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!fill-zinc-300 [&>button:hover]:!bg-zinc-700"
+      />
       <MiniMap
         nodeStrokeWidth={3}
+        nodeColor={miniMapNodeColor}
+        maskColor="oklch(0.13 0.004 272 / 0.7)"
         position="bottom-right"
-        style={{ width: 120, height: 80 }}
+        style={{ width: 120, height: 80, background: "#1a1a1e" }}
       />
     </ReactFlow>
+  );
+}
+
+export default function TraceGraph() {
+  return (
+    <ReactFlowProvider>
+      <TraceGraphInner />
+    </ReactFlowProvider>
   );
 }
