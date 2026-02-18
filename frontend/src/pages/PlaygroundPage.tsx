@@ -1,12 +1,12 @@
+import { useNavigate } from "react-router-dom";
 import Playground from "@/components/Playground";
-import { useNavigationStore } from "@/store/navigation";
 
 export default function PlaygroundPage() {
-  const navigate = useNavigationStore((s) => s.navigate);
+  const navigate = useNavigate();
 
   return (
     <Playground
-      onViewInDebugger={() => navigate("traces")}
+      onViewInDebugger={() => navigate("/traces")}
     />
   );
 }

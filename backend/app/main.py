@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings as app_settings
 from app.database import init_db
-from app.routers import demo, playground, replay, settings, spans, traces
+from app.routers import demo, playground, replay, search, settings, spans, stats, traces
 from app.ws.manager import ws_router
 
 
@@ -37,6 +37,8 @@ app.include_router(replay.router, prefix="/v1")
 app.include_router(settings.router, prefix="/v1")
 app.include_router(playground.router, prefix="/v1")
 app.include_router(demo.router, prefix="/v1")
+app.include_router(stats.router, prefix="/v1")
+app.include_router(search.router, prefix="/v1")
 app.include_router(ws_router)
 
 

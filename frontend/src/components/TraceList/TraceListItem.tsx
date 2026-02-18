@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { TraceSummary } from "@/lib/types";
 
@@ -5,6 +7,7 @@ interface TraceListItemProps {
   trace: TraceSummary;
   isSelected: boolean;
   onSelect: (traceId: string) => void;
+  onDelete: (traceId: string) => void;
 }
 
 const STATUS_VARIANT: Record<string, "default" | "destructive" | "secondary"> =
@@ -35,20 +38,61 @@ export default function TraceListItem({
   trace,
   isSelected,
   onSelect,
+  onDelete,
 }: TraceListItemProps) {
+  const [confirming, setConfirming] = useState(false);
+
   return (
     <button
       type="button"
-      className={`w-full text-left px-3 py-2 border-b border-border hover:bg-accent transition-colors ${
+      className={`group w-full text-left px-3 py-2 border-b border-border hover:bg-accent transition-colors ${
         isSelected ? "bg-accent" : ""
       }`}
       onClick={() => onSelect(trace.trace_id)}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="font-medium text-[13px] truncate">{trace.name}</span>
-        <Badge variant={STATUS_VARIANT[trace.status] ?? "secondary"}>
-          {trace.status}
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          {confirming ? (
+            <span
+              className="flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="text-[11px] text-red-400 hover:text-red-300 font-medium"
+                onClick={() => {
+                  onDelete(trace.trace_id);
+                  setConfirming(false);
+                }}
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                className="text-[11px] text-muted-foreground hover:text-foreground"
+                onClick={() => setConfirming(false)}
+              >
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-opacity p-0.5"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirming(true);
+              }}
+              aria-label="Delete trace"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
+          <Badge variant={STATUS_VARIANT[trace.status] ?? "secondary"}>
+            {trace.status}
+          </Badge>
+        </div>
       </div>
       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
         <span>{formatDuration(trace.duration_ms)}</span>

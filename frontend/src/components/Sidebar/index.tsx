@@ -6,15 +6,14 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useNavigationStore } from "@/store/navigation";
-import type { Page } from "@/store/navigation";
 import type { LucideIcon } from "lucide-react";
 import { useEffect } from "react";
 
 interface NavItemProps {
   icon: LucideIcon;
   label: string;
-  page: Page;
   isActive: boolean;
   collapsed: boolean;
   onClick: () => void;
@@ -40,17 +39,22 @@ function NavItem({ icon: Icon, label, isActive, collapsed, onClick }: NavItemPro
   );
 }
 
-const NAV_ITEMS: { icon: LucideIcon; label: string; page: Page }[] = [
-  { icon: LayoutDashboard, label: "Dashboard", page: "dashboard" },
-  { icon: Bug, label: "Traces", page: "traces" },
-  { icon: FlaskConical, label: "Playground", page: "playground" },
+const NAV_ITEMS: { icon: LucideIcon; label: string; path: string }[] = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Bug, label: "Traces", path: "/traces" },
+  { icon: FlaskConical, label: "Playground", path: "/playground" },
 ];
 
 export default function Sidebar() {
-  const currentPage = useNavigationStore((s) => s.currentPage);
-  const navigate = useNavigationStore((s) => s.navigate);
+  const location = useLocation();
+  const navigate = useNavigate();
   const collapsed = useNavigationStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useNavigationStore((s) => s.toggleSidebar);
+
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -87,13 +91,12 @@ export default function Sidebar() {
       <nav className={`flex-1 flex flex-col gap-0.5 ${collapsed ? "px-1.5" : "px-2"}`}>
         {NAV_ITEMS.map((item) => (
           <NavItem
-            key={item.page}
+            key={item.path}
             icon={item.icon}
             label={item.label}
-            page={item.page}
-            isActive={currentPage === item.page}
+            isActive={isActive(item.path)}
             collapsed={collapsed}
-            onClick={() => navigate(item.page)}
+            onClick={() => navigate(item.path)}
           />
         ))}
       </nav>
@@ -102,10 +105,9 @@ export default function Sidebar() {
         <NavItem
           icon={Settings}
           label="Settings"
-          page="settings"
-          isActive={currentPage === "settings"}
+          isActive={isActive("/settings")}
           collapsed={collapsed}
-          onClick={() => navigate("settings")}
+          onClick={() => navigate("/settings")}
         />
       </nav>
     </aside>

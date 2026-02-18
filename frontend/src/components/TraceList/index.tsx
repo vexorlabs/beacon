@@ -1,16 +1,19 @@
 import { useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
 import TraceListItem from "./TraceListItem";
 import TraceFilter from "./TraceFilter";
+import SearchBar from "./SearchBar";
 
 export default function TraceList() {
+  const navigate = useNavigate();
   const traces = useTraceStore((s) => s.traces);
   const isLoading = useTraceStore((s) => s.isLoadingTraces);
   const selectedTraceId = useTraceStore((s) => s.selectedTraceId);
-  const selectTrace = useTraceStore((s) => s.selectTrace);
   const loadTraces = useTraceStore((s) => s.loadTraces);
+  const deleteTrace = useTraceStore((s) => s.deleteTrace);
   const traceFilter = useTraceStore((s) => s.traceFilter);
 
   useEffect(() => {
@@ -35,6 +38,7 @@ export default function TraceList() {
       <div className="px-3 py-2 border-b border-border">
         <h2 className="text-[13px] font-semibold">Traces</h2>
       </div>
+      <SearchBar />
       <TraceFilter />
       <ScrollArea className="flex-1">
         {isLoading && traces.length === 0 && (
@@ -69,7 +73,13 @@ export default function TraceList() {
             key={trace.trace_id}
             trace={trace}
             isSelected={trace.trace_id === selectedTraceId}
-            onSelect={selectTrace}
+            onSelect={(id) => navigate(`/traces/${id}`)}
+            onDelete={(id) => {
+              void deleteTrace(id);
+              if (id === selectedTraceId) {
+                navigate("/traces");
+              }
+            }}
           />
         ))}
       </ScrollArea>

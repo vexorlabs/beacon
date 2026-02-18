@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import { getTrace, getTraceGraph, getTraces, postReplay } from "@/lib/api";
+import {
+  deleteTrace as apiDeleteTrace,
+  getTrace,
+  getTraceGraph,
+  getTraces,
+  postReplay,
+} from "@/lib/api";
 import type {
   GraphData,
   GraphEdge,
@@ -43,6 +49,7 @@ interface TraceStore {
   clearReplay: () => void;
   appendSpan: (span: Span) => void;
   prependTrace: (trace: TraceSummary) => void;
+  deleteTrace: (traceId: string) => Promise<void>;
   clearBackendError: () => void;
   setTraceFilter: (filter: Partial<TraceFilter>) => void;
 }
@@ -199,6 +206,23 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
 
   prependTrace: (trace: TraceSummary) => {
     set({ traces: [trace, ...get().traces] });
+  },
+
+  deleteTrace: async (traceId: string) => {
+    await apiDeleteTrace(traceId);
+    const { selectedTraceId } = get();
+    set({
+      traces: get().traces.filter((t) => t.trace_id !== traceId),
+      ...(selectedTraceId === traceId
+        ? {
+            selectedTraceId: null,
+            selectedTrace: null,
+            graphData: null,
+            selectedSpanId: null,
+            selectedSpan: null,
+          }
+        : {}),
+    });
   },
 
   clearBackendError: () => {

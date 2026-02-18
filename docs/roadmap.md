@@ -224,9 +224,9 @@ New developer opens `localhost:5173` → sees a welcoming Dashboard → can navi
 - [x] Ensure the canonical price table includes all models from `backend/app/services/llm_client.py` (gpt-4.1, o4-mini, claude-opus-4-6, claude-sonnet-4-6, etc.)
 
 **SDK: File Operation Auto-Patch**
-- [ ] Create `sdk/beacon_sdk/integrations/file_patch.py` that patches `builtins.open` to create `file_operation` spans with attributes: `file.operation`, `file.path`, `file.size_bytes`, `file.content` (truncated to 2000 chars)
-- [ ] In `sdk/beacon_sdk/__init__.py`, add `file_patch` to `_apply_auto_patches()` — only when `BEACON_PATCH_FILE_OPS=true` (default `false`) since patching `open()` is intrusive
-- [ ] Add `sdk/tests/test_integrations_file.py` with tests for read, write, and append operations
+- [x] Create `sdk/beacon_sdk/integrations/file_patch.py` that patches `builtins.open` to create `file_operation` spans with attributes: `file.operation`, `file.path`, `file.size_bytes`, `file.content` (truncated to 2000 chars)
+- [x] In `sdk/beacon_sdk/__init__.py`, add `file_patch` to `_apply_auto_patches()` — only when `BEACON_PATCH_FILE_OPS=true` (default `false`) since patching `open()` is intrusive
+- [x] Add `sdk/tests/test_integrations_file.py` with tests for read, write, and append operations
 
 ### Done Condition
 Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streaming, and LangChain chains — all spans appear correctly in the UI with complete data (full completion text, token counts, cost, tool calls). The exporter does not block the event loop.
@@ -240,23 +240,23 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 ### Tasks
 
 **Frontend: URL-Based Routing**
-- [ ] Add `react-router-dom` to `frontend/package.json`
-- [ ] In `frontend/src/App.tsx`, replace the Zustand-based `currentPage` routing with React Router: `/` (dashboard), `/traces` (trace list), `/traces/:traceId` (trace with selected trace), `/traces/:traceId/:spanId` (specific span), `/playground`, `/settings`
-- [ ] Update `frontend/src/store/navigation.ts` to sync with React Router or replace entirely with `useNavigate`/`useParams`
-- [ ] In `frontend/src/store/trace.ts`, read `traceId` and `spanId` from URL params on mount, auto-selecting the trace/span
-- [ ] In `frontend/src/components/Sidebar/index.tsx`, replace `navigate()` calls with React Router `<Link>` or `useNavigate()`
-- [ ] In `frontend/vite.config.ts`, add history fallback so all routes resolve to `index.html`
+- [x] Add `react-router-dom` to `frontend/package.json`
+- [x] In `frontend/src/App.tsx`, replace the Zustand-based `currentPage` routing with React Router: `/` (dashboard), `/traces` (trace list), `/traces/:traceId` (trace with selected trace), `/traces/:traceId/:spanId` (specific span), `/playground`, `/settings`
+- [x] Update `frontend/src/store/navigation.ts` to sync with React Router or replace entirely with `useNavigate`/`useParams`
+- [x] In `frontend/src/store/trace.ts`, read `traceId` and `spanId` from URL params on mount, auto-selecting the trace/span
+- [x] In `frontend/src/components/Sidebar/index.tsx`, replace `navigate()` calls with React Router `<Link>` or `useNavigate()`
+- [x] In `frontend/vite.config.ts`, add history fallback so all routes resolve to `index.html`
 
 **Backend: Trace Deletion and Cleanup**
-- [ ] Add `DELETE /v1/traces/{trace_id}` endpoint — cascading delete of spans and replay_runs via the existing `ON DELETE CASCADE` FK
-- [ ] Add `DELETE /v1/traces` (batch) endpoint accepting `{ trace_ids: string[] }` or `{ older_than: float }` for bulk cleanup
-- [ ] Add `GET /v1/stats` endpoint returning database size, total traces, total spans, oldest trace timestamp
-- [ ] Add tests in `backend/tests/test_traces.py` for delete endpoints
+- [x] Add `DELETE /v1/traces/{trace_id}` endpoint — cascading delete of spans and replay_runs via the existing `ON DELETE CASCADE` FK
+- [x] Add `DELETE /v1/traces` (batch) endpoint accepting `{ trace_ids: string[] }` or `{ older_than: float }` for bulk cleanup
+- [x] Add `GET /v1/stats` endpoint returning database size, total traces, total spans, oldest trace timestamp
+- [x] Add tests in `backend/tests/test_traces.py` for delete endpoints
 
 **Frontend: Trace Deletion**
-- [ ] Add delete button (trash icon) to trace list items with confirmation dialog
-- [ ] Add "Clear All Traces" button to the Settings page
-- [ ] Add `deleteTrace()` and `deleteAllTraces()` functions to `frontend/src/lib/api.ts`
+- [x] Add delete button (trash icon) to trace list items with confirmation dialog
+- [x] Add "Clear All Traces" button to the Settings page
+- [x] Add `deleteTrace()` and `deleteAllTraces()` functions to `frontend/src/lib/api.ts`
 
 **Frontend: Timeline/Waterfall View**
 - [ ] Create `frontend/src/components/TimelineView/index.tsx` — Gantt-chart view showing each span as a horizontal bar positioned by `start_time`/`end_time`, color-coded by `span_type`, with parent-child indentation
@@ -267,13 +267,13 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [ ] Add a "Slowest Spans" summary panel below the timeline showing the top 5 spans by duration
 
 **Backend: Full-Text Search**
-- [ ] Add `GET /v1/search` endpoint accepting `q` (search string), searching across `spans.name`, `spans.attributes` (JSON text), and `traces.name` using SQLite `LIKE`
-- [ ] Return `{ results: [{ trace_id, span_id, name, match_context }], total }` with matching text snippets
-- [ ] Add index `idx_spans_name` on `spans.name`
+- [x] Add `GET /v1/search` endpoint accepting `q` (search string), searching across `spans.name`, `spans.attributes` (JSON text), and `traces.name` using SQLite `LIKE`
+- [x] Return `{ results: [{ trace_id, span_id, name, match_context }], total }` with matching text snippets
+- [x] Add index `idx_spans_name` on `spans.name`
 
 **Frontend: Full-Text Search**
-- [ ] Add a search bar at the top of the Traces page that calls `GET /v1/search` with debounced input
-- [ ] Display search results as a list linking to specific traces/spans via URL routing
+- [x] Add a search bar at the top of the Traces page that calls `GET /v1/search` with debounced input
+- [x] Display search results as a list linking to specific traces/spans via URL routing
 
 **Frontend: Trace Comparison**
 - [ ] Create `frontend/src/pages/ComparePage.tsx` — side-by-side view of two traces

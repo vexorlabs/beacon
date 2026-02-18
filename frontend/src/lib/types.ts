@@ -150,6 +150,29 @@ export interface DemoRunResponse {
   trace_id: string;
 }
 
+// --- Stats types ---
+
+export interface StatsResponse {
+  database_size_bytes: number;
+  total_traces: number;
+  total_spans: number;
+  oldest_trace_timestamp: number | null;
+}
+
+// --- Search types ---
+
+export interface SearchResultItem {
+  trace_id: string;
+  span_id: string;
+  name: string;
+  match_context: string;
+}
+
+export interface SearchResponse {
+  results: SearchResultItem[];
+  total: number;
+}
+
 // --- WebSocket types ---
 
 export type WsEvent =

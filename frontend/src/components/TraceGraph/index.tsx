@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ReactFlow,
   Background,
@@ -31,6 +32,7 @@ const SPAN_TYPE_COLORS: Record<SpanType, string> = {
 };
 
 function TraceGraphInner() {
+  const navigate = useNavigate();
   const graphData = useTraceStore((s) => s.graphData);
   const isLoading = useTraceStore((s) => s.isLoadingTrace);
   const selectedTraceId = useTraceStore((s) => s.selectedTraceId);
@@ -97,8 +99,11 @@ function TraceGraphInner() {
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
       selectSpan(node.id);
+      if (selectedTraceId) {
+        navigate(`/traces/${selectedTraceId}/${node.id}`, { replace: true });
+      }
     },
-    [selectSpan],
+    [selectSpan, selectedTraceId, navigate],
   );
 
   // Center + zoom on a node when double-clicked

@@ -134,6 +134,65 @@ def get_trace_graph(db: Session, trace_id: str) -> GraphData | None:
     return GraphData(nodes=nodes, edges=edges)
 
 
+def delete_trace(db: Session, trace_id: str) -> bool:
+    """Delete a single trace by ID. Returns True if deleted, False if not found.
+
+    ON DELETE CASCADE handles span and replay_run cleanup.
+    """
+    trace = db.execute(
+        select(models.Trace).where(models.Trace.trace_id == trace_id)
+    ).scalar_one_or_none()
+    if trace is None:
+        return False
+    db.delete(trace)
+    db.commit()
+    return True
+
+
+def delete_traces_batch(
+    db: Session,
+    *,
+    trace_ids: list[str] | None = None,
+    older_than: float | None = None,
+) -> int:
+    """Delete traces in bulk. Returns count of deleted traces."""
+    if trace_ids is not None:
+        stmt = select(models.Trace).where(
+            models.Trace.trace_id.in_(trace_ids)
+        )
+    elif older_than is not None:
+        stmt = select(models.Trace).where(
+            models.Trace.created_at < older_than
+        )
+    else:
+        stmt = select(models.Trace)
+
+    traces = db.execute(stmt).scalars().all()
+    count = len(traces)
+    for trace in traces:
+        db.delete(trace)
+    db.commit()
+    return count
+
+
+def get_stats(db: Session) -> dict[str, int | float | None]:
+    """Return database statistics (trace count, span count, oldest timestamp)."""
+    total_traces: int = db.execute(
+        select(func.count()).select_from(models.Trace)
+    ).scalar_one()
+    total_spans: int = db.execute(
+        select(func.count()).select_from(models.Span)
+    ).scalar_one()
+    oldest: float | None = db.execute(
+        select(func.min(models.Trace.created_at))
+    ).scalar_one()
+    return {
+        "total_traces": total_traces,
+        "total_spans": total_spans,
+        "oldest_trace_timestamp": oldest,
+    }
+
+
 def _trace_to_summary(trace: models.Trace) -> TraceSummary:
     duration_ms = (
         (trace.end_time - trace.start_time) * 1000

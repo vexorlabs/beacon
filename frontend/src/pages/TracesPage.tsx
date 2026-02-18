@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import TraceList from "@/components/TraceList";
 import TraceGraph from "@/components/TraceGraph";
 import SpanDetail from "@/components/SpanDetail";
@@ -8,24 +9,45 @@ import { useResizablePanels } from "@/lib/useResizablePanels";
 import { useTraceStore } from "@/store/trace";
 
 export default function TracesPage() {
+  const { traceId, spanId } = useParams<{
+    traceId?: string;
+    spanId?: string;
+  }>();
+
   const { leftWidth, rightWidth, leftHandleProps, rightHandleProps } =
     useResizablePanels(280, 380);
 
   const [expanded, setExpanded] = useState(false);
-  const selectedSpanId = useTraceStore((s) => s.selectedSpanId);
-  const prevSpanId = useRef(selectedSpanId);
+  const selectedTraceId = useTraceStore((s) => s.selectedTraceId);
+  const selectTrace = useTraceStore((s) => s.selectTrace);
+  const selectSpan = useTraceStore((s) => s.selectSpan);
+
+  // Auto-select trace from URL params
+  useEffect(() => {
+    if (traceId && traceId !== selectedTraceId) {
+      void selectTrace(traceId);
+    }
+  }, [traceId, selectTrace, selectedTraceId]);
+
+  // Auto-select span from URL params after trace is loaded
+  useEffect(() => {
+    if (spanId && traceId === selectedTraceId) {
+      selectSpan(spanId);
+    }
+  }, [spanId, traceId, selectedTraceId, selectSpan]);
 
   // When a span is clicked while in fullscreen, reveal the detail panel
   useEffect(() => {
-    if (
-      expanded &&
-      selectedSpanId !== null &&
-      selectedSpanId !== prevSpanId.current
-    ) {
-      setExpanded(false);
-    }
-    prevSpanId.current = selectedSpanId;
-  }, [expanded, selectedSpanId]);
+    if (!expanded) return;
+    let prevSpanId: string | null = useTraceStore.getState().selectedSpanId;
+    const unsub = useTraceStore.subscribe((state) => {
+      if (state.selectedSpanId !== null && state.selectedSpanId !== prevSpanId) {
+        setExpanded(false);
+      }
+      prevSpanId = state.selectedSpanId;
+    });
+    return unsub;
+  }, [expanded]);
 
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden">

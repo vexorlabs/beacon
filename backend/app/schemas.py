@@ -230,3 +230,40 @@ class DemoRunRequest(BaseModel):
 
 class DemoRunResponse(BaseModel):
     trace_id: str
+
+
+# --- Deletion schemas ---
+
+
+class DeleteTracesRequest(BaseModel):
+    trace_ids: list[str] | None = None
+    older_than: float | None = None
+
+
+class DeleteTracesResponse(BaseModel):
+    deleted_count: int
+
+
+# --- Stats schemas ---
+
+
+class StatsResponse(BaseModel):
+    database_size_bytes: int
+    total_traces: int
+    total_spans: int
+    oldest_trace_timestamp: float | None
+
+
+# --- Search schemas ---
+
+
+class SearchResultItem(BaseModel):
+    trace_id: str
+    span_id: str
+    name: str
+    match_context: str
+
+
+class SearchResponse(BaseModel):
+    results: list[SearchResultItem]
+    total: int

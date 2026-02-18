@@ -86,10 +86,13 @@ This document describes Beacon's system architecture. It is the authoritative re
 
 **Key responsibilities:**
 - Accept OTEL span payloads via `POST /v1/spans`
-- Store spans and traces in SQLite
+- Store spans and traces in SQLite (with enforced foreign key constraints)
 - Serve trace list and trace detail via REST API
 - Push new spans to the UI in real-time via WebSocket
 - Execute LLM replay requests (`POST /replay`) for time-travel debugging
+- Trace deletion (single and batch) with cascading cleanup
+- Full-text search across span names, attributes, and trace names
+- Database statistics reporting
 
 **Does NOT:**
 - Instrument any agent code
@@ -105,12 +108,13 @@ This document describes Beacon's system architecture. It is the authoritative re
 **What it does:** Provides the interactive debugging interface. Fetches trace data from the backend and renders it as an interactive graph.
 
 **Key responsibilities:**
-- Display list of all captured traces
+- Display list of all captured traces with full-text search and deletion
 - Render a trace as an interactive React Flow graph
 - Show span detail in a side panel when a node is clicked
 - Allow prompt editing via Monaco Editor and trigger replays
 - Stream new spans in real-time via WebSocket
 - Provide a time-travel timeline scrubber
+- URL-based routing with deep-linking to specific traces and spans (React Router)
 
 **Does NOT:**
 - Communicate with the SDK directly
