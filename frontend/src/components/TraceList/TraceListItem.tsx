@@ -45,7 +45,7 @@ export default function TraceListItem({
   return (
     <button
       type="button"
-      className={`group w-full text-left px-3 py-2 border-b border-border hover:bg-accent transition-colors ${
+      className={`group w-full text-left px-3 py-2 border-b border-border/60 hover:bg-accent transition-colors ${
         isSelected ? "bg-accent" : ""
       }`}
       onClick={() => onSelect(trace.trace_id)}

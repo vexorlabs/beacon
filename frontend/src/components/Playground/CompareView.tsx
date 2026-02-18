@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Send, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ function formatCost(usd: number): string {
 
 export default function CompareView() {
   const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const compareModels = usePlaygroundStore((s) => s.compareModels);
   const toggleCompareModel = usePlaygroundStore((s) => s.toggleCompareModel);
   const compareResults = usePlaygroundStore((s) => s.compareResults);
@@ -21,8 +22,21 @@ export default function CompareView() {
   const handleCompare = () => {
     const trimmed = input.trim();
     if (!trimmed || isComparing || compareModels.length < 2) return;
+    setInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
     runComparison(trimmed);
   };
+
+  const handleTextareaChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setInput(e.target.value);
+      e.target.style.height = "auto";
+      e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+    },
+    [],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -89,7 +103,7 @@ export default function CompareView() {
             {compareResults.map((result) => (
               <div
                 key={result.model}
-                className="border border-border rounded-lg overflow-hidden"
+                className="bg-card border-[0.5px] border-border rounded-lg overflow-hidden shadow-[0_2px_8px_oklch(0_0_0/0.15)]"
               >
                 <div className="bg-secondary px-4 py-3 border-b border-border">
                   <div className="flex items-center justify-between mb-1">
@@ -112,7 +126,7 @@ export default function CompareView() {
                   </div>
                 </div>
                 <div className="p-4">
-                  <p className="text-sm whitespace-pre-wrap">
+                  <p className="text-[13px] leading-relaxed whitespace-pre-wrap">
                     {result.completion}
                   </p>
                 </div>
@@ -122,33 +136,39 @@ export default function CompareView() {
         )}
       </div>
 
-      {/* Input */}
-      <div className="border-t border-border p-4">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            className="flex-1 bg-background border border-input rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      {/* Composer */}
+      <div className="border-t border-border p-3">
+        <div className="flex items-end gap-2 bg-card border-[0.5px] border-border rounded-lg p-2 shadow-[0_2px_8px_oklch(0_0_0/0.15)]">
+          <textarea
+            ref={textareaRef}
+            className="flex-1 bg-transparent resize-none text-[13px] placeholder:text-muted-foreground/60 focus:outline-none min-h-[36px] max-h-[120px] py-1.5 px-2 leading-relaxed"
             placeholder="Type a prompt to compare..."
+            rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && !e.shiftKey && handleCompare()
-            }
+            onChange={handleTextareaChange}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleCompare();
+              }
+            }}
             disabled={isComparing}
           />
           <Button
+            size="icon-sm"
             onClick={handleCompare}
             disabled={isComparing || !input.trim() || compareModels.length < 2}
+            className="flex-none rounded-md"
           >
             {isComparing ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin" />
             ) : (
-              <Send size={16} />
+              <Send size={14} />
             )}
           </Button>
         </div>
         {compareModels.length < 2 && (
-          <p className="text-xs text-destructive mt-1">
+          <p className="text-xs text-destructive mt-1.5 px-1">
             Select at least 2 models to compare.
           </p>
         )}

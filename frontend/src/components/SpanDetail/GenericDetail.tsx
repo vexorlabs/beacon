@@ -58,14 +58,14 @@ export default function GenericDetail({ span }: GenericDetailProps) {
     <div className="space-y-4">
       {groups.map((group) => (
         <div key={group.label}>
-          <h4 className="text-xs font-semibold mb-1 capitalize">
+          <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2 capitalize">
             {group.label}
           </h4>
           <div className="space-y-1">
             {group.entries.map(([key, value]) => (
               <div key={key}>
                 <div className="text-xs text-muted-foreground">{key}</div>
-                <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[200px] overflow-auto">
+                <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[200px] overflow-auto border-[0.5px] border-border">
                   {formatValue(value)}
                 </pre>
               </div>

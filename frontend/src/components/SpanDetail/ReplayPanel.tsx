@@ -33,7 +33,9 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-semibold">Replay</h4>
+      <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        Replay
+      </h4>
 
       {/* Prompt Editor */}
       <div className="rounded overflow-hidden border border-border">
@@ -54,7 +56,7 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
 
       {/* Error feedback */}
       {replayError && (
-        <div className="text-xs text-red-500 bg-red-950/20 border border-red-900/30 rounded p-2">
+        <div className="text-xs text-red-400 bg-red-500/10 border border-red-900/30 rounded-md p-2">
           Replay failed: {replayError}
         </div>
       )}
@@ -69,13 +71,17 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
           ) : (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <div className="text-xs font-semibold mb-1">Original</div>
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                  Original
+                </div>
                 <pre className="text-xs bg-red-950/20 border border-red-900/30 rounded p-2 whitespace-pre-wrap max-h-[200px] overflow-auto">
                   {replayResult.diff.old_completion}
                 </pre>
               </div>
               <div>
-                <div className="text-xs font-semibold mb-1">Replayed</div>
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                  Replayed
+                </div>
                 <pre className="text-xs bg-green-950/20 border border-green-900/30 rounded p-2 whitespace-pre-wrap max-h-[200px] overflow-auto">
                   {replayResult.diff.new_completion}
                 </pre>

@@ -21,7 +21,9 @@ export default function BrowserDetail({ span }: BrowserDetailProps) {
       {/* URL */}
       {typeof url === "string" && (
         <div>
-          <h4 className="text-xs font-semibold mb-1">URL</h4>
+          <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+            URL
+          </h4>
           {url.startsWith("http://") || url.startsWith("https://") ? (
             <a
               href={url}
@@ -47,7 +49,9 @@ export default function BrowserDetail({ span }: BrowserDetailProps) {
       {/* Selector */}
       {typeof selector === "string" && (
         <div>
-          <h4 className="text-xs font-semibold mb-1">Selector</h4>
+          <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+            Selector
+          </h4>
           <code className="text-xs bg-muted rounded px-1.5 py-0.5">
             {selector}
           </code>
@@ -57,7 +61,9 @@ export default function BrowserDetail({ span }: BrowserDetailProps) {
       {/* Value */}
       {typeof value === "string" && (
         <div>
-          <h4 className="text-xs font-semibold mb-1">Value</h4>
+          <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+            Value
+          </h4>
           <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap">
             {value}
           </pre>
@@ -68,7 +74,9 @@ export default function BrowserDetail({ span }: BrowserDetailProps) {
       {typeof span.attributes["browser.screenshot"] === "string" &&
         (span.attributes["browser.screenshot"] as string).length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold mb-1">Screenshot</h4>
+            <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+              Screenshot
+            </h4>
             <img
               src={`data:image/png;base64,${span.attributes["browser.screenshot"] as string}`}
               alt="Browser screenshot"
