@@ -2,6 +2,7 @@ import { useNavigationStore } from "@/store/navigation";
 import { useTraceStore } from "@/store/trace";
 import { Bug, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DemoAgents from "@/components/DemoAgents";
 import type { TraceSummary } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -52,6 +53,8 @@ function GettingStarted({
             description="Traces appear here automatically via WebSocket."
           />
         </div>
+
+        <DemoAgents />
 
         <div className="flex gap-3 pt-2">
           <Button onClick={() => onNavigate("playground")}>
@@ -189,6 +192,8 @@ function Overview({
             ))}
           </div>
         </div>
+
+        <DemoAgents />
 
         <div className="flex gap-3">
           <Button onClick={() => onNavigate("playground")}>

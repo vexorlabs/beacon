@@ -14,6 +14,11 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 - test(sdk): 19 new tests for LangChain callback handler covering chain/llm/tool/agent lifecycle, parent-child nesting, and error handling
 
 ### Added
+- feat(backend): Demo agents — clickable Dashboard cards that trigger real LLM calls (OpenAI/Anthropic), producing genuine traces with tool calling; 3 scenarios: Research Assistant, Code Reviewer, Trip Planner
+- feat(backend): `GET /v1/demo/scenarios` — list demo scenarios with API key status
+- feat(backend): `POST /v1/demo/run` — start a demo agent in background, returns trace_id immediately
+- feat(backend): `call_openai_with_tools()` and `call_anthropic_with_tools()` in `llm_client.py` — tool-calling support for LLM API calls
+- feat(frontend): `DemoAgents` component — demo agent cards on Dashboard with run/loading/disabled states
 - feat(sdk): tool calls capture — serialize OpenAI `tool_calls` and Anthropic `tool_use` blocks into `llm.tool_calls` span attribute; render in frontend LLM detail panel
 - feat(sdk): Streaming support for OpenAI and Anthropic integrations — `OpenAIStreamWrapper`, `OpenAIAsyncStreamWrapper`, `AnthropicStreamWrapper`, `AnthropicAsyncStreamWrapper` intercept streaming chunks/events to create LLM spans with accumulated completion text, token usage, cost estimation, and finish reason
 - docs: expand roadmap with advisor-informed features (Phases 7–11) — trace import/export, critical path analysis, prompt versioning, OTLP ingestion, error pattern recognition, A/B prompt testing, CI/CD integration, VS Code extension

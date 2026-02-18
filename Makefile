@@ -12,7 +12,7 @@ BACKEND_PORT := 7474
 FRONTEND_PORT := 5173
 DB_PATH      := $(HOME)/.beacon/traces.db
 
-.PHONY: help install dev dev-backend dev-frontend stop test lint format clean db-reset
+.PHONY: help install dev dev-backend dev-frontend demo stop test lint format clean db-reset
 
 help:
 	@echo ""
@@ -25,6 +25,7 @@ help:
 	@echo "    make dev            Start backend + frontend (Ctrl-C to stop both)"
 	@echo "    make dev-backend    Start backend only (port $(BACKEND_PORT))"
 	@echo "    make dev-frontend   Start frontend only (port $(FRONTEND_PORT))"
+	@echo "    make demo           Run demo agents (populate UI with example traces)"
 	@echo ""
 	@echo "  Stop:"
 	@echo "    make stop           Kill processes on ports $(BACKEND_PORT) and $(FRONTEND_PORT)"
@@ -72,6 +73,11 @@ dev-backend:
 
 dev-frontend:
 	npm --prefix $(FRONTEND_DIR) run dev
+
+demo:
+	@curl -sf http://localhost:$(BACKEND_PORT)/health > /dev/null || \
+	  (echo "Backend not running. Start with: make dev"; exit 1)
+	$(VENV)/bin/python sdk/examples/demo/run_all.py
 
 # -----------------------------------------------------------------------------
 # Stop

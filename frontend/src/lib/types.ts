@@ -135,6 +135,21 @@ export interface PlaygroundCompareResponse {
   results: CompareResultItem[];
 }
 
+// --- Demo agent types ---
+
+export interface DemoScenario {
+  key: string;
+  name: string;
+  description: string;
+  provider: string;
+  model: string;
+  api_key_configured: boolean;
+}
+
+export interface DemoRunResponse {
+  trace_id: string;
+}
+
 // --- WebSocket types ---
 
 export type WsEvent =

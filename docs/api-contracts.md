@@ -192,6 +192,69 @@ Get full detail for a single span, including all attributes.
 
 ---
 
+### Demo Agents (Used by UI)
+
+#### `GET /v1/demo/scenarios`
+
+List available demo agent scenarios with API key configuration status.
+
+**Response `200 OK`:**
+```json
+[
+  {
+    "key": "research_assistant",
+    "name": "Research Assistant",
+    "description": "Multi-step research with web search tool",
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "api_key_configured": true
+  },
+  {
+    "key": "code_reviewer",
+    "name": "Code Reviewer",
+    "description": "Code analysis with linting tool",
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "api_key_configured": false
+  }
+]
+```
+
+---
+
+#### `POST /v1/demo/run`
+
+Start a demo agent. Returns `trace_id` immediately; the agent loop runs as a background task, broadcasting spans via WebSocket as they are created.
+
+**Request body:**
+```json
+{
+  "scenario": "research_assistant"
+}
+```
+
+**Response `200 OK`:**
+```json
+{
+  "trace_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+}
+```
+
+**Response `400 Bad Request`:**
+```json
+{ "detail": "Unknown scenario: invalid_key" }
+```
+```json
+{ "detail": "No API key configured for openai. Add one in Settings." }
+```
+
+**Response `502 Bad Gateway`:**
+```json
+{ "detail": "LLM API call failed: ..." }
+```
+
+---
+
 ### Replay (Used by UI — Time-Travel Feature)
 
 #### `POST /v1/replay`

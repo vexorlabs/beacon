@@ -1,5 +1,7 @@
 import type {
   ApiKeyStatus,
+  DemoRunResponse,
+  DemoScenario,
   GraphData,
   PlaygroundChatResponse,
   PlaygroundCompareResponse,
@@ -109,5 +111,19 @@ export function playgroundCompare(request: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
+  });
+}
+
+// --- Demo agents ---
+
+export function getDemoScenarios(): Promise<DemoScenario[]> {
+  return apiFetch<DemoScenario[]>("/demo/scenarios");
+}
+
+export function runDemoAgent(scenario: string): Promise<DemoRunResponse> {
+  return apiFetch<DemoRunResponse>("/demo/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scenario }),
   });
 }
