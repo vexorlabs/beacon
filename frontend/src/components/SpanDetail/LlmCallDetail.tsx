@@ -108,6 +108,64 @@ export default function LlmCallDetail({ span }: LlmCallDetailProps) {
         </pre>
       </div>
 
+      {/* Tool Calls */}
+      {(() => {
+        const toolCallsRaw = parseJson(attr(span, "llm.tool_calls"));
+        if (!Array.isArray(toolCallsRaw) || toolCallsRaw.length === 0)
+          return null;
+        return (
+          <div>
+            <h4 className="text-xs font-semibold mb-1">Tool Calls</h4>
+            <div className="space-y-2">
+              {toolCallsRaw.map(
+                (tc: Record<string, unknown>, i: number) => {
+                  const name =
+                    typeof tc.function === "object" &&
+                    tc.function !== null &&
+                    "name" in tc.function
+                      ? String(
+                          (tc.function as Record<string, unknown>).name,
+                        )
+                      : typeof tc.name === "string"
+                        ? tc.name
+                        : "unknown";
+                  const args =
+                    typeof tc.function === "object" &&
+                    tc.function !== null &&
+                    "arguments" in tc.function
+                      ? (tc.function as Record<string, unknown>).arguments
+                      : tc.input;
+                  const formattedArgs =
+                    typeof args === "string"
+                      ? (() => {
+                          try {
+                            return JSON.stringify(
+                              JSON.parse(args),
+                              null,
+                              2,
+                            );
+                          } catch {
+                            return args;
+                          }
+                        })()
+                      : JSON.stringify(args, null, 2);
+                  return (
+                    <details key={i} className="bg-muted rounded p-2">
+                      <summary className="text-xs font-medium cursor-pointer">
+                        {name}
+                      </summary>
+                      <pre className="text-xs whitespace-pre-wrap mt-1 max-h-[200px] overflow-auto">
+                        {formattedArgs}
+                      </pre>
+                    </details>
+                  );
+                },
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Parameters */}
       {(temperature !== undefined ||
         maxTokens !== undefined ||

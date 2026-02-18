@@ -199,10 +199,10 @@ New developer opens `localhost:5173` → sees a welcoming Dashboard → can navi
 - [x] Add tests in `sdk/tests/test_integrations_anthropic.py` for streaming: mock Anthropic's event-based streaming, assert span correctness
 
 **SDK: Tool Calls Capture**
-- [ ] In `sdk/beacon_sdk/integrations/openai.py`, extend `_apply_response_attributes` to check `choice.message.tool_calls` — if present, serialize the tool calls list (name + arguments) as JSON into `llm.tool_calls` attribute and set `llm.finish_reason` to `"tool_calls"`
-- [ ] In `sdk/beacon_sdk/integrations/anthropic.py`, extend response handling to detect `tool_use` content blocks in `response.content`, serialize them as JSON into `llm.tool_calls`
-- [ ] In `frontend/src/components/SpanDetail/LlmCallDetail.tsx`, add a "Tool Calls" section that renders `llm.tool_calls` when present — display each tool call's name and arguments in a collapsible JSON view
-- [ ] Add tests for tool_calls capture in both `sdk/tests/test_integrations_openai.py` and `sdk/tests/test_integrations_anthropic.py`
+- [x] In `sdk/beacon_sdk/integrations/openai.py`, extend `_apply_response_attributes` to check `choice.message.tool_calls` — if present, serialize the tool calls list (name + arguments) as JSON into `llm.tool_calls` attribute and set `llm.finish_reason` to `"tool_calls"`
+- [x] In `sdk/beacon_sdk/integrations/anthropic.py`, extend response handling to detect `tool_use` content blocks in `response.content`, serialize them as JSON into `llm.tool_calls`
+- [x] In `frontend/src/components/SpanDetail/LlmCallDetail.tsx`, add a "Tool Calls" section that renders `llm.tool_calls` when present — display each tool call's name and arguments in a collapsible JSON view
+- [x] Add tests for tool_calls capture in both `sdk/tests/test_integrations_openai.py` and `sdk/tests/test_integrations_anthropic.py`
 
 **SDK: Fix LangChain Integration**
 - [ ] In `sdk/beacon_sdk/integrations/langchain.py`, update `BeaconCallbackHandler` to use the `(span, token)` tuple return from `tracer.start_span()` instead of the old single-span return API

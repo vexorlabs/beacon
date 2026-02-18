@@ -349,6 +349,51 @@ def test_openai_stream_records_prompt_and_model(
     assert '"role": "user"' in span.attributes["llm.prompt"]
 
 
+def test_openai_captures_tool_calls(exporter: InMemoryExporter) -> None:
+    response = SimpleNamespace(
+        choices=[
+            SimpleNamespace(
+                message=SimpleNamespace(
+                    content=None,
+                    tool_calls=[
+                        SimpleNamespace(
+                            id="call_abc123",
+                            function=SimpleNamespace(
+                                name="get_weather",
+                                arguments='{"location": "San Francisco"}',
+                            ),
+                        ),
+                    ],
+                ),
+                finish_reason="tool_calls",
+            )
+        ],
+        usage=SimpleNamespace(
+            prompt_tokens=20, completion_tokens=10, total_tokens=30
+        ),
+        model="gpt-4o",
+    )
+    wrapper = _patched_create_fn(_make_fake_original(response=response))
+    wrapper(None, model="gpt-4o", messages=[])
+
+    span = exporter.spans[0]
+    import json
+
+    tool_calls = json.loads(span.attributes["llm.tool_calls"])
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["function"]["name"] == "get_weather"
+    assert tool_calls[0]["id"] == "call_abc123"
+    assert span.attributes["llm.finish_reason"] == "tool_calls"
+
+
+def test_openai_no_tool_calls_when_text_only(exporter: InMemoryExporter) -> None:
+    wrapper = _patched_create_fn(_make_fake_original())
+    wrapper(None, model="gpt-4o", messages=[])
+
+    span = exporter.spans[0]
+    assert "llm.tool_calls" not in span.attributes
+
+
 def test_openai_cost_estimation() -> None:
     assert _estimate_cost("gpt-4o", 1000, 1000) > 0
     assert _estimate_cost("gpt-4o-mini", 1000, 1000) > 0
