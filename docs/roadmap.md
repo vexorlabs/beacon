@@ -1,6 +1,6 @@
 # Implementation Roadmap
 
-8-week plan to MVP v1.0. Each phase has a clear goal, specific tasks, and a done condition.
+Product roadmap from MVP through enterprise. Each phase has a clear goal, specific tasks, and a done condition. Phases 1–5 (MVP) are complete. Phases 6–10 define the path from open-source adoption to enterprise offering.
 
 **North Star:** Every decision should answer — "Does this make it easier and faster for a developer to debug their AI agent?"
 
@@ -184,20 +184,337 @@ New developer opens `localhost:5173` → sees a welcoming Dashboard → can navi
 
 ---
 
-## Post-MVP Backlog (Do Not Build Yet)
+## Phase 6: Production Readiness
 
-These are explicitly out of scope for v1.0. Add them after the launch:
+**Goal:** Fix the gaps that make Beacon unreliable with real-world agents. After this phase, any Python agent using OpenAI or Anthropic — including streaming, tool-calling, and async patterns — produces complete, accurate traces.
 
-| Feature | Why Deferred |
-|---------|-------------|
-| Authentication / user accounts | Not needed for local-first tool |
-| PostgreSQL support | SQLite is sufficient for local dev |
-| LLM evaluation / scoring | Different product surface; build after core debugging is solid |
-| Production monitoring | Cloud product — Phase 2 of the business |
-| CrewAI / AutoGen integrations | High value but needs community feedback on priority |
-| Export traces (JSON, CSV) | Nice to have |
-| AI-powered root cause analysis | Phase 3 feature |
-| VS Code extension | Post-launch based on community demand |
+### Tasks
+
+**SDK: Streaming Support**
+- [ ] In `sdk/beacon_sdk/integrations/openai.py`, implement streaming in `_patched_create_fn`: when `kwargs.get("stream")` is `True`, wrap the returned iterator to accumulate chunks, extract the final completion text and token usage, and emit a completed span when the stream is exhausted
+- [ ] Implement the same streaming logic in `_patched_async_create_fn` for the async path, wrapping the `AsyncStream` object
+- [ ] In `sdk/beacon_sdk/integrations/anthropic.py`, implement streaming in `_patched_create_fn`: wrap the Anthropic `MessageStream` to accumulate `content_block_delta` events, extract final `message_stop` usage data, and emit a completed span
+- [ ] Implement the same streaming logic in `_patched_async_create_fn` for the async Anthropic path
+- [ ] Add tests in `sdk/tests/test_integrations_openai.py` for streaming: mock a chunked response iterator, assert the span captures the full accumulated completion, correct token counts, and cost
+- [ ] Add tests in `sdk/tests/test_integrations_anthropic.py` for streaming: mock Anthropic's event-based streaming, assert span correctness
+
+**SDK: Tool Calls Capture**
+- [ ] In `sdk/beacon_sdk/integrations/openai.py`, extend `_apply_response_attributes` to check `choice.message.tool_calls` — if present, serialize the tool calls list (name + arguments) as JSON into `llm.tool_calls` attribute and set `llm.finish_reason` to `"tool_calls"`
+- [ ] In `sdk/beacon_sdk/integrations/anthropic.py`, extend response handling to detect `tool_use` content blocks in `response.content`, serialize them as JSON into `llm.tool_calls`
+- [ ] In `frontend/src/components/SpanDetail/LlmCallDetail.tsx`, add a "Tool Calls" section that renders `llm.tool_calls` when present — display each tool call's name and arguments in a collapsible JSON view
+- [ ] Add tests for tool_calls capture in both `sdk/tests/test_integrations_openai.py` and `sdk/tests/test_integrations_anthropic.py`
+
+**SDK: Fix LangChain Integration**
+- [ ] In `sdk/beacon_sdk/integrations/langchain.py`, update `BeaconCallbackHandler` to use the `(span, token)` tuple return from `tracer.start_span()` instead of the old single-span return API
+- [ ] Update all `on_*_end` and `on_*_error` methods to use the `end_span(span, token, ...)` signature
+- [ ] Store `(span, token)` tuples in the `_run_to_span` dict instead of just span_id strings
+- [ ] Add `sdk/tests/test_integrations_langchain.py` with mock LangChain runs testing the full callback lifecycle
+
+**SDK: Async Batch Exporter**
+- [ ] In `sdk/beacon_sdk/exporters.py`, create `AsyncBatchExporter` class: thread-safe queue, background daemon thread that flushes every N ms or when batch_size is reached, uses `requests` in the background thread to avoid blocking the caller's event loop
+- [ ] Add `flush()` method for manual flushing and `shutdown()` method that flushes remaining spans and stops the background thread
+- [ ] In `sdk/beacon_sdk/__init__.py`, update `init()` to accept an `exporter` parameter (`"sync"` | `"async"` | `"auto"` default) — `"auto"` selects async exporter when an asyncio event loop is running
+- [ ] Add `atexit` handler in `init()` to call `shutdown()` on the exporter, ensuring no spans are lost on process exit
+- [ ] Add tests in `sdk/tests/test_exporters.py` for batching, flush-on-shutdown, and thread safety
+
+**SDK: Consolidate Price Tables**
+- [ ] Create `sdk/beacon_sdk/pricing.py` with a unified `PRICE_TABLE: dict[str, tuple[float, float]]` using per-1M-token pricing and a shared `estimate_cost(model, input_tokens, output_tokens)` function
+- [ ] In `sdk/beacon_sdk/integrations/openai.py`, remove the local `_COST_PER_1K` dict and `_estimate_cost` function; import from `beacon_sdk.pricing`
+- [ ] In `sdk/beacon_sdk/integrations/anthropic.py`, do the same
+- [ ] Ensure the canonical price table includes all models from `backend/app/services/llm_client.py` (gpt-4.1, o4-mini, claude-opus-4-6, claude-sonnet-4-6, etc.)
+
+**SDK: File Operation Auto-Patch**
+- [ ] Create `sdk/beacon_sdk/integrations/file_patch.py` that patches `builtins.open` to create `file_operation` spans with attributes: `file.operation`, `file.path`, `file.size_bytes`, `file.content` (truncated to 2000 chars)
+- [ ] In `sdk/beacon_sdk/__init__.py`, add `file_patch` to `_apply_auto_patches()` — only when `BEACON_PATCH_FILE_OPS=true` (default `false`) since patching `open()` is intrusive
+- [ ] Add `sdk/tests/test_integrations_file.py` with tests for read, write, and append operations
+
+### Done Condition
+Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streaming, and LangChain chains — all spans appear correctly in the UI with complete data (full completion text, token counts, cost, tool calls). The exporter does not block the event loop.
+
+---
+
+## Phase 7: Deep Debugging
+
+**Goal:** Strengthen the core "Chrome DevTools for AI Agents" differentiator. Add timeline views, search, trace comparison, URL routing, export, and frontend test infrastructure.
+
+### Tasks
+
+**Frontend: URL-Based Routing**
+- [ ] Add `react-router-dom` to `frontend/package.json`
+- [ ] In `frontend/src/App.tsx`, replace the Zustand-based `currentPage` routing with React Router: `/` (dashboard), `/traces` (trace list), `/traces/:traceId` (trace with selected trace), `/traces/:traceId/:spanId` (specific span), `/playground`, `/settings`
+- [ ] Update `frontend/src/store/navigation.ts` to sync with React Router or replace entirely with `useNavigate`/`useParams`
+- [ ] In `frontend/src/store/trace.ts`, read `traceId` and `spanId` from URL params on mount, auto-selecting the trace/span
+- [ ] In `frontend/src/components/Sidebar/index.tsx`, replace `navigate()` calls with React Router `<Link>` or `useNavigate()`
+- [ ] In `frontend/vite.config.ts`, add history fallback so all routes resolve to `index.html`
+
+**Backend: Trace Deletion and Cleanup**
+- [ ] Add `DELETE /v1/traces/{trace_id}` endpoint — cascading delete of spans and replay_runs via the existing `ON DELETE CASCADE` FK
+- [ ] Add `DELETE /v1/traces` (batch) endpoint accepting `{ trace_ids: string[] }` or `{ older_than: float }` for bulk cleanup
+- [ ] Add `GET /v1/stats` endpoint returning database size, total traces, total spans, oldest trace timestamp
+- [ ] Add tests in `backend/tests/test_traces.py` for delete endpoints
+
+**Frontend: Trace Deletion**
+- [ ] Add delete button (trash icon) to trace list items with confirmation dialog
+- [ ] Add "Clear All Traces" button to the Settings page
+- [ ] Add `deleteTrace()` and `deleteAllTraces()` functions to `frontend/src/lib/api.ts`
+
+**Frontend: Timeline/Waterfall View**
+- [ ] Create `frontend/src/components/TimelineView/index.tsx` — Gantt-chart view showing each span as a horizontal bar positioned by `start_time`/`end_time`, color-coded by `span_type`, with parent-child indentation
+- [ ] Create `TimelineBar.tsx` sub-component with hover tooltip showing name, duration, cost
+- [ ] Add a toggle in `TracesPage` to switch between "Graph" and "Timeline" views
+- [ ] Highlight parallelism: overlapping spans at the same depth appear on separate rows
+
+**Backend: Full-Text Search**
+- [ ] Add `GET /v1/search` endpoint accepting `q` (search string), searching across `spans.name`, `spans.attributes` (JSON text), and `traces.name` using SQLite `LIKE`
+- [ ] Return `{ results: [{ trace_id, span_id, name, match_context }], total }` with matching text snippets
+- [ ] Add index `idx_spans_name` on `spans.name`
+
+**Frontend: Full-Text Search**
+- [ ] Add a search bar at the top of the Traces page that calls `GET /v1/search` with debounced input
+- [ ] Display search results as a list linking to specific traces/spans via URL routing
+
+**Frontend: Trace Comparison**
+- [ ] Create `frontend/src/pages/ComparePage.tsx` — side-by-side view of two traces
+- [ ] Add "Compare" action: user selects two traces via checkboxes in TraceList, clicks "Compare"
+- [ ] Render two React Flow graphs side by side with synchronized zoom/pan
+- [ ] Show diff table: metrics comparison (total cost, tokens, duration, span count, error rate)
+
+**Backend: Trace Export**
+- [ ] Add `GET /v1/traces/{trace_id}/export?format=json` — full trace with all spans in Beacon's JSON format
+- [ ] Add `format=otel` option converting spans to OTEL-compatible export format
+- [ ] Add `GET /v1/traces/export` for bulk export with optional `trace_ids` query param
+
+**Frontend: Trace Export**
+- [ ] Add "Export" button to trace detail view (top bar of TraceGraph) with dropdown: "JSON", "OTEL JSON"
+- [ ] Trigger browser download of the exported file
+
+**Backend: Tags and Annotations**
+- [ ] Add `PUT /v1/traces/{trace_id}/tags` endpoint to set/update trace tags (the `tags` column already exists in the schema)
+- [ ] Add `PUT /v1/spans/{span_id}/annotations` endpoint (new `annotations TEXT DEFAULT '[]'` column in spans table)
+- [ ] Add migration logic in `database.py` `init_db()` to add the `annotations` column if it doesn't exist
+
+**Frontend: Tags and Annotations**
+- [ ] Add tag pills to `TraceListItem` showing existing tags
+- [ ] Add inline tag editor (click to add/edit tags) in the trace detail header
+- [ ] Add annotation input in `SpanDetail` — text area to add notes to any span
+- [ ] Add tag-based filtering in `TraceFilter`
+
+**Frontend: Test Infrastructure**
+- [ ] Add Vitest + React Testing Library to `frontend/package.json` dev dependencies
+- [ ] Add `vitest.config.ts` in the frontend root
+- [ ] Write tests for `TraceList` component (renders traces, handles empty state, filter interaction)
+- [ ] Write tests for `SpanDetail/LlmCallDetail.tsx` (renders attributes correctly, handles missing data)
+- [ ] Write tests for the Zustand `trace` store (loadTraces, selectTrace, appendSpan)
+- [ ] Write tests for `api.ts` utility functions (mock fetch, verify URL construction)
+- [ ] Add `npm run test` script and integrate into `make test`
+
+### Done Condition
+A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and land on the correct trace and span, (2) search for "error" and find all spans with errors, (3) compare two traces side by side, (4) view a timeline/waterfall of span execution, (5) export a trace as JSON, (6) tag traces and annotate spans, (7) delete old traces. Frontend has test coverage for critical components.
+
+---
+
+## Phase 8: Ecosystem Expansion
+
+**Goal:** Widen the funnel beyond Python/OpenAI/Anthropic. Support the major AI frameworks and ship a JavaScript SDK.
+
+### Tasks
+
+**SDK: Google Gemini Support**
+- [ ] Create `sdk/beacon_sdk/integrations/google_genai.py` — patch `google.generativeai.GenerativeModel.generate_content` (sync + async), creating `llm_call` spans with `llm.provider: "google"`, prompt, completion, tokens, cost
+- [ ] Add Gemini models to `sdk/beacon_sdk/pricing.py` (gemini-2.0-flash, gemini-2.5-pro, etc.)
+- [ ] Add Gemini to `_apply_auto_patches()` in `sdk/beacon_sdk/__init__.py`
+- [ ] In `backend/app/services/llm_client.py`, add Google/Gemini models to `PRICE_TABLE` and add `call_google()` for replay support
+- [ ] Add `sdk/tests/test_integrations_google.py` with mocked responses
+- [ ] Create `sdk/examples/google_agent.py`
+
+**SDK: CrewAI Integration**
+- [ ] Create `sdk/beacon_sdk/integrations/crewai.py` — patch `Crew.kickoff()` to create a root `agent_step` span, hook into CrewAI's callback system for individual agent steps and tool uses
+- [ ] Set `agent.framework: "crewai"` in span attributes
+- [ ] Create `sdk/examples/crewai_agent.py`
+- [ ] Add `sdk/tests/test_integrations_crewai.py`
+
+**SDK: AutoGen Integration**
+- [ ] Create `sdk/beacon_sdk/integrations/autogen.py` — patch `ConversableAgent.generate_reply()` and `GroupChat.run()` to create spans capturing multi-agent conversation turns
+- [ ] Map each AutoGen agent message exchange to an `agent_step` span with `agent.framework: "autogen"`
+- [ ] Create `sdk/examples/autogen_agent.py`
+- [ ] Add `sdk/tests/test_integrations_autogen.py`
+
+**SDK: LlamaIndex Integration**
+- [ ] Create `sdk/beacon_sdk/integrations/llamaindex.py` — implement `BeaconCallbackHandler` for LlamaIndex that traces query engine calls, retrieval steps, and LLM calls
+- [ ] Map LlamaIndex events to appropriate span types: `llm_call` for LLM, `tool_use` for retrieval
+- [ ] Create `sdk/examples/llamaindex_agent.py`
+- [ ] Add `sdk/tests/test_integrations_llamaindex.py`
+
+**SDK: Local Model Support**
+- [ ] Verify that Ollama and vLLM (OpenAI-compatible APIs) are automatically traced via the existing OpenAI patch; document this in SDK README
+- [ ] For Ollama's native Python client, create `sdk/beacon_sdk/integrations/ollama.py` patching `ollama.chat()` and `ollama.generate()`
+- [ ] Add `sdk/tests/test_integrations_ollama.py`
+
+**JavaScript/TypeScript SDK (New Package)**
+- [ ] Create `sdk-js/` directory with `package.json`, `tsconfig.json`, project structure mirroring the Python SDK
+- [ ] Implement `sdk-js/src/tracer.ts` — `BeaconTracer` class using `AsyncLocalStorage` for context propagation
+- [ ] Implement `sdk-js/src/exporter.ts` — HTTP exporter posting to `POST /v1/spans` (same backend)
+- [ ] Implement `sdk-js/src/integrations/openai.ts` — monkey-patch the `openai` npm package's `chat.completions.create()`
+- [ ] Implement `sdk-js/src/integrations/anthropic.ts` — monkey-patch the `@anthropic-ai/sdk` npm package
+- [ ] Implement `sdk-js/src/integrations/vercel-ai.ts` — instrument Vercel AI SDK's `generateText()` and `streamText()`
+- [ ] Implement `sdk-js/src/index.ts` — public API: `init()`, `observe()` decorator, auto-patching
+- [ ] Write `sdk-js/README.md` with quickstart guide
+- [ ] Add `sdk-js/tests/` with tests for tracer, exporter, and integrations
+- [ ] Add `sdk-js/examples/` with a basic Node.js agent example
+
+**Backend: Multi-SDK Support**
+- [ ] In `backend/app/schemas.py`, add optional `sdk_language` field to `SpanCreate` (`"python"` | `"javascript"` | `"unknown"`) for analytics
+- [ ] In `backend/app/services/llm_client.py`, add Gemini models to the replay service
+
+**Frontend: Framework Badges**
+- [ ] In `frontend/src/components/TraceGraph/SpanNode.tsx`, add framework icon/badge (LangChain, CrewAI, AutoGen, LlamaIndex) based on `agent.framework` attribute
+- [ ] In `frontend/src/components/TraceList/TraceListItem.tsx`, show SDK language badge (Python/JS) if `sdk_language` is present
+
+### Done Condition
+A developer using CrewAI, AutoGen, LlamaIndex, Google Gemini, Ollama, or the JS/TS SDK can `init()` Beacon and see complete, correctly structured traces. Framework badges appear in the graph view.
+
+---
+
+## Phase 9: AI-Powered Debugging
+
+**Goal:** The viral "wow" features. AI analyzes traces and provides actionable debugging insights. This is the screenshot-worthy moment that gets shared on social media.
+
+### Tasks
+
+**Backend: Analysis Infrastructure**
+- [ ] Create `backend/app/services/analysis_service.py` — shared infrastructure for AI-powered analysis: accepts trace span data, constructs a prompt, calls an LLM via `llm_client.py`, returns structured analysis
+- [ ] Add Pydantic schemas: `AnalysisRequest`, `AnalysisResponse`, `RootCauseAnalysis`, `CostOptimization`, `PromptSuggestion`, `AnomalyReport`, `TraceSummary`
+- [ ] Create `backend/app/routers/analysis.py` with router prefix `/v1/analysis`
+- [ ] Register the analysis router in `backend/app/main.py`
+
+**Backend: Root Cause Analysis**
+- [ ] Add `POST /v1/analysis/root-cause` accepting `{ trace_id }` — retrieves all spans, constructs a prompt with the execution graph and error context, asks the LLM to identify root cause, affected components, and suggested fix
+- [ ] Return `{ trace_id, root_cause, affected_spans, confidence, suggested_fix }`
+- [ ] Add tests with a mock trace containing a known error pattern
+
+**Backend: Cost Optimization Analysis**
+- [ ] Add `POST /v1/analysis/cost-optimization` accepting `{ trace_ids }` — analyzes LLM call patterns and identifies: redundant calls (same prompt repeated), expensive models used for simple tasks, cacheable calls, token waste from overly long prompts
+- [ ] Return `{ suggestions: [{ type, description, estimated_savings_usd, affected_spans }] }`
+
+**Backend: Prompt Improvement Suggestions**
+- [ ] Add `POST /v1/analysis/prompt-suggestions` accepting `{ span_id }` — analyzes a single LLM call's prompt and suggests improvements (clarity, specificity, format instructions, few-shot examples)
+- [ ] Return `{ original_prompt, suggestions: [{ category, description, improved_prompt_snippet }] }`
+
+**Backend: Anomaly Detection**
+- [ ] Add `POST /v1/analysis/anomalies` accepting `{ trace_id }` — compares trace against historical baselines (last 50 traces of the same name) and flags: cost spikes (>2x mean), latency spikes, unusual error patterns, missing expected spans
+- [ ] Return `{ anomalies: [{ type, severity, description, trace_id, span_id }] }`
+
+**Backend: Trace Summarization**
+- [ ] Add `POST /v1/analysis/summarize` accepting `{ trace_id }` — generates a natural language summary of what the agent did (e.g., "The agent received a request to book a flight. It called GPT-4o 3 times, searched for flights, encountered a rate limit, retried, and returned results in 12.4s at $0.023.")
+- [ ] Return `{ trace_id, summary, key_events }`
+
+**Frontend: Analysis Panel**
+- [ ] Create `frontend/src/components/Analysis/RootCausePanel.tsx` — shows root cause, affected spans (highlighted in graph), and suggested fix
+- [ ] Create `CostOptimizationPanel.tsx` — shows suggestions with estimated savings, links to affected spans
+- [ ] Create `PromptSuggestionsPanel.tsx` — shows prompt improvements with before/after diffs
+- [ ] Create `AnomalyBanner.tsx` — dismissible banner at top of trace detail when anomalies are detected
+- [ ] Create `TraceSummaryCard.tsx` — natural language summary at top of trace detail, generated on demand
+
+**Frontend: Analysis Integration**
+- [ ] Add "Analyze" button (sparkle icon) to trace detail header — dropdown with: "Root Cause Analysis", "Cost Optimization", "Prompt Suggestions", "Summarize"
+- [ ] Add analysis API functions to `frontend/src/lib/api.ts`
+- [ ] Create `frontend/src/store/analysis.ts` Zustand store for analysis state
+- [ ] When root cause analysis highlights affected spans, pulse/highlight those nodes in the React Flow graph
+
+**Dashboard: Analytics Upgrade**
+- [ ] In `frontend/src/pages/DashboardPage.tsx`, replace 4-stat-card layout with: trend charts (cost over time, tokens over time, trace count, error rate) using recharts, most expensive traces table, anomaly alerts section
+- [ ] Add `GET /v1/stats/trends` backend endpoint returning time-bucketed aggregates (daily cost, tokens, traces, errors) for the last 30 days
+
+### Done Condition
+A developer clicks "Analyze" on a failed trace and receives: (1) a plain-English root cause explanation with highlighted spans, (2) cost optimization suggestions, (3) prompt improvement recommendations. The dashboard shows trend charts for cost, tokens, and error rate over time.
+
+---
+
+## Phase 10: Enterprise Foundation
+
+**Goal:** Build the foundation for multi-user, team-based, and self-hosted deployment. Transition Beacon from a solo local tool toward a product that can sustain a business. The zero-auth local SQLite experience remains the default for individual developers.
+
+### Tasks
+
+**Backend: Authentication System**
+- [ ] Create `backend/app/auth/` with `models.py`, `schemas.py`, `service.py`, `middleware.py`
+- [ ] Implement API key authentication: `X-Beacon-API-Key` header, keys stored hashed in a new `api_keys` table
+- [ ] Add auth middleware to `backend/app/main.py` — only active when `BEACON_AUTH_ENABLED=true` (default `false`)
+- [ ] Add `POST /v1/auth/api-keys` (create), `DELETE /v1/auth/api-keys/{key_id}` (revoke), `GET /v1/auth/api-keys` (list)
+- [ ] Add tests for auth middleware (enabled and disabled paths)
+
+**Backend: OAuth/SSO Support**
+- [ ] Implement OAuth 2.0 authorization code flow with support for Google, GitHub, and generic OIDC providers
+- [ ] Add SAML support for enterprise SSO
+- [ ] Add `GET /v1/auth/login`, `GET /v1/auth/callback`, `POST /v1/auth/logout`
+- [ ] Configuration via env vars: `BEACON_OAUTH_PROVIDER`, `BEACON_OAUTH_CLIENT_ID`, `BEACON_OAUTH_CLIENT_SECRET`
+
+**Backend: Multi-Tenancy**
+- [ ] Add `workspaces` table: `workspace_id`, `name`, `created_at`, `settings` (JSON)
+- [ ] Add `workspace_members` table: `workspace_id`, `user_id`, `role` (owner/admin/member/viewer)
+- [ ] Add `workspace_id` column to `traces` and `spans` tables (nullable for backward compatibility)
+- [ ] Add workspace-scoped query filtering to all trace/span service functions
+- [ ] Add CRUD endpoints for workspaces and workspace members
+
+**Backend: Role-Based Access Control**
+- [ ] Implement RBAC middleware: owner (full access), admin (manage members, delete traces), member (create/read), viewer (read-only)
+- [ ] Add `@require_role("admin")` decorator for protected endpoints
+
+**Backend: PostgreSQL Support**
+- [ ] Refactor `backend/app/database.py` to support both SQLite and PostgreSQL via `BEACON_DB_TYPE` env var (`"sqlite"` default, `"postgresql"`)
+- [ ] For PostgreSQL, read `BEACON_DATABASE_URL` connection string
+- [ ] Ensure all queries are dialect-compatible; use PostgreSQL `tsvector`/`tsquery` for full-text search when available
+- [ ] Add test fixture that can run the suite against both databases
+
+**Backend: Trace Retention Policies**
+- [ ] Add `retention_policies` table: `policy_id`, `workspace_id`, `max_age_days`, `max_traces`, `max_storage_mb`
+- [ ] Create `backend/app/services/retention_service.py` running as a background task every hour, deleting traces exceeding the policy
+- [ ] Add `GET/PUT /v1/settings/retention` endpoints
+
+**Frontend: Authentication UI**
+- [ ] Create `LoginPage.tsx` with API key input and OAuth provider buttons
+- [ ] Add auth state to Zustand store: `user`, `isAuthenticated`, `token`
+- [ ] Add protected route wrapper that redirects to login when auth is enabled
+
+**Frontend: Workspace Switcher**
+- [ ] Add workspace selector dropdown in sidebar header
+- [ ] Create `WorkspaceSettingsPage.tsx` for managing members and workspace settings
+- [ ] All trace/span queries pass `workspace_id` when workspaces are enabled
+
+**Deployment: Docker and Kubernetes**
+- [ ] Create `Dockerfile` for backend (Python/FastAPI + Uvicorn)
+- [ ] Create `Dockerfile` for frontend (Node build + Nginx serve)
+- [ ] Create `docker-compose.yml` with backend, frontend, and optional PostgreSQL
+- [ ] Create `k8s/` directory with Kubernetes manifests (Deployment, Service, ConfigMap, Secret, Ingress)
+- [ ] Create `k8s/helm/` with a Helm chart for parameterized deployment
+- [ ] Add `make docker-build` and `make docker-up` targets
+- [ ] Write `docs/deployment.md` deployment guide
+
+### Done Condition
+Beacon can be deployed via `docker-compose up` with PostgreSQL, API key authentication, workspace isolation, and RBAC. An organization can self-host with SSO, create team workspaces, and configure trace retention. The zero-auth local SQLite experience remains the default.
+
+---
+
+## Strategic Notes
+
+**Phase ordering rationale:**
+
+1. **Phase 6 first** — streaming and tool_calls gaps make real developers bounce. If `stream=True` calls are invisible (the default for most agents in 2026), developers try Beacon once and leave.
+
+2. **Phase 7 next** — deepens the core differentiator into a daily-driver tool. URL routing alone unlocks sharing traces with teammates. Timeline view and search make the "Chrome DevTools" metaphor real.
+
+3. **Phase 8 third** — widening the funnel only matters after the core product is robust. A JS/TS SDK opens the Vercel AI SDK / Next.js ecosystem. Framework integrations serve vocal communities.
+
+4. **Phase 9 fourth** — the viral "wow" feature positioned after ecosystem expansion for maximum impact. When a developer clicks "Analyze" and gets a plain-English explanation of why their agent failed, that's the screenshot moment that drives social sharing.
+
+5. **Phase 10 last** — highest-effort, lowest-individual-developer-value work. Auth, multi-tenancy, and PostgreSQL add zero value for solo developers. Build this when community traction (Phases 6-9) justifies it and enterprise design partners are ready.
+
+**How each phase builds on the previous:**
+- Phase 6 fixes the data pipeline so traces are complete → all subsequent phases depend on this
+- Phase 7 adds navigation/search/export infrastructure that Phase 8's multi-framework traces need
+- Phase 8 expands the user base that Phase 9's AI features will delight
+- Phase 9's analytics and anomaly detection naturally lead to Phase 10's retention policies
+- Phase 10's PostgreSQL support is needed at scale but not before
 
 ---
 
