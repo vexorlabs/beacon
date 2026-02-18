@@ -211,11 +211,11 @@ New developer opens `localhost:5173` → sees a welcoming Dashboard → can navi
 - [x] Add `sdk/tests/test_integrations_langchain.py` with mock LangChain runs testing the full callback lifecycle
 
 **SDK: Async Batch Exporter**
-- [ ] In `sdk/beacon_sdk/exporters.py`, create `AsyncBatchExporter` class: thread-safe queue, background daemon thread that flushes every N ms or when batch_size is reached, uses `requests` in the background thread to avoid blocking the caller's event loop
-- [ ] Add `flush()` method for manual flushing and `shutdown()` method that flushes remaining spans and stops the background thread
-- [ ] In `sdk/beacon_sdk/__init__.py`, update `init()` to accept an `exporter` parameter (`"sync"` | `"async"` | `"auto"` default) — `"auto"` selects async exporter when an asyncio event loop is running
-- [ ] Add `atexit` handler in `init()` to call `shutdown()` on the exporter, ensuring no spans are lost on process exit
-- [ ] Add tests in `sdk/tests/test_exporters.py` for batching, flush-on-shutdown, and thread safety
+- [x] In `sdk/beacon_sdk/exporters.py`, create `AsyncBatchExporter` class: thread-safe queue, background daemon thread that flushes every N ms or when batch_size is reached, uses `requests` in the background thread to avoid blocking the caller's event loop
+- [x] Add `flush()` method for manual flushing and `shutdown()` method that flushes remaining spans and stops the background thread
+- [x] In `sdk/beacon_sdk/__init__.py`, update `init()` to accept an `exporter` parameter (`"sync"` | `"async"` | `"auto"` default) — `"auto"` selects async exporter when an asyncio event loop is running
+- [x] Add `atexit` handler in `init()` to call `shutdown()` on the exporter, ensuring no spans are lost on process exit
+- [x] Add tests in `sdk/tests/test_exporters.py` for batching, flush-on-shutdown, and thread safety
 
 **SDK: Consolidate Price Tables**
 - [ ] Create `sdk/beacon_sdk/pricing.py` with a unified `PRICE_TABLE: dict[str, tuple[float, float]]` using per-1M-token pricing and a shared `estimate_cost(model, input_tokens, output_tokens)` function

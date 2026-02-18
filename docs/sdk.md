@@ -63,6 +63,7 @@ beacon_sdk.init(
     backend_url="http://localhost:7474",
     auto_patch=True,   # Enable monkey-patching (default: True)
     enabled=True,      # Set to False to disable all tracing
+    exporter="auto",   # "auto"/"async" (batched, default) or "sync" (blocking)
 )
 ```
 
@@ -207,23 +208,32 @@ When a new root span is started (no active context), the SDK generates a new `tr
 
 ## Exporter
 
-The default exporter sends spans via HTTP to `POST /v1/spans` on the backend.
+The SDK ships two exporters, selectable via the `exporter` parameter on `init()`:
+
+| Mode | Class | Behavior |
+|------|-------|----------|
+| `"async"` (default) | `AsyncBatchExporter` | Queues spans in memory, flushes on a background daemon thread every 1 s or when 50 spans accumulate — whichever comes first. Non-blocking. |
+| `"sync"` | `HttpSpanExporter` | Sends each span immediately via a blocking HTTP POST. Useful for debugging the SDK itself. |
+| `"auto"` | same as `"async"` | Alias — always selects the async batch exporter. |
 
 ```python
-class HttpSpanExporter:
-    def __init__(self, backend_url: str):
-        self.endpoint = f"{backend_url}/v1/spans"
+# Default — async batch exporter (recommended)
+beacon_sdk.init()
 
-    def export(self, spans: list[Span]) -> None:
-        payload = {"spans": [span.to_dict() for span in spans]}
-        try:
-            requests.post(self.endpoint, json=payload, timeout=5)
-        except Exception as e:
-            # NEVER crash the agent
-            logger.debug(f"Beacon: failed to export spans: {e}")
+# Explicit sync for debugging
+beacon_sdk.init(exporter="sync")
 ```
 
-For MVP, the exporter is synchronous and called immediately after each span ends. A future version will batch spans and use an async queue.
+Both exporters POST to `{backend_url}/v1/spans` and silently drop spans on connection/timeout errors (logged at `DEBUG`).
+
+### Lifecycle
+
+```python
+beacon_sdk.flush()     # Force-flush any queued spans
+beacon_sdk.shutdown()  # Flush + stop the background thread
+```
+
+An `atexit` handler calls `shutdown()` automatically when the process exits, so spans are never silently lost.
 
 ---
 
