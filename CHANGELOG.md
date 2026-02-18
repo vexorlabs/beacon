@@ -9,6 +9,9 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- feat(sdk): file operation auto-patch (`integrations/file_patch.py`) — patches `builtins.open` to create `file_operation` spans with `file.path`, `file.operation`, `file.size_bytes`, and `file.content` (truncated to 2000 chars); opt-in via `BEACON_PATCH_FILE_OPS=true` env var
+
 ### Changed
 - refactor(sdk): consolidate duplicated price tables into unified `sdk/beacon_sdk/pricing.py` with per-1M-token pricing and prefix matching for dated model names; adds missing models (gpt-4.1 family, o3, o4-mini, claude-haiku-4, o1/o1-mini)
 
