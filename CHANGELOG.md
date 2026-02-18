@@ -10,6 +10,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- docs: post-MVP roadmap (Phases 6–10) — production readiness, deep debugging, ecosystem expansion, AI-powered debugging, enterprise foundation
 - feat(frontend): Collapsible sidebar with icon-only collapsed state and `Cmd+\` keyboard shortcut
 - feat(frontend): Fullscreen canvas toggle in CostSummaryBar — hides side panels, auto-reveals span detail on node click
 - feat(frontend): Draggable graph nodes, animated edges, zoom controls, double-click-to-focus, color-coded MiniMap
