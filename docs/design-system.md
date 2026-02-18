@@ -237,9 +237,9 @@ Radius: rounded-full
 +-- Sidebar (220px) --+-- Main Content (flex-1) ----+
 |                      |                              |
 |  Logo                |  <ErrorBanner />             |
-|  Nav items           |  <Page content />            |
-|  ...                 |                              |
-|  ─────────           |                              |
+|  Dashboard           |  <Page content />            |
+|  Traces              |                              |
+|  Playground          |                              |
 |  Settings            |                              |
 +----------------------+------------------------------+
 ```
