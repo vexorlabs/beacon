@@ -27,6 +27,16 @@ export default function TimelineBar({
   const barStyle = SPAN_TYPE_BAR_STYLES[span.span_type] ?? SPAN_TYPE_BAR_STYLES.custom;
   const isRunning = span.end_time === null;
 
+  // Pick a single ring style with explicit priority: error > selected > critical path
+  const ringStyle =
+    span.status === "error"
+      ? "ring-2 ring-red-500/60"
+      : isSelected
+        ? "ring-2 ring-ring"
+        : isOnCriticalPath
+          ? "ring-1 ring-yellow-400/60"
+          : "";
+
   return (
     <div
       role="button"
@@ -49,9 +59,7 @@ export default function TimelineBar({
         className={cn(
           "h-full rounded-sm border transition-colors overflow-hidden flex items-center",
           barStyle,
-          isOnCriticalPath && "ring-1 ring-yellow-400/60",
-          isSelected && "ring-2 ring-ring",
-          span.status === "error" && "ring-2 ring-red-500/60",
+          ringStyle,
         )}
       >
         {/* Pulse indicator for running spans */}
@@ -66,8 +74,8 @@ export default function TimelineBar({
         )}
       </div>
 
-      {/* Hover tooltip */}
-      <div className="absolute z-50 hidden group-hover:block left-0 top-full mt-1 px-2.5 py-1.5 rounded-md bg-zinc-900 border border-border/60 text-xs text-foreground shadow-lg whitespace-nowrap pointer-events-none">
+      {/* Hover tooltip — positioned above bar to avoid ScrollArea clipping */}
+      <div className="absolute z-50 hidden group-hover:block left-0 bottom-full mb-1 px-2.5 py-1.5 rounded-md bg-zinc-900 border border-border/60 text-xs text-foreground shadow-lg whitespace-nowrap pointer-events-none">
         <div className="font-medium">{span.name}</div>
         <div className="text-muted-foreground mt-0.5">
           {span.span_type.replace("_", " ")}

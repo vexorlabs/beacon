@@ -185,6 +185,46 @@ function computeLayout(
 
   walk(null, 0);
 
+  // Collect orphan spans (parent_span_id references a missing span)
+  const visited = new Set(result.map((ts) => ts.span.span_id));
+  for (const span of spans) {
+    if (!visited.has(span.span_id)) {
+      const endTime = span.end_time ?? traceEnd;
+      const durationMs =
+        span.end_time !== null
+          ? (span.end_time - span.start_time) * 1000
+          : null;
+      const costUsd =
+        typeof span.attributes["llm.cost_usd"] === "number"
+          ? (span.attributes["llm.cost_usd"] as number)
+          : null;
+
+      let assignedRow = -1;
+      for (let r = 0; r < rowEndTimes.length; r++) {
+        if (rowEndTimes[r] <= span.start_time) {
+          assignedRow = r;
+          break;
+        }
+      }
+      if (assignedRow === -1) {
+        assignedRow = rowEndTimes.length;
+        rowEndTimes.push(0);
+      }
+      rowEndTimes[assignedRow] = endTime;
+
+      result.push({
+        span,
+        row: assignedRow,
+        depth: 0,
+        leftPx: (span.start_time - traceStart) * pxPerSec,
+        widthPx: Math.max(MIN_BAR_WIDTH, (endTime - span.start_time) * pxPerSec),
+        isOnCriticalPath: false,
+        durationMs,
+        costUsd,
+      });
+    }
+  }
+
   // Top 5 slowest spans
   const slowestSpans = [...result]
     .filter((ts) => ts.durationMs !== null)
