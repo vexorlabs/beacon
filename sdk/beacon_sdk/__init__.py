@@ -3,6 +3,7 @@ from __future__ import annotations
 import atexit
 import logging
 import os
+from typing import Literal
 
 from beacon_sdk.context import get_active_span, get_context
 from beacon_sdk.decorators import observe
@@ -39,7 +40,7 @@ def init(
     backend_url: str | None = None,
     auto_patch: bool | None = None,
     enabled: bool | None = None,
-    exporter: str | None = None,
+    exporter: Literal["sync", "async", "auto"] | None = None,
 ) -> None:
     """Initialize the Beacon SDK. Call once at the top of your script.
 
@@ -71,6 +72,15 @@ def init(
     logging.getLogger("beacon_sdk").setLevel(
         getattr(logging, log_level, logging.WARNING)
     )
+
+    # Shut down the previous exporter to avoid leaking background threads
+    if _tracer is not None and _tracer._exporter is not None:
+        old_exp = _tracer._exporter
+        if isinstance(old_exp, FlushableExporter):
+            try:
+                old_exp.shutdown()
+            except Exception:
+                pass
 
     exporter_mode = exporter or "auto"
     if exporter_mode == "sync":
