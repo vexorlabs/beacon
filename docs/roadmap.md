@@ -314,11 +314,13 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [ ] In the Monaco prompt editor (`ReplayPanel.tsx`), show a live estimated token count as the user edits using `js-tiktoken` or a similar tokenizer
 - [ ] Display token count badge next to the Replay button
 
-**Frontend: Prompt Versioning**
+**Backend: Prompt Versioning**
 - [ ] Add `prompt_versions` table: `version_id`, `span_id`, `prompt_text`, `created_at`, `label` (optional)
-- [ ] Each replay automatically saves a prompt version; users can also manually save with an optional label
-- [ ] Add version history dropdown in the prompt editor to browse and restore previous prompt versions
 - [ ] Add `GET /v1/spans/{span_id}/prompt-versions` and `POST /v1/spans/{span_id}/prompt-versions` endpoints
+- [ ] Each replay automatically saves a prompt version; users can also manually save with an optional label
+
+**Frontend: Prompt Versioning**
+- [ ] Add version history dropdown in the prompt editor to browse and restore previous prompt versions
 
 **Frontend: Test Infrastructure**
 - [ ] Add Vitest + React Testing Library to `frontend/package.json` dev dependencies
@@ -384,8 +386,7 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [ ] Add `sdk-js/examples/` with a basic Node.js agent example
 
 **Backend: OTLP-Compatible Ingestion**
-- [ ] Add `POST /v1/otlp/traces` endpoint accepting standard OpenTelemetry Protocol (OTLP) JSON format, mapping OTEL resource/scope/span fields to Beacon's span model
-- [ ] This allows existing OTEL-instrumented applications to send traces to Beacon without the Beacon SDK
+- [ ] Add `POST /v1/otlp/traces` endpoint accepting standard OpenTelemetry Protocol (OTLP) JSON format, mapping OTEL resource/scope/span fields to Beacon's span model — this allows existing OTEL-instrumented applications to send traces to Beacon without the Beacon SDK
 - [ ] Document the OTLP ingestion endpoint in `sdk/README.md`
 - [ ] Add tests in `backend/tests/test_otlp.py` with sample OTLP payloads
 
