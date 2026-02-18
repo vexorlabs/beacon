@@ -259,12 +259,12 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [x] Add `deleteTrace()` and `deleteAllTraces()` functions to `frontend/src/lib/api.ts`
 
 **Frontend: Timeline/Waterfall View**
-- [ ] Create `frontend/src/components/TimelineView/index.tsx` — Gantt-chart view showing each span as a horizontal bar positioned by `start_time`/`end_time`, color-coded by `span_type`, with parent-child indentation
-- [ ] Create `TimelineBar.tsx` sub-component with hover tooltip showing name, duration, cost
-- [ ] Add a toggle in `TracesPage` to switch between "Graph" and "Timeline" views
-- [ ] Highlight parallelism: overlapping spans at the same depth appear on separate rows
-- [ ] Highlight the critical path (longest chain of sequential spans determining total trace duration) with a distinct color/border
-- [ ] Add a "Slowest Spans" summary panel below the timeline showing the top 5 spans by duration
+- [x] Create `frontend/src/components/TimelineView/index.tsx` — Gantt-chart view showing each span as a horizontal bar positioned by `start_time`/`end_time`, color-coded by `span_type`, with parent-child indentation
+- [x] Create `TimelineBar.tsx` sub-component with hover tooltip showing name, duration, cost
+- [x] Add a toggle in `TracesPage` to switch between "Graph" and "Timeline" views
+- [x] Highlight parallelism: overlapping spans at the same depth appear on separate rows
+- [x] Highlight the critical path (longest chain of sequential spans determining total trace duration) with a distinct color/border
+- [x] Add a "Slowest Spans" summary panel below the timeline showing the top 5 spans by duration
 
 **Backend: Full-Text Search**
 - [x] Add `GET /v1/search` endpoint accepting `q` (search string), searching across `spans.name`, `spans.attributes` (JSON text), and `traces.name` using SQLite `LIKE`

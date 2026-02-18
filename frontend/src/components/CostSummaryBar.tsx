@@ -1,15 +1,22 @@
-import { Maximize2, Minimize2 } from "lucide-react";
+import { GitGraph, GanttChart, Maximize2, Minimize2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useTraceStore } from "@/store/trace";
+
+export type ViewMode = "graph" | "timeline";
 
 interface CostSummaryBarProps {
   expanded: boolean;
   onToggleExpand: () => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 export default function CostSummaryBar({
   expanded,
   onToggleExpand,
+  viewMode,
+  onViewModeChange,
 }: CostSummaryBarProps) {
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
 
@@ -36,14 +43,44 @@ export default function CostSummaryBar({
       ) : (
         <span className="text-muted-foreground">No trace selected</span>
       )}
-      <button
-        type="button"
-        onClick={onToggleExpand}
-        title={expanded ? "Exit fullscreen" : "Fullscreen canvas"}
-        className="ml-auto flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-      >
-        {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-      </button>
+
+      {/* View toggle + fullscreen */}
+      <div className="ml-auto flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onViewModeChange("graph")}
+          title="Graph view"
+          className={cn(
+            "flex items-center justify-center w-6 h-6 rounded-md transition-colors",
+            viewMode === "graph"
+              ? "bg-secondary text-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
+          )}
+        >
+          <GitGraph size={13} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onViewModeChange("timeline")}
+          title="Timeline view"
+          className={cn(
+            "flex items-center justify-center w-6 h-6 rounded-md transition-colors",
+            viewMode === "timeline"
+              ? "bg-secondary text-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
+          )}
+        >
+          <GanttChart size={13} />
+        </button>
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          title={expanded ? "Exit fullscreen" : "Fullscreen canvas"}
+          className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+        >
+          {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+        </button>
+      </div>
     </div>
   );
 }

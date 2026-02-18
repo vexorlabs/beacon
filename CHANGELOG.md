@@ -10,6 +10,8 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): Timeline/Waterfall View — Gantt-chart visualization of trace spans with wall-clock positioning, parallel span detection (separate swim-lane rows), critical path highlighting (gold ring), hover tooltips (name/duration/cost), collapsible "Slowest Spans" summary panel, and Graph/Timeline toggle in CostSummaryBar
+- refactor(frontend): extract shared span-type color constants into `lib/span-colors.ts` (reused by TraceGraph, SpanNode, and TimelineView)
 - feat(frontend): URL-based routing with React Router — deep-link to `/traces/:traceId/:spanId` with full browser history support
 - feat(backend): `DELETE /v1/traces/{trace_id}` — single trace deletion with CASCADE cleanup of spans and replay runs
 - feat(backend): `DELETE /v1/traces` — batch delete traces by IDs or `older_than` timestamp

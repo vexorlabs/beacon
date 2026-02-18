@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TraceList from "@/components/TraceList";
 import TraceGraph from "@/components/TraceGraph";
+import TimelineView from "@/components/TimelineView";
 import SpanDetail from "@/components/SpanDetail";
 import TimeTravel from "@/components/TimeTravel";
 import CostSummaryBar from "@/components/CostSummaryBar";
+import type { ViewMode } from "@/components/CostSummaryBar";
 import { useResizablePanels } from "@/lib/useResizablePanels";
 import { useTraceStore } from "@/store/trace";
 
@@ -18,6 +20,7 @@ export default function TracesPage() {
     useResizablePanels(280, 380);
 
   const [expanded, setExpanded] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("graph");
   const selectedTraceId = useTraceStore((s) => s.selectedTraceId);
   const selectTrace = useTraceStore((s) => s.selectTrace);
   const selectSpan = useTraceStore((s) => s.selectSpan);
@@ -69,14 +72,16 @@ export default function TracesPage() {
         </>
       )}
 
-      {/* Center — Graph canvas */}
+      {/* Center — Graph or Timeline canvas */}
       <div className="flex-1 min-w-0 flex flex-col">
         <CostSummaryBar
           expanded={expanded}
           onToggleExpand={() => setExpanded((e) => !e)}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
         <div className="flex-1 min-h-0">
-          <TraceGraph />
+          {viewMode === "graph" ? <TraceGraph /> : <TimelineView />}
         </div>
         <TimeTravel />
       </div>
