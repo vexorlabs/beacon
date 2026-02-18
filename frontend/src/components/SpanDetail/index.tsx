@@ -24,7 +24,7 @@ export default function SpanDetail() {
   return (
     <div className="p-4 overflow-auto h-full">
       {/* Header — shared across all span types */}
-      <h3 className="font-semibold text-sm">{selectedSpan.name}</h3>
+      <h3 className="font-semibold text-[13px]">{selectedSpan.name}</h3>
       <div className="mt-2 flex items-center gap-2 flex-wrap">
         <Badge variant="outline">{selectedSpan.span_type}</Badge>
         <Badge

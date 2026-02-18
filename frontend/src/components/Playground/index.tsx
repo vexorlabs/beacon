@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   RotateCcw,
   ExternalLink,
-  KeyRound,
   ChevronDown,
   ChevronUp,
   GitCompareArrows,
@@ -16,10 +15,9 @@ import { usePlaygroundStore } from "@/store/playground";
 
 interface Props {
   onViewInDebugger: () => void;
-  onOpenSettings: () => void;
 }
 
-export default function Playground({ onViewInDebugger, onOpenSettings }: Props) {
+export default function Playground({ onViewInDebugger }: Props) {
   const [systemPromptOpen, setSystemPromptOpen] = useState(false);
 
   const selectedModel = usePlaygroundStore((s) => s.selectedModel);
@@ -110,10 +108,6 @@ export default function Playground({ onViewInDebugger, onOpenSettings }: Props) 
           Clear
         </Button>
 
-        <Button variant="ghost" size="xs" onClick={onOpenSettings}>
-          <KeyRound size={12} />
-          API Keys
-        </Button>
       </div>
 
       {/* System prompt */}

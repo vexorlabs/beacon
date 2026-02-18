@@ -45,7 +45,7 @@ export default function TraceListItem({
       onClick={() => onSelect(trace.trace_id)}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-sm truncate">{trace.name}</span>
+        <span className="font-medium text-[13px] truncate">{trace.name}</span>
         <Badge variant={STATUS_VARIANT[trace.status] ?? "secondary"}>
           {trace.status}
         </Badge>

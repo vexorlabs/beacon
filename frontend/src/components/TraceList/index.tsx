@@ -33,7 +33,7 @@ export default function TraceList() {
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2 border-b border-border">
-        <h2 className="text-sm font-semibold">Traces</h2>
+        <h2 className="text-[13px] font-semibold">Traces</h2>
       </div>
       <TraceFilter />
       <ScrollArea className="flex-1">
