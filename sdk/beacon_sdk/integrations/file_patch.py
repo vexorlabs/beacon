@@ -99,9 +99,10 @@ class _TrackedFile:
         return result
 
     def writelines(self, lines: Any) -> Any:
-        result = self._file.writelines(lines)
+        collected = list(lines)
+        result = self._file.writelines(collected)
         if not self._is_binary:
-            for line in lines:
+            for line in collected:
                 if isinstance(line, str):
                     self._content_parts.append(line)
         return result

@@ -168,6 +168,50 @@ def test_file_iteration_captures_content(
     assert span.attributes["file.content"] == "a\nb\nc\n"
 
 
+def test_file_writelines_captures_content(
+    tmp_path: Path,
+    exporter: InMemoryExporter,
+) -> None:
+    test_file = tmp_path / "writelines.txt"
+
+    with open(str(test_file), "w") as f:
+        f.writelines(["hello ", "world\n"])
+
+    span = exporter.spans[0]
+    assert span.attributes["file.content"] == "hello world\n"
+
+
+def test_file_writelines_handles_generator(
+    tmp_path: Path,
+    exporter: InMemoryExporter,
+) -> None:
+    test_file = tmp_path / "gen.txt"
+
+    def line_gen() -> Any:
+        yield "line1\n"
+        yield "line2\n"
+
+    with open(str(test_file), "w") as f:
+        f.writelines(line_gen())
+
+    span = exporter.spans[0]
+    assert span.attributes["file.content"] == "line1\nline2\n"
+
+
+def test_file_readlines_captures_content(
+    tmp_path: Path,
+    exporter: InMemoryExporter,
+) -> None:
+    test_file = tmp_path / "readlines.txt"
+    test_file.write_text("a\nb\nc\n")
+
+    with open(str(test_file), "r") as f:
+        f.readlines()
+
+    span = exporter.spans[0]
+    assert span.attributes["file.content"] == "a\nb\nc\n"
+
+
 def test_file_patch_is_idempotent() -> None:
     file_patch.patch()
     first_open = open
