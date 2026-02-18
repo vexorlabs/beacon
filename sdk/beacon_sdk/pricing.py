@@ -34,7 +34,7 @@ PRICE_TABLE: dict[str, tuple[float, float]] = {
     "gpt-4": (30.00, 60.00),
     "gpt-3.5-turbo": (0.50, 1.50),
     # Anthropic — latest
-    "claude-opus-4": (15.00, 75.00),
+    "claude-opus-4": (5.00, 25.00),
     "claude-sonnet-4": (3.00, 15.00),
     "claude-haiku-4": (1.00, 5.00),
     # Anthropic — legacy
