@@ -167,3 +167,12 @@ def _apply_auto_patches() -> None:
             mod.patch()
         except Exception:
             logger.debug("Beacon: auto-patch failed for %s", mod.__name__)
+
+    # File operation patch is opt-in due to intrusiveness
+    if os.environ.get("BEACON_PATCH_FILE_OPS", "false").lower() == "true":
+        try:
+            from beacon_sdk.integrations import file_patch as _file_patch
+
+            _file_patch.patch()
+        except Exception:
+            logger.debug("Beacon: auto-patch failed for file_patch")
