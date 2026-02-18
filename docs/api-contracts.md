@@ -1,24 +1,39 @@
 # API Contracts
 
-This document defines all HTTP and WebSocket APIs exposed by `beacon-backend`. It is the contract between the backend and:
-- The **SDK** (which sends spans to the backend)
-- The **UI** (which reads traces from the backend)
+This document defines the HTTP and WebSocket contracts exposed by `beacon-backend`.
 
-**Base URL:** `http://localhost:7474`
+Base URL: `http://localhost:7474`
 
-All request/response bodies are JSON. All timestamps are Unix float (seconds since epoch).
+All request/response bodies are JSON. Timestamps are Unix epoch seconds (float).
 
 ---
 
 ## REST API
 
-### Span Ingestion (Used by SDK)
+### Health
+
+#### `GET /health`
+
+Response `200 OK`:
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "db_path": "/Users/you/.beacon/traces.db"
+}
+```
+
+---
+
+### Spans
 
 #### `POST /v1/spans`
 
-Ingest one or more spans from the SDK.
+Ingest one or more spans.
 
-**Request body:**
+Request:
+
 ```json
 {
   "spans": [
@@ -35,21 +50,21 @@ Ingest one or more spans from the SDK.
       "attributes": {
         "llm.provider": "openai",
         "llm.model": "gpt-4o",
-        "llm.prompt": "[{\"role\": \"user\", \"content\": \"What is 2+2?\"}]",
+        "llm.prompt": "[{\"role\":\"user\",\"content\":\"What is 2+2?\"}]",
         "llm.completion": "4",
         "llm.tokens.input": 14,
         "llm.tokens.output": 1,
         "llm.tokens.total": 15,
         "llm.cost_usd": 0.000075,
-        "llm.finish_reason": "tool_calls",
-        "llm.tool_calls": "[{\"id\": \"call_abc123\", \"function\": {\"name\": \"get_weather\", \"arguments\": \"{\\\"location\\\": \\\"San Francisco\\\"}\"}}]"
+        "llm.finish_reason": "stop"
       }
     }
   ]
 }
 ```
 
-**Response `200 OK`:**
+Response `200 OK`:
+
 ```json
 {
   "accepted": 1,
@@ -57,34 +72,44 @@ Ingest one or more spans from the SDK.
 }
 ```
 
-**Response `422 Unprocessable Entity`:** Validation error (malformed span).
+Response `422 Unprocessable Entity`: request validation error.
+
+#### `GET /v1/spans/{span_id}`
+
+Get a single span.
+
+Response `200 OK`: `SpanResponse`.
+
+Response `404 Not Found`:
+
+```json
+{ "detail": "Span not found" }
+```
 
 ---
 
-### Trace List (Used by UI)
+### Traces
 
 #### `GET /v1/traces`
 
-List all traces, newest first.
+List traces, newest first.
 
-**Query parameters:**
+Query params:
+- `limit` (int, default `50`, min `1`, max `200`)
+- `offset` (int, default `0`)
+- `status` (`ok | error | unset`, optional)
 
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `limit` | int | 50 | Max results |
-| `offset` | int | 0 | Pagination offset |
-| `status` | string | (all) | Filter: `ok`, `error`, `unset` |
+Response `200 OK`:
 
-**Response `200 OK`:**
 ```json
 {
   "traces": [
     {
       "trace_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-      "name": "Travel booking agent",
+      "name": "Playground: gpt-4.1",
       "start_time": 1739800000.0,
       "end_time": 1739800045.3,
-      "duration_ms": 45300,
+      "duration_ms": 45300.0,
       "span_count": 23,
       "status": "ok",
       "total_cost_usd": 0.042,
@@ -98,54 +123,24 @@ List all traces, newest first.
 }
 ```
 
----
-
 #### `GET /v1/traces/{trace_id}`
 
-Get a single trace with all its spans.
+Get a trace with all spans.
 
-**Response `200 OK`:**
-```json
-{
-  "trace_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-  "name": "Travel booking agent",
-  "start_time": 1739800000.0,
-  "end_time": 1739800045.3,
-  "duration_ms": 45300,
-  "span_count": 23,
-  "status": "ok",
-  "total_cost_usd": 0.042,
-  "total_tokens": 12450,
-  "tags": {},
-  "spans": [
-    {
-      "span_id": "550e8400-...",
-      "parent_span_id": null,
-      "span_type": "agent_step",
-      "name": "root",
-      "status": "ok",
-      "start_time": 1739800000.0,
-      "end_time": 1739800045.3,
-      "duration_ms": 45300,
-      "attributes": {}
-    }
-    // ... more spans
-  ]
-}
-```
+Response `200 OK`: `TraceDetailResponse` (`TraceSummary` + `spans[]`).
 
-**Response `404 Not Found`:**
+Response `404 Not Found`:
+
 ```json
 { "detail": "Trace not found" }
 ```
 
----
-
 #### `GET /v1/traces/{trace_id}/graph`
 
-Get a trace formatted as a graph (nodes + edges) for direct use by React Flow.
+Get trace graph data for React Flow.
 
-**Response `200 OK`:**
+Response `200 OK`:
+
 ```json
 {
   "nodes": [
@@ -153,11 +148,11 @@ Get a trace formatted as a graph (nodes + edges) for direct use by React Flow.
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "type": "spanNode",
       "data": {
-        "span_id": "550e8400-...",
+        "span_id": "550e8400-e29b-41d4-a716-446655440000",
         "span_type": "llm_call",
-        "name": "openai.chat.completions",
+        "name": "gpt-4.1",
         "status": "ok",
-        "duration_ms": 2333,
+        "duration_ms": 2333.0,
         "cost_usd": 0.000075
       },
       "position": { "x": 0, "y": 0 }
@@ -167,38 +162,261 @@ Get a trace formatted as a graph (nodes + edges) for direct use by React Flow.
     {
       "id": "edge-parent-child",
       "source": "parent-span-id",
-      "target": "550e8400-..."
+      "target": "550e8400-e29b-41d4-a716-446655440000"
     }
   ]
 }
 ```
 
-Note: `position` is initialized to `{x: 0, y: 0}`. Layout is computed client-side by React Flow using the `dagre` layout algorithm.
+Response `404 Not Found`:
 
----
-
-### Span Detail (Used by UI)
-
-#### `GET /v1/spans/{span_id}`
-
-Get full detail for a single span, including all attributes.
-
-**Response `200 OK`:** Full span object (same structure as in the trace spans array, but with all attributes included).
-
-**Response `404 Not Found`:**
 ```json
-{ "detail": "Span not found" }
+{ "detail": "Trace not found" }
 ```
 
+#### `DELETE /v1/traces/{trace_id}`
+
+Delete one trace (spans/replay rows removed by cascade).
+
+Response `200 OK`:
+
+```json
+{ "deleted_count": 1 }
+```
+
+Response `404 Not Found`:
+
+```json
+{ "detail": "Trace not found" }
+```
+
+#### `DELETE /v1/traces`
+
+Batch delete traces.
+
+Request (at least one field required):
+
+```json
+{
+  "trace_ids": ["uuid-1", "uuid-2"],
+  "older_than": 1739800000.0
+}
+```
+
+Response `200 OK`:
+
+```json
+{ "deleted_count": 5 }
+```
+
+Response `422 Unprocessable Entity` when both fields are omitted.
+
 ---
 
-### Demo Agents (Used by UI)
+### Replay
+
+#### `POST /v1/replay`
+
+Replay a single `llm_call` span with modified attributes.
+
+Request:
+
+```json
+{
+  "span_id": "550e8400-e29b-41d4-a716-446655440000",
+  "modified_attributes": {
+    "llm.prompt": "[{\"role\":\"user\",\"content\":\"What is 2+2? Show your work.\"}]"
+  }
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "replay_id": "new-uuid",
+  "original_span_id": "550e8400-e29b-41d4-a716-446655440000",
+  "new_output": {
+    "llm.completion": "2 + 2 = 4. Here's how...",
+    "llm.tokens.input": 20,
+    "llm.tokens.output": 45,
+    "llm.cost_usd": 0.0003
+  },
+  "diff": {
+    "old_completion": "4",
+    "new_completion": "2 + 2 = 4. Here's how...",
+    "changed": true
+  }
+}
+```
+
+Response `400 Bad Request` (e.g., missing span, unsupported span type, bad provider/model).
+
+Response `502 Bad Gateway` when upstream LLM call fails.
+
+---
+
+### Settings
+
+#### `GET /v1/settings/api-keys`
+
+List API key status for supported providers.
+
+Response `200 OK`:
+
+```json
+[
+  {
+    "provider": "openai",
+    "configured": true,
+    "masked_key": "••••••••1234"
+  },
+  {
+    "provider": "anthropic",
+    "configured": false,
+    "masked_key": null
+  }
+]
+```
+
+#### `PUT /v1/settings/api-keys`
+
+Set/update a provider API key.
+
+Request:
+
+```json
+{
+  "provider": "openai",
+  "api_key": "sk-..."
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "provider": "openai",
+  "configured": true
+}
+```
+
+Response `400 Bad Request` for unsupported provider.
+
+#### `DELETE /v1/settings/api-keys/{provider}`
+
+Delete a provider key.
+
+Response `200 OK`:
+
+```json
+{
+  "provider": "openai",
+  "configured": false
+}
+```
+
+Response `400 Bad Request` for unsupported provider.
+
+---
+
+### Playground
+
+#### `POST /v1/playground/chat`
+
+Run one chat turn on one model.
+
+Request:
+
+```json
+{
+  "conversation_id": null,
+  "model": "gpt-4.1",
+  "system_prompt": "You are concise.",
+  "messages": [
+    { "role": "user", "content": "Explain retries." }
+  ]
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "conversation_id": "f7f43eb8-...",
+  "trace_id": "f7f43eb8-...",
+  "message": {
+    "role": "assistant",
+    "content": "..."
+  },
+  "metrics": {
+    "input_tokens": 123,
+    "output_tokens": 45,
+    "cost_usd": 0.0008,
+    "latency_ms": 842.1
+  }
+}
+```
+
+Response `400 Bad Request` for missing/unsupported provider key.
+
+Response `422 Unprocessable Entity` for request validation errors.
+
+Response `502 Bad Gateway` for upstream LLM failure.
+
+#### `POST /v1/playground/compare`
+
+Run one prompt across multiple models.
+
+Request:
+
+```json
+{
+  "system_prompt": "You are concise.",
+  "messages": [
+    { "role": "user", "content": "Explain retries." }
+  ],
+  "models": ["gpt-4.1", "claude-sonnet-4-6"]
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id": "4c72c0f1-...",
+  "results": [
+    {
+      "model": "gpt-4.1",
+      "provider": "openai",
+      "completion": "...",
+      "metrics": {
+        "input_tokens": 120,
+        "output_tokens": 40,
+        "cost_usd": 0.0007,
+        "latency_ms": 820.5
+      }
+    }
+  ]
+}
+```
+
+Response `400 Bad Request` if fewer than 2 models or provider config is missing.
+
+Response `422 Unprocessable Entity` for request validation errors.
+
+Response `502 Bad Gateway` for upstream LLM failure.
+
+---
+
+### Demo Agents
 
 #### `GET /v1/demo/scenarios`
 
-List available demo agent scenarios with API key configuration status.
+List demo scenarios.
 
-**Response `200 OK`:**
+Response `200 OK`:
+
 ```json
 [
   {
@@ -208,142 +426,60 @@ List available demo agent scenarios with API key configuration status.
     "provider": "openai",
     "model": "gpt-4o-mini",
     "api_key_configured": true
-  },
-  {
-    "key": "code_reviewer",
-    "name": "Code Reviewer",
-    "description": "Code analysis with linting tool",
-    "provider": "anthropic",
-    "model": "claude-haiku-4-5-20251001",
-    "api_key_configured": false
   }
 ]
 ```
 
----
-
 #### `POST /v1/demo/run`
 
-Start a demo agent. Returns `trace_id` immediately; the agent loop runs as a background task, broadcasting spans via WebSocket as they are created.
+Start demo agent in background and return trace id immediately.
 
-**Request body:**
-```json
-{
-  "scenario": "research_assistant"
-}
-```
+Request:
 
-**Response `200 OK`:**
 ```json
-{
-  "trace_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7"
-}
+{ "scenario": "research_assistant" }
 ```
 
-**Response `400 Bad Request`:**
+Response `200 OK`:
+
 ```json
-{ "detail": "Unknown scenario: invalid_key" }
-```
-```json
-{ "detail": "No API key configured for openai. Add one in Settings." }
+{ "trace_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7" }
 ```
 
-**Response `502 Bad Gateway`:**
-```json
-{ "detail": "LLM API call failed: ..." }
-```
+Response `400 Bad Request` for unknown scenario or missing API key.
+
+Response `502 Bad Gateway` for upstream LLM failure.
 
 ---
 
-### Replay (Used by UI — Time-Travel Feature)
+### Search
 
-#### `POST /v1/replay`
+#### `GET /v1/search`
 
-Re-execute a span (currently only supported for `llm_call` spans) with modified input.
+Search span name/attributes and trace names.
 
-**Request body:**
+Query params:
+- `q` (required, min 1, max 500)
+- `limit` (default `50`, min `1`, max `200`)
+- `offset` (default `0`)
+
+Response `200 OK`:
+
 ```json
 {
-  "span_id": "550e8400-e29b-41d4-a716-446655440000",
-  "modified_attributes": {
-    "llm.prompt": "[{\"role\": \"user\", \"content\": \"What is 2+2? Show your work.\"}]"
-  }
+  "results": [
+    {
+      "trace_id": "7c9e6679-...",
+      "span_id": "550e8400-...",
+      "name": "openai.chat.completions",
+      "match_context": "..."
+    }
+  ],
+  "total": 3
 }
 ```
 
-**Response `200 OK`:**
-```json
-{
-  "replay_id": "new-uuid",
-  "original_span_id": "550e8400-...",
-  "new_output": {
-    "llm.completion": "2 + 2 = 4. Here's how: ...",
-    "llm.tokens.input": 20,
-    "llm.tokens.output": 45,
-    "llm.cost_usd": 0.0003
-  },
-  "diff": {
-    "old_completion": "4",
-    "new_completion": "2 + 2 = 4. Here's how: ...",
-    "changed": true
-  }
-}
-```
-
-**Response `400 Bad Request`:**
-```json
-{ "detail": "Replay only supported for span_type=llm_call" }
-```
-
-**Response `500 Internal Server Error`:**
-```json
-{ "detail": "LLM API call failed: ..." }
-```
-
----
-
-### Trace Deletion
-
-#### `DELETE /v1/traces/{trace_id}`
-
-Delete a single trace and all its spans and replay runs (via CASCADE).
-
-**Response `200 OK`:**
-```json
-{
-  "deleted_count": 1
-}
-```
-
-**Response `404 Not Found`:**
-```json
-{ "detail": "Trace not found" }
-```
-
----
-
-#### `DELETE /v1/traces`
-
-Batch delete traces. Must provide at least one criteria.
-
-**Request body:**
-```json
-{
-  "trace_ids": ["uuid-1", "uuid-2"],
-  "older_than": 1739800000.0
-}
-```
-
-Both fields are optional, but at least one must be provided. `older_than` deletes traces with `created_at` before the given timestamp.
-
-**Response `200 OK`:**
-```json
-{
-  "deleted_count": 5
-}
-```
-
-**Response `422 Unprocessable Entity`:** When neither `trace_ids` nor `older_than` is provided.
+Response `422 Unprocessable Entity` if `q` is missing.
 
 ---
 
@@ -351,9 +487,10 @@ Both fields are optional, but at least one must be provided. `older_than` delete
 
 #### `GET /v1/stats`
 
-Get database statistics.
+Database stats.
 
-**Response `200 OK`:**
+Response `200 OK`:
+
 ```json
 {
   "database_size_bytes": 1048576,
@@ -365,71 +502,15 @@ Get database statistics.
 
 ---
 
-### Search
-
-#### `GET /v1/search`
-
-Full-text search across span names, span attributes, and trace names.
-
-**Query parameters:**
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `q` | string | (required) | Search query |
-| `limit` | int | 50 | Max results |
-| `offset` | int | 0 | Pagination offset |
-
-**Response `200 OK`:**
-```json
-{
-  "results": [
-    {
-      "trace_id": "7c9e6679-...",
-      "span_id": "550e8400-...",
-      "name": "openai.chat.completions",
-      "match_context": "...matching text snippet..."
-    }
-  ],
-  "total": 3
-}
-```
-
-**Response `422 Unprocessable Entity`:** When `q` parameter is missing.
-
----
-
-### Health Check
-
-#### `GET /health`
-
-Simple health check for the UI to verify the backend is running.
-
-**Response `200 OK`:**
-```json
-{
-  "status": "ok",
-  "version": "0.1.0",
-  "db_path": "/Users/you/.beacon/traces.db"
-}
-```
-
----
-
 ## WebSocket API
 
 ### `WS /ws/live`
 
-Real-time span streaming. The UI connects to this WebSocket when it loads. The backend pushes new spans as they arrive from the SDK.
+Connection URL: `ws://localhost:7474/ws/live`
 
-**Connection:** `ws://localhost:7474/ws/live`
+Server -> client events:
 
-**Server → Client messages:**
-
-All messages are JSON with an `event` field.
-
-#### `span_created` event
-
-Sent when a new span is received from the SDK.
+#### `span_created`
 
 ```json
 {
@@ -441,32 +522,16 @@ Sent when a new span is received from the SDK.
     "span_type": "llm_call",
     "name": "openai.chat.completions",
     "status": "ok",
+    "error_message": null,
     "start_time": 1739800000.123,
     "end_time": 1739800002.456,
-    "duration_ms": 2333,
-    "attributes": { ... }
+    "duration_ms": 2333.0,
+    "attributes": {}
   }
 }
 ```
 
-#### `span_updated` event
-
-Sent when a span's end_time or status is updated (e.g., when an in-progress span completes).
-
-```json
-{
-  "event": "span_updated",
-  "span_id": "...",
-  "updates": {
-    "end_time": 1739800002.456,
-    "status": "ok"
-  }
-}
-```
-
-#### `trace_created` event
-
-Sent when a brand-new trace is seen for the first time.
+#### `trace_created`
 
 ```json
 {
@@ -480,9 +545,24 @@ Sent when a brand-new trace is seen for the first time.
 }
 ```
 
-**Client → Server messages:**
+#### `span_updated`
 
-#### Subscribe to a specific trace
+Supported by the WS manager and reserved for partial updates:
+
+```json
+{
+  "event": "span_updated",
+  "span_id": "...",
+  "updates": {
+    "status": "ok",
+    "end_time": 1739800002.456
+  }
+}
+```
+
+Client -> server actions:
+
+#### Subscribe to one trace
 
 ```json
 {
@@ -491,9 +571,7 @@ Sent when a brand-new trace is seen for the first time.
 }
 ```
 
-After this, the client only receives `span_created` and `span_updated` events for that trace.
-
-#### Unsubscribe
+#### Unsubscribe from one trace
 
 ```json
 {
@@ -504,39 +582,19 @@ After this, the client only receives `span_created` and `span_updated` events fo
 
 ---
 
-## Error Response Format
-
-All error responses follow this shape:
+## Error Format
 
 ```json
-{
-  "detail": "Human-readable error message"
-}
+{ "detail": "Human-readable message" }
 ```
 
-For validation errors (422):
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "spans", 0, "span_id"],
-      "msg": "field required",
-      "type": "value_error.missing"
-    }
-  ]
-}
-```
+Validation errors use FastAPI's standard `detail[]` structure.
 
 ---
 
-## SDK Transport
+## SDK Transport Notes
 
-The SDK sends spans to `POST /v1/spans` in batches. Batching strategy:
-- Send immediately when a span ends (low-latency mode, default for MVP)
-- Future: configurable batch size and flush interval
-
-The SDK does not retry on failure in MVP. Failures are logged to stderr but do not crash the agent.
-
-The SDK reads the backend URL from:
-1. `BEACON_BACKEND_URL` environment variable
-2. Default: `http://localhost:7474`
+- SDK sends span batches to `POST /v1/spans`.
+- Default SDK exporter is async batching (`AsyncBatchExporter`), flushing periodically or on batch size threshold.
+- SDK can be forced to sync exporter mode (`init(exporter="sync")`).
+- Export failures are non-fatal to user code.

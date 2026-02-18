@@ -1,179 +1,121 @@
 # Architecture Overview
 
-This document describes Beacon's system architecture. It is the authoritative reference for understanding how the three main components fit together.
+Beacon has three local components:
+
+1. `beacon-sdk` (Python instrumentation)
+2. `beacon-backend` (FastAPI + SQLite)
+3. `beacon-ui` (React + Vite)
 
 ---
 
 ## System Diagram
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                  Developer's Application                  │
-│                                                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
-│  │  LangChain  │  │   CrewAI    │  │  Custom Agent   │  │
-│  │    Agent    │  │    Agent    │  │  (any Python)   │  │
-│  └──────┬──────┘  └──────┬──────┘  └────────┬────────┘  │
-│         │                │                   │           │
-│         └────────────────┴───────────────────┘           │
-│                          │                               │
-│              ┌───────────▼──────────┐                   │
-│              │    beacon-sdk        │                   │
-│              │  (auto-instrument)   │                   │
-│              │                      │                   │
-│              │  @observe decorator  │                   │
-│              │  monkey-patching     │                   │
-│              │  LangChain handler   │                   │
-│              └───────────┬──────────┘                   │
-└──────────────────────────┼──────────────────────────────┘
-                           │
-                           │  HTTP POST /v1/spans
-                           │  (OTEL span format, JSON)
-                           │
-              ┌────────────▼───────────┐
-              │    beacon-backend      │
-              │    (FastAPI)           │
-              │                        │
-              │  ┌──────────────────┐  │
-              │  │    SQLite DB     │  │
-              │  │  (traces.db)     │  │
-              │  └──────────────────┘  │
-              │                        │
-              │  REST API  WebSocket   │
-              └────────────┬───────────┘
-                           │
-                           │  REST + WebSocket
-                           │  (localhost:7474)
-                           │
-              ┌────────────▼───────────┐
-              │    beacon-ui           │
-              │    (React + Vite)      │
-              │                        │
-              │  TraceList   (left)    │
-              │  TraceGraph  (center)  │
-              │  SpanDetail  (right)   │
-              │  TimeTravel  (bottom)  │
-              └────────────────────────┘
+```text
+Developer Agent (Python)
+  ├─ manual spans via @observe
+  ├─ tracer API
+  └─ optional auto-patching (openai/anthropic/playwright/subprocess/file ops)
+            |
+            | POST /v1/spans
+            v
+beacon-backend (FastAPI, port 7474)
+  ├─ SQLite persistence (~/.beacon/traces.db)
+  ├─ REST API (/v1/*)
+  └─ WebSocket stream (/ws/live)
+            |
+            | REST + WS
+            v
+beacon-ui (React, port 5173)
+  ├─ Dashboard
+  ├─ Traces debugger (list + graph + detail + time-travel)
+  ├─ Playground (chat + compare)
+  └─ Settings (API keys + trace data management)
 ```
 
 ---
 
 ## Component Responsibilities
 
-### 1. beacon-sdk (Python)
+### 1. SDK (`sdk/`)
 
-**What it does:** Intercepts agent actions and converts them into OTEL spans, then sends those spans to the backend.
+What it does:
+- creates spans via `@observe` and `BeaconTracer`
+- tracks trace/span context with `ContextVar`
+- exports spans to backend (`/v1/spans`) using sync or async batch exporter
+- integrates with OpenAI, Anthropic, Playwright, subprocess, and LangChain callback handler
 
-**Key responsibilities:**
-- Provide `@observe` decorator for manual instrumentation
-- Monkey-patch `openai`, `anthropic`, `playwright`, `subprocess`, `os.open` at import time (handles both streaming and non-streaming calls)
-- Provide `BeaconCallbackHandler` for LangChain auto-instrumentation
-- Manage trace context (trace ID, parent span ID) across async boundaries
-- Batch and export spans to the backend HTTP endpoint
+What it does not do:
+- persistent storage
+- UI rendering
+- backend querying
 
-**Does NOT:**
-- Store any data permanently
-- Know anything about the UI
-- Handle authentication or network security
+### 2. Backend (`backend/`)
 
-**Lives in:** `sdk/`
+What it does:
+- persists traces/spans/replay runs in SQLite
+- serves trace APIs (`/v1/traces`, `/v1/spans`, `/v1/search`, `/v1/stats`)
+- serves replay API (`/v1/replay`)
+- serves settings/playground/demo APIs (`/v1/settings/*`, `/v1/playground/*`, `/v1/demo/*`)
+- streams `span_created` and `trace_created` events via WebSocket
 
----
+What it does not do:
+- SDK-side instrumentation
+- UI rendering
+- auth/session management (intentionally no-auth for local-first MVP)
 
-### 2. beacon-backend (FastAPI)
+### 3. Frontend (`frontend/`)
 
-**What it does:** Receives spans from the SDK, stores them in SQLite, serves them to the UI via REST and WebSocket.
+What it does:
+- route-driven UI with React Router
+- renders trace DAG with React Flow
+- displays span detail and replay UI
+- drives time-travel + search/filter + trace deletion
+- provides Playground for live model calls
+- manages API keys and data stats in Settings
 
-**Key responsibilities:**
-- Accept OTEL span payloads via `POST /v1/spans`
-- Store spans and traces in SQLite (with enforced foreign key constraints)
-- Serve trace list and trace detail via REST API
-- Push new spans to the UI in real-time via WebSocket
-- Execute LLM replay requests (`POST /replay`) for time-travel debugging
-- Trace deletion (single and batch) with cascading cleanup
-- Full-text search across span names, attributes, and trace names
-- Database statistics reporting
-
-**Does NOT:**
-- Instrument any agent code
-- Render any UI
-- Communicate with external services (except for replay: calls OpenAI/Anthropic API)
-
-**Lives in:** `backend/`
-
----
-
-### 3. beacon-ui (React)
-
-**What it does:** Provides the interactive debugging interface. Fetches trace data from the backend and renders it as an interactive graph.
-
-**Key responsibilities:**
-- Display list of all captured traces with full-text search and deletion
-- Render a trace as an interactive React Flow graph
-- Show span detail in a side panel when a node is clicked
-- Allow prompt editing via Monaco Editor and trigger replays
-- Stream new spans in real-time via WebSocket
-- Provide a time-travel timeline scrubber
-- URL-based routing with deep-linking to specific traces and spans (React Router)
-
-**Does NOT:**
-- Communicate with the SDK directly
-- Store any persistent data
-- Execute any agent code
-
-**Lives in:** `frontend/`
+What it does not do:
+- direct SDK communication
+- persistent storage (beyond runtime client state)
 
 ---
 
-## Data Flow: Happy Path
+## Data Flow: Standard Trace Ingestion
 
-```
-1. Developer starts agent:
-   python my_agent.py
-
-2. SDK auto-patches libraries on import.
-   Every intercepted call creates a Span object.
-
-3. SDK exports Span to backend:
-   POST http://localhost:7474/v1/spans
-   Content-Type: application/json
-   { "span_id": "...", "trace_id": "...", "span_type": "llm_call", ... }
-
-4. Backend writes span to SQLite:
-   INSERT INTO spans (span_id, trace_id, ...) VALUES (...)
-
-5. Backend broadcasts span to UI via WebSocket:
-   ws://localhost:7474/ws/live
-   → { "event": "span_created", "span": { ... } }
-
-6. UI receives WebSocket event, adds node to React Flow graph.
-
-7. Developer sees the graph update in real-time.
+```text
+1. Agent code executes instrumented function/call.
+2. SDK creates a span and ends it with status/attributes.
+3. SDK exporter POSTs to /v1/spans.
+4. Backend upserts trace summary + span rows in SQLite.
+5. Backend broadcasts span_created over /ws/live.
+6. Frontend updates trace list/graph state in real time.
 ```
 
-## Data Flow: Time-Travel Replay
+---
 
+## Data Flow: Replay
+
+```text
+1. User selects an llm_call span in SpanDetail.
+2. User edits prompt JSON in PromptEditor.
+3. Frontend POSTs /v1/replay with { span_id, modified_attributes }.
+4. Backend replays with provider/model from original span attributes.
+5. Backend stores replay result in replay_runs.
+6. Backend returns new output + diff.
+7. Frontend renders old/new completion comparison.
 ```
-1. Developer clicks an LLM call node in the graph.
 
-2. UI fetches full span detail:
-   GET /spans/{span_id}
-   → Returns span with full prompt + completion
+---
 
-3. Developer edits the prompt in Monaco Editor.
+## Data Flow: Playground + Demo
 
-4. Developer clicks "Replay":
-   POST /replay
-   { "span_id": "...", "new_input": { "prompt": "..." } }
+```text
+Playground:
+  Frontend -> /v1/playground/chat or /v1/playground/compare
+  Backend -> calls upstream LLM APIs -> emits spans/trace events -> UI updates
 
-5. Backend re-executes the LLM call using the original model/params
-   but with the new prompt.
-
-6. Backend creates a new "replay" span linked to the original.
-
-7. Backend returns the new completion + diff from old completion.
-
-8. UI shows diff view: old completion vs. new completion.
+Demo:
+  Frontend -> /v1/demo/run
+  Backend -> starts background loop -> emits spans incrementally -> UI updates
 ```
 
 ---
@@ -181,32 +123,33 @@ This document describes Beacon's system architecture. It is the authoritative re
 ## Design Principles
 
 ### Local-First
-Everything runs on the developer's machine. No cloud account, no network call outside localhost. The backend talks to external LLM APIs only during replay, using the developer's own API keys from their environment.
+- primary data path is localhost only
+- SQLite database on developer machine
+- no required cloud control plane
 
-### OTEL-Conformant
-All spans follow the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/). The backend accepts standard OTEL JSON export format. This ensures future interoperability with the OTEL ecosystem.
+### OTEL-Aligned Span Shape
+- canonical span fields align with OTEL-style tracing semantics
+- consistent cross-layer shape: backend Pydantic schemas -> frontend TypeScript types
 
-### Schema-First API
-The backend defines all API contracts with Pydantic models. The frontend mirrors these as TypeScript interfaces in `frontend/src/lib/types.ts`. The two must stay in sync.
-
-### Simple Over Clever
-For the MVP, prefer the simplest solution that works. No Celery, no Redis, no message queues. SQLite handles concurrency fine for local development. FastAPI WebSockets handle real-time without an external broker.
-
----
-
-## Port Assignments
-
-| Service | Port | Notes |
-|---------|------|-------|
-| beacon-backend | 7474 | Chosen to avoid conflicts with common dev ports |
-| beacon-ui | 5173 | Vite default |
+### Simple, Observable Runtime
+- FastAPI + SQLite + WebSocket, no queue/broker dependency
+- direct APIs for inspect/debug workflows
 
 ---
 
-## File Organization Rules
+## Ports
 
-- All backend code lives in `backend/app/`
-- All SDK code lives in `sdk/beacon_sdk/`
-- All frontend source lives in `frontend/src/`
-- Shared types between backend and frontend are defined in backend Pydantic schemas (source of truth) and manually mirrored in `frontend/src/lib/types.ts`
-- No code in the root of the repo (only config files and docs)
+| Service | Port |
+|---|---|
+| backend | `7474` |
+| frontend | `5173` |
+
+---
+
+## Source of Truth
+
+- API contracts: `docs/api-contracts.md`
+- Data model: `docs/data-model.md`
+- Backend behavior: `docs/backend.md`
+- Frontend behavior: `docs/frontend.md`
+- SDK behavior: `docs/sdk.md`

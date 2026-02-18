@@ -1,8 +1,8 @@
 # beacon-sdk
 
-Instrumentation SDK for [Beacon](https://github.com/vexorlabs/beacon) — Chrome DevTools for AI Agents.
+Instrumentation SDK for Beacon.
 
-Add tracing to your AI agent in 2 lines of code. See every LLM call, tool use, and browser action in an interactive graph UI.
+Add tracing to Python agents with minimal changes and inspect traces in Beacon UI.
 
 ## Quickstart
 
@@ -10,112 +10,75 @@ Add tracing to your AI agent in 2 lines of code. See every LLM call, tool use, a
 pip install beacon-sdk[openai]
 ```
 
-Add two lines to your existing code:
-
 ```python
 import beacon_sdk
 from openai import OpenAI
 
-beacon_sdk.init()  # <-- line 1
-
+beacon_sdk.init()
 client = OpenAI()
 
-@beacon_sdk.observe  # <-- line 2
+@beacon_sdk.observe
 def run_agent(question: str) -> str:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": question}],
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 run_agent("What is the capital of France?")
 ```
 
-Start the Beacon backend and UI, then open [http://localhost:5173](http://localhost:5173):
-
-```bash
-git clone https://github.com/vexorlabs/beacon && cd beacon
-make install && make dev
-```
-
-Your trace appears in the UI with a full graph of spans, token counts, costs, and timing.
+Start Beacon (`make dev`) and open `http://localhost:5173`.
 
 ## Integrations
 
-| Integration | Setup | What's traced |
-|---|---|---|
-| **OpenAI** | Automatic — just call `init()` | Chat completions (+ streaming), tokens, cost |
-| **Anthropic** | Automatic — just call `init()` | Messages (+ streaming), tokens, cost |
-| **Playwright** | Automatic — just call `init()` | Page navigation, clicks, screenshots |
-| **subprocess** | Automatic — just call `init()` | Shell commands, stdout, stderr |
-| **LangChain** | Pass `BeaconCallbackHandler()` to your chain | Chains, LLM calls, tool use, agent steps |
+| Integration | Behavior |
+|---|---|
+| OpenAI | auto-patched chat completions (sync/async + streaming) |
+| Anthropic | auto-patched messages (sync/async + streaming) |
+| Playwright | auto-patched page actions |
+| subprocess | auto-patched `run` and `check_output` |
+| LangChain | callback handler (`BeaconCallbackHandler`) |
 
-LangChain example:
+File operation patching (`builtins.open`) is opt-in via `BEACON_PATCH_FILE_OPS=true`.
 
-```python
-from beacon_sdk.integrations.langchain import BeaconCallbackHandler
-
-chain.invoke(input, config={"callbacks": [BeaconCallbackHandler()]})
-```
-
-Streaming is captured transparently — no extra code needed:
-
-```python
-# This is traced automatically, including the full completion text and token usage
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "Hello"}],
-    stream=True,
-)
-for chunk in response:
-    print(chunk.choices[0].delta.content or "", end="", flush=True)
-```
-
-Install extras for specific integrations:
+## Install Extras
 
 ```bash
-pip install beacon-sdk[openai]       # OpenAI
-pip install beacon-sdk[anthropic]    # Anthropic
-pip install beacon-sdk[playwright]   # Playwright
-pip install beacon-sdk[all]          # Everything
+pip install beacon-sdk
+pip install beacon-sdk[openai]
+pip install beacon-sdk[anthropic]
+pip install beacon-sdk[playwright]
+pip install beacon-sdk[all]
 ```
 
 ## Configuration
 
-| Environment Variable | Default | Description |
+| Env var | Default | Meaning |
 |---|---|---|
-| `BEACON_BACKEND_URL` | `http://localhost:7474` | Backend URL for span ingestion |
-| `BEACON_ENABLED` | `true` | Set to `false` to disable all tracing |
-| `BEACON_AUTO_PATCH` | `true` | Set to `false` to disable auto-patching |
-| `BEACON_LOG_LEVEL` | `WARNING` | SDK log level (`DEBUG` for troubleshooting) |
+| `BEACON_BACKEND_URL` | `http://localhost:7474` | backend ingestion URL |
+| `BEACON_ENABLED` | `true` | enable/disable tracing |
+| `BEACON_AUTO_PATCH` | `true` | enable/disable auto-patching |
+| `BEACON_LOG_LEVEL` | `WARNING` | SDK logging level |
+| `BEACON_PATCH_FILE_OPS` | `false` | enable file operation patch |
 
-All options can also be passed to `init()`:
+`init()` options:
 
 ```python
-beacon_sdk.init(backend_url="http://custom:7474", auto_patch=False, enabled=True)
+beacon_sdk.init(
+    backend_url="http://localhost:7474",
+    auto_patch=True,
+    enabled=True,
+    exporter="auto",  # auto | async | sync
+)
 ```
 
-## Examples
+## Public API
 
-See [`examples/`](./examples/) for runnable scripts:
-
-- **[hello_world.py](./examples/hello_world.py)** — Core SDK with `@observe` decorator
-- **[langchain_agent.py](./examples/langchain_agent.py)** — LangChain agent with callback handler
-- **[browser_agent.py](./examples/browser_agent.py)** — Playwright browser automation
-
-## API
-
-| Export | Description |
-|---|---|
-| `init()` | Initialize the SDK. Call once at startup. |
-| `@observe` | Decorator to wrap functions as spans (sync + async) |
-| `get_current_span()` | Get the active span from context |
-| `get_tracer()` | Get the global `BeaconTracer` instance |
-| `Span` | Span data model |
-| `SpanType` | Enum: `LLM_CALL`, `TOOL_USE`, `AGENT_STEP`, `BROWSER_ACTION`, `FILE_OPERATION`, `SHELL_COMMAND`, `CHAIN`, `CUSTOM` |
-| `SpanStatus` | Enum: `OK`, `ERROR`, `UNSET` |
-| `BeaconTracer` | Low-level tracer (use `@observe` instead for most cases) |
-
-## License
-
-MIT
+- `init()`
+- `observe`
+- `get_current_span()`
+- `get_tracer()`
+- `flush()`
+- `shutdown()`
+- `Span`, `SpanType`, `SpanStatus`, `BeaconTracer`
