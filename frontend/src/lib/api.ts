@@ -137,10 +137,12 @@ export function deleteTrace(traceId: string): Promise<{ deleted_count: number }>
 }
 
 export function deleteAllTraces(): Promise<{ deleted_count: number }> {
+  // Use a far-future timestamp to match all existing traces
+  const farFuture = Math.floor(Date.now() / 1000) + 999999;
   return apiFetch("/traces", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
+    body: JSON.stringify({ older_than: farFuture }),
   });
 }
 

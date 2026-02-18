@@ -376,7 +376,7 @@ Full-text search across span names, span attributes, and trace names.
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
 | `q` | string | (required) | Search query |
-| `limit` | int | 20 | Max results |
+| `limit` | int | 50 | Max results |
 | `offset` | int | 0 | Pagination offset |
 
 **Response `200 OK`:**

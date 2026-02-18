@@ -24,15 +24,16 @@ def search(
     Uses SQLite LIKE for substring matching.  Returns matching spans
     with a snippet of the matching context.
     """
-    pattern = f"%{query}%"
+    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    pattern = f"%{escaped}%"
 
     # Spans matching by name or attributes
     span_stmt = (
         select(models.Span)
         .where(
             or_(
-                models.Span.name.ilike(pattern),
-                models.Span.attributes.ilike(pattern),
+                models.Span.name.ilike(pattern, escape="\\"),
+                models.Span.attributes.ilike(pattern, escape="\\"),
             )
         )
         .order_by(models.Span.start_time.desc())
@@ -42,7 +43,7 @@ def search(
     trace_name_stmt = (
         select(models.Span)
         .join(models.Trace, models.Span.trace_id == models.Trace.trace_id)
-        .where(models.Trace.name.ilike(pattern))
+        .where(models.Trace.name.ilike(pattern, escape="\\"))
         .order_by(models.Span.start_time.desc())
     )
 
