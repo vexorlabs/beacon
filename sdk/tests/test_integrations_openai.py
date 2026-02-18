@@ -5,6 +5,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
+import json
+
 import pytest
 
 import beacon_sdk
@@ -377,8 +379,6 @@ def test_openai_captures_tool_calls(exporter: InMemoryExporter) -> None:
     wrapper(None, model="gpt-4o", messages=[])
 
     span = exporter.spans[0]
-    import json
-
     tool_calls = json.loads(span.attributes["llm.tool_calls"])
     assert len(tool_calls) == 1
     assert tool_calls[0]["function"]["name"] == "get_weather"

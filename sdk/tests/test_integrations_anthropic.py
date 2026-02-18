@@ -5,6 +5,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
+import json
+
 import pytest
 
 import beacon_sdk
@@ -403,8 +405,6 @@ def test_anthropic_captures_tool_use_blocks(exporter: InMemoryExporter) -> None:
     wrapper(None, model="claude-sonnet-4-6-20250514", messages=[], max_tokens=100)
 
     span = exporter.spans[0]
-    import json
-
     tool_calls = json.loads(span.attributes["llm.tool_calls"])
     assert len(tool_calls) == 1
     assert tool_calls[0]["name"] == "get_weather"
