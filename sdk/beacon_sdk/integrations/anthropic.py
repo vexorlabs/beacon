@@ -76,6 +76,210 @@ def _apply_response_attributes(span: Any, response: Any, model: str) -> None:
         span.set_attribute("llm.model", response.model)
 
 
+class AnthropicStreamWrapper:
+    """Wraps an Anthropic MessageStream to intercept events and finalize the span."""
+
+    def __init__(
+        self,
+        stream: Any,
+        span: Any,
+        token: Any,
+        tracer: Any,
+        model: str,
+    ) -> None:
+        self._stream = stream
+        self._span = span
+        self._token = token
+        self._tracer = tracer
+        self._model = model
+        self._text_chunks: list[str] = []
+        self._input_tokens: int = 0
+        self._output_tokens: int = 0
+        self._finish_reason: str | None = None
+        self._finalized = False
+
+    def __iter__(self) -> AnthropicStreamWrapper:
+        return self
+
+    def __next__(self) -> Any:
+        try:
+            event = next(self._stream)
+            self._process_event(event)
+            return event
+        except StopIteration:
+            self._finalize(status=SpanStatus.OK)
+            raise
+        except Exception as exc:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc))
+            raise
+
+    def __enter__(self) -> AnthropicStreamWrapper:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if exc_type is not None:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc_val))
+        else:
+            self._finalize(status=SpanStatus.OK)
+        if hasattr(self._stream, "close"):
+            self._stream.close()
+
+    def __del__(self) -> None:
+        self._finalize(status=SpanStatus.OK)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
+
+    def _process_event(self, event: Any) -> None:
+        event_type = getattr(event, "type", None)
+
+        if event_type == "message_start":
+            message = getattr(event, "message", None)
+            if message is not None and hasattr(message, "usage"):
+                self._input_tokens = getattr(message.usage, "input_tokens", 0) or 0
+
+        elif event_type == "content_block_delta":
+            delta = getattr(event, "delta", None)
+            if delta is not None and hasattr(delta, "text"):
+                self._text_chunks.append(delta.text)
+
+        elif event_type == "message_delta":
+            delta = getattr(event, "delta", None)
+            if delta is not None and hasattr(delta, "stop_reason"):
+                self._finish_reason = delta.stop_reason
+            usage = getattr(event, "usage", None)
+            if usage is not None and hasattr(usage, "output_tokens"):
+                self._output_tokens = getattr(usage, "output_tokens", 0) or 0
+
+    def _finalize(
+        self,
+        status: SpanStatus = SpanStatus.OK,
+        error_message: str | None = None,
+    ) -> None:
+        if self._finalized:
+            return
+        self._finalized = True
+
+        self._span.set_attribute("llm.completion", "".join(self._text_chunks))
+        if self._finish_reason:
+            self._span.set_attribute("llm.finish_reason", self._finish_reason)
+
+        total_tokens = self._input_tokens + self._output_tokens
+        self._span.set_attribute("llm.tokens.input", self._input_tokens)
+        self._span.set_attribute("llm.tokens.output", self._output_tokens)
+        self._span.set_attribute("llm.tokens.total", total_tokens)
+        self._span.set_attribute(
+            "llm.cost_usd",
+            _estimate_cost(self._model, self._input_tokens, self._output_tokens),
+        )
+
+        self._tracer.end_span(
+            self._span, self._token, status=status, error_message=error_message
+        )
+
+
+class AnthropicAsyncStreamWrapper:
+    """Wraps an Anthropic AsyncMessageStream to intercept events and finalize the span."""
+
+    def __init__(
+        self,
+        stream: Any,
+        span: Any,
+        token: Any,
+        tracer: Any,
+        model: str,
+    ) -> None:
+        self._stream = stream
+        self._span = span
+        self._token = token
+        self._tracer = tracer
+        self._model = model
+        self._text_chunks: list[str] = []
+        self._input_tokens: int = 0
+        self._output_tokens: int = 0
+        self._finish_reason: str | None = None
+        self._finalized = False
+
+    def __aiter__(self) -> AnthropicAsyncStreamWrapper:
+        return self
+
+    async def __anext__(self) -> Any:
+        try:
+            event = await self._stream.__anext__()
+            self._process_event(event)
+            return event
+        except StopAsyncIteration:
+            self._finalize(status=SpanStatus.OK)
+            raise
+        except Exception as exc:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc))
+            raise
+
+    async def __aenter__(self) -> AnthropicAsyncStreamWrapper:
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if exc_type is not None:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc_val))
+        else:
+            self._finalize(status=SpanStatus.OK)
+        if hasattr(self._stream, "close"):
+            await self._stream.close()
+
+    def __del__(self) -> None:
+        self._finalize(status=SpanStatus.OK)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
+
+    def _process_event(self, event: Any) -> None:
+        event_type = getattr(event, "type", None)
+
+        if event_type == "message_start":
+            message = getattr(event, "message", None)
+            if message is not None and hasattr(message, "usage"):
+                self._input_tokens = getattr(message.usage, "input_tokens", 0) or 0
+
+        elif event_type == "content_block_delta":
+            delta = getattr(event, "delta", None)
+            if delta is not None and hasattr(delta, "text"):
+                self._text_chunks.append(delta.text)
+
+        elif event_type == "message_delta":
+            delta = getattr(event, "delta", None)
+            if delta is not None and hasattr(delta, "stop_reason"):
+                self._finish_reason = delta.stop_reason
+            usage = getattr(event, "usage", None)
+            if usage is not None and hasattr(usage, "output_tokens"):
+                self._output_tokens = getattr(usage, "output_tokens", 0) or 0
+
+    def _finalize(
+        self,
+        status: SpanStatus = SpanStatus.OK,
+        error_message: str | None = None,
+    ) -> None:
+        if self._finalized:
+            return
+        self._finalized = True
+
+        self._span.set_attribute("llm.completion", "".join(self._text_chunks))
+        if self._finish_reason:
+            self._span.set_attribute("llm.finish_reason", self._finish_reason)
+
+        total_tokens = self._input_tokens + self._output_tokens
+        self._span.set_attribute("llm.tokens.input", self._input_tokens)
+        self._span.set_attribute("llm.tokens.output", self._output_tokens)
+        self._span.set_attribute("llm.tokens.total", total_tokens)
+        self._span.set_attribute(
+            "llm.cost_usd",
+            _estimate_cost(self._model, self._input_tokens, self._output_tokens),
+        )
+
+        self._tracer.end_span(
+            self._span, self._token, status=status, error_message=error_message
+        )
+
+
 def _patched_create_fn(original: Any) -> Any:
     """Create a sync wrapper around the original create method."""
 
@@ -83,10 +287,10 @@ def _patched_create_fn(original: Any) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
-        if tracer is None or kwargs.get("stream"):
-            # TODO: streaming support
+        if tracer is None:
             return original(self, *args, **kwargs)
 
+        is_stream = kwargs.get("stream", False)
         model = kwargs.get("model", "unknown")
         span, token = tracer.start_span(
             name="anthropic.messages.create",
@@ -104,6 +308,8 @@ def _patched_create_fn(original: Any) -> Any:
 
         try:
             response = original(self, *args, **kwargs)
+            if is_stream:
+                return AnthropicStreamWrapper(response, span, token, tracer, model)
             _apply_response_attributes(span, response, model)
             tracer.end_span(span, token, status=SpanStatus.OK)
             return response
@@ -123,10 +329,10 @@ def _patched_async_create_fn(original: Any) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
-        if tracer is None or kwargs.get("stream"):
-            # TODO: streaming support
+        if tracer is None:
             return await original(self, *args, **kwargs)
 
+        is_stream = kwargs.get("stream", False)
         model = kwargs.get("model", "unknown")
         span, token = tracer.start_span(
             name="anthropic.messages.create",
@@ -144,6 +350,10 @@ def _patched_async_create_fn(original: Any) -> Any:
 
         try:
             response = await original(self, *args, **kwargs)
+            if is_stream:
+                return AnthropicAsyncStreamWrapper(
+                    response, span, token, tracer, model
+                )
             _apply_response_attributes(span, response, model)
             tracer.end_span(span, token, status=SpanStatus.OK)
             return response

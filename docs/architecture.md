@@ -66,7 +66,7 @@ This document describes Beacon's system architecture. It is the authoritative re
 
 **Key responsibilities:**
 - Provide `@observe` decorator for manual instrumentation
-- Monkey-patch `openai`, `anthropic`, `playwright`, `subprocess`, `os.open` at import time
+- Monkey-patch `openai`, `anthropic`, `playwright`, `subprocess`, `os.open` at import time (handles both streaming and non-streaming calls)
 - Provide `BeaconCallbackHandler` for LangChain auto-instrumentation
 - Manage trace context (trace ID, parent span ID) across async boundaries
 - Batch and export spans to the backend HTTP endpoint

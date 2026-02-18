@@ -9,6 +9,7 @@ import pytest
 
 import beacon_sdk
 from beacon_sdk.integrations.anthropic import (
+    AnthropicStreamWrapper,
     _estimate_cost,
     _patched_create_fn,
 )
@@ -42,20 +43,107 @@ def _make_mock_response(
     )
 
 
+def _make_anthropic_events(
+    text_chunks: list[str],
+    input_tokens: int = 25,
+    output_tokens: int = 10,
+    stop_reason: str = "end_turn",
+) -> list[SimpleNamespace]:
+    """Build a full Anthropic streaming event sequence."""
+    events: list[SimpleNamespace] = [
+        SimpleNamespace(
+            type="message_start",
+            message=SimpleNamespace(
+                usage=SimpleNamespace(input_tokens=input_tokens),
+            ),
+        ),
+        SimpleNamespace(type="content_block_start", index=0),
+    ]
+    for text in text_chunks:
+        events.append(
+            SimpleNamespace(
+                type="content_block_delta",
+                delta=SimpleNamespace(type="text_delta", text=text),
+            )
+        )
+    events.append(SimpleNamespace(type="content_block_stop", index=0))
+    events.append(
+        SimpleNamespace(
+            type="message_delta",
+            delta=SimpleNamespace(stop_reason=stop_reason),
+            usage=SimpleNamespace(output_tokens=output_tokens),
+        )
+    )
+    events.append(SimpleNamespace(type="message_stop"))
+    return events
+
+
+class MockAnthropicStream:
+    """Mock Anthropic stream that yields events."""
+
+    def __init__(self, events: list[SimpleNamespace]) -> None:
+        self._events = iter(events)
+
+    def __iter__(self) -> MockAnthropicStream:
+        return self
+
+    def __next__(self) -> SimpleNamespace:
+        return next(self._events)
+
+    def __enter__(self) -> MockAnthropicStream:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        pass
+
+
+class MockErrorAnthropicStream:
+    """Mock stream that raises an error after yielding some events."""
+
+    def __init__(
+        self, events: list[SimpleNamespace], error: Exception
+    ) -> None:
+        self._events = iter(events)
+        self._error = error
+
+    def __iter__(self) -> MockErrorAnthropicStream:
+        return self
+
+    def __next__(self) -> SimpleNamespace:
+        try:
+            return next(self._events)
+        except StopIteration:
+            raise self._error from None
+
+    def __enter__(self) -> MockErrorAnthropicStream:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        pass
+
+
 def _make_fake_original(
     response: SimpleNamespace | None = None,
     error: Exception | None = None,
+    stream: MockAnthropicStream | MockErrorAnthropicStream | None = None,
 ) -> Any:
     """Create a fake original create function."""
 
-    def fake_create(self: Any, **kwargs: Any) -> SimpleNamespace:
+    def fake_create(self: Any, **kwargs: Any) -> Any:
         if error is not None:
             raise error
+        if kwargs.get("stream"):
+            if stream is not None:
+                return stream
+            return MockAnthropicStream([])
         return response or _make_mock_response(
             model=kwargs.get("model", "claude-sonnet-4-6-20250514")
         )
 
     return fake_create
+
+
+# --- Non-streaming tests ---
 
 
 def test_anthropic_creates_llm_call_span(exporter: InMemoryExporter) -> None:
@@ -139,11 +227,159 @@ def test_anthropic_records_finish_reason(exporter: InMemoryExporter) -> None:
     assert span.attributes["llm.finish_reason"] == "end_turn"
 
 
-def test_anthropic_skips_stream(exporter: InMemoryExporter) -> None:
-    wrapper = _patched_create_fn(_make_fake_original())
-    wrapper(None, model="claude-sonnet-4-6-20250514", messages=[], stream=True)
+# --- Streaming tests ---
 
-    assert len(exporter.spans) == 0
+
+def test_anthropic_stream_creates_span(exporter: InMemoryExporter) -> None:
+    events = _make_anthropic_events(["Hello", " world", "!"])
+    mock_stream = MockAnthropicStream(events)
+    wrapper = _patched_create_fn(_make_fake_original(stream=mock_stream))
+
+    result = wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+    assert isinstance(result, AnthropicStreamWrapper)
+
+    collected = list(result)
+    assert len(collected) == len(events)
+
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.span_type == SpanType.LLM_CALL
+    assert span.name == "anthropic.messages.create"
+    assert span.status == SpanStatus.OK
+    assert span.attributes["llm.completion"] == "Hello world!"
+
+
+def test_anthropic_stream_captures_tokens(exporter: InMemoryExporter) -> None:
+    events = _make_anthropic_events(
+        ["Hi"], input_tokens=25, output_tokens=10
+    )
+    mock_stream = MockAnthropicStream(events)
+    wrapper = _patched_create_fn(_make_fake_original(stream=mock_stream))
+
+    result = wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+    list(result)
+
+    span = exporter.spans[0]
+    assert span.attributes["llm.tokens.input"] == 25
+    assert span.attributes["llm.tokens.output"] == 10
+    assert span.attributes["llm.tokens.total"] == 35
+    expected_cost = _estimate_cost("claude-sonnet-4-6-20250514", 25, 10)
+    assert span.attributes["llm.cost_usd"] == expected_cost
+    assert expected_cost > 0
+
+
+def test_anthropic_stream_captures_finish_reason(
+    exporter: InMemoryExporter,
+) -> None:
+    events = _make_anthropic_events(["Hi"], stop_reason="end_turn")
+    mock_stream = MockAnthropicStream(events)
+    wrapper = _patched_create_fn(_make_fake_original(stream=mock_stream))
+
+    result = wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+    list(result)
+
+    span = exporter.spans[0]
+    assert span.attributes["llm.finish_reason"] == "end_turn"
+
+
+def test_anthropic_stream_error_midstream(exporter: InMemoryExporter) -> None:
+    partial_events = [
+        SimpleNamespace(
+            type="message_start",
+            message=SimpleNamespace(
+                usage=SimpleNamespace(input_tokens=10),
+            ),
+        ),
+        SimpleNamespace(
+            type="content_block_delta",
+            delta=SimpleNamespace(type="text_delta", text="partial"),
+        ),
+    ]
+    error_stream = MockErrorAnthropicStream(
+        partial_events, RuntimeError("Stream interrupted")
+    )
+    wrapper = _patched_create_fn(_make_fake_original(stream=error_stream))
+
+    result = wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+
+    collected: list[SimpleNamespace] = []
+    with pytest.raises(RuntimeError, match="Stream interrupted"):
+        for event in result:
+            collected.append(event)
+
+    assert len(collected) == 2
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.status == SpanStatus.ERROR
+    assert span.error_message == "Stream interrupted"
+    assert span.attributes["llm.completion"] == "partial"
+
+
+def test_anthropic_stream_context_manager(exporter: InMemoryExporter) -> None:
+    events = _make_anthropic_events(["one", "two", "three"])
+    mock_stream = MockAnthropicStream(events)
+    wrapper = _patched_create_fn(_make_fake_original(stream=mock_stream))
+
+    result = wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+    with result:
+        first = next(result)
+        assert first.type == "message_start"
+
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.status == SpanStatus.OK
+
+
+def test_anthropic_stream_records_prompt_and_model(
+    exporter: InMemoryExporter,
+) -> None:
+    events = _make_anthropic_events(["Hi"])
+    mock_stream = MockAnthropicStream(events)
+    wrapper = _patched_create_fn(_make_fake_original(stream=mock_stream))
+
+    result = wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[{"role": "user", "content": "test"}],
+        max_tokens=100,
+        stream=True,
+    )
+    list(result)
+
+    span = exporter.spans[0]
+    assert span.attributes["llm.provider"] == "anthropic"
+    assert span.attributes["llm.model"] == "claude-sonnet-4-6-20250514"
+    assert '"role": "user"' in span.attributes["llm.prompt"]
 
 
 def test_anthropic_cost_estimation() -> None:

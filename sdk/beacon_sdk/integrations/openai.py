@@ -59,6 +59,196 @@ def _apply_response_attributes(span: Any, response: Any, model: str) -> None:
         span.set_attribute("llm.model", response.model)
 
 
+class OpenAIStreamWrapper:
+    """Wraps an OpenAI Stream to intercept chunks and finalize the span."""
+
+    def __init__(
+        self,
+        stream: Any,
+        span: Any,
+        token: Any,
+        tracer: Any,
+        model: str,
+    ) -> None:
+        self._stream = stream
+        self._span = span
+        self._token = token
+        self._tracer = tracer
+        self._model = model
+        self._chunks: list[str] = []
+        self._finish_reason: str | None = None
+        self._usage: Any = None
+        self._finalized = False
+
+    def __iter__(self) -> OpenAIStreamWrapper:
+        return self
+
+    def __next__(self) -> Any:
+        try:
+            chunk = next(self._stream)
+            self._process_chunk(chunk)
+            return chunk
+        except StopIteration:
+            self._finalize(status=SpanStatus.OK)
+            raise
+        except Exception as exc:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc))
+            raise
+
+    def __enter__(self) -> OpenAIStreamWrapper:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if exc_type is not None:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc_val))
+        else:
+            self._finalize(status=SpanStatus.OK)
+        if hasattr(self._stream, "close"):
+            self._stream.close()
+
+    def __del__(self) -> None:
+        self._finalize(status=SpanStatus.OK)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
+
+    def _process_chunk(self, chunk: Any) -> None:
+        if hasattr(chunk, "choices") and chunk.choices:
+            choice = chunk.choices[0]
+            delta = getattr(choice, "delta", None)
+            if delta is not None and hasattr(delta, "content") and delta.content is not None:
+                self._chunks.append(delta.content)
+            finish_reason = getattr(choice, "finish_reason", None)
+            if finish_reason is not None:
+                self._finish_reason = finish_reason
+        if hasattr(chunk, "usage") and chunk.usage is not None:
+            self._usage = chunk.usage
+
+    def _finalize(
+        self,
+        status: SpanStatus = SpanStatus.OK,
+        error_message: str | None = None,
+    ) -> None:
+        if self._finalized:
+            return
+        self._finalized = True
+
+        self._span.set_attribute("llm.completion", "".join(self._chunks))
+        if self._finish_reason:
+            self._span.set_attribute("llm.finish_reason", self._finish_reason)
+
+        if self._usage is not None:
+            input_tokens = getattr(self._usage, "prompt_tokens", 0) or 0
+            output_tokens = getattr(self._usage, "completion_tokens", 0) or 0
+            total_tokens = getattr(self._usage, "total_tokens", 0) or 0
+            self._span.set_attribute("llm.tokens.input", input_tokens)
+            self._span.set_attribute("llm.tokens.output", output_tokens)
+            self._span.set_attribute("llm.tokens.total", total_tokens)
+            self._span.set_attribute(
+                "llm.cost_usd",
+                _estimate_cost(self._model, input_tokens, output_tokens),
+            )
+
+        self._tracer.end_span(
+            self._span, self._token, status=status, error_message=error_message
+        )
+
+
+class OpenAIAsyncStreamWrapper:
+    """Wraps an OpenAI AsyncStream to intercept chunks and finalize the span."""
+
+    def __init__(
+        self,
+        stream: Any,
+        span: Any,
+        token: Any,
+        tracer: Any,
+        model: str,
+    ) -> None:
+        self._stream = stream
+        self._span = span
+        self._token = token
+        self._tracer = tracer
+        self._model = model
+        self._chunks: list[str] = []
+        self._finish_reason: str | None = None
+        self._usage: Any = None
+        self._finalized = False
+
+    def __aiter__(self) -> OpenAIAsyncStreamWrapper:
+        return self
+
+    async def __anext__(self) -> Any:
+        try:
+            chunk = await self._stream.__anext__()
+            self._process_chunk(chunk)
+            return chunk
+        except StopAsyncIteration:
+            self._finalize(status=SpanStatus.OK)
+            raise
+        except Exception as exc:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc))
+            raise
+
+    async def __aenter__(self) -> OpenAIAsyncStreamWrapper:
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if exc_type is not None:
+            self._finalize(status=SpanStatus.ERROR, error_message=str(exc_val))
+        else:
+            self._finalize(status=SpanStatus.OK)
+        if hasattr(self._stream, "close"):
+            await self._stream.close()
+
+    def __del__(self) -> None:
+        self._finalize(status=SpanStatus.OK)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
+
+    def _process_chunk(self, chunk: Any) -> None:
+        if hasattr(chunk, "choices") and chunk.choices:
+            choice = chunk.choices[0]
+            delta = getattr(choice, "delta", None)
+            if delta is not None and hasattr(delta, "content") and delta.content is not None:
+                self._chunks.append(delta.content)
+            finish_reason = getattr(choice, "finish_reason", None)
+            if finish_reason is not None:
+                self._finish_reason = finish_reason
+        if hasattr(chunk, "usage") and chunk.usage is not None:
+            self._usage = chunk.usage
+
+    def _finalize(
+        self,
+        status: SpanStatus = SpanStatus.OK,
+        error_message: str | None = None,
+    ) -> None:
+        if self._finalized:
+            return
+        self._finalized = True
+
+        self._span.set_attribute("llm.completion", "".join(self._chunks))
+        if self._finish_reason:
+            self._span.set_attribute("llm.finish_reason", self._finish_reason)
+
+        if self._usage is not None:
+            input_tokens = getattr(self._usage, "prompt_tokens", 0) or 0
+            output_tokens = getattr(self._usage, "completion_tokens", 0) or 0
+            total_tokens = getattr(self._usage, "total_tokens", 0) or 0
+            self._span.set_attribute("llm.tokens.input", input_tokens)
+            self._span.set_attribute("llm.tokens.output", output_tokens)
+            self._span.set_attribute("llm.tokens.total", total_tokens)
+            self._span.set_attribute(
+                "llm.cost_usd",
+                _estimate_cost(self._model, input_tokens, output_tokens),
+            )
+
+        self._tracer.end_span(
+            self._span, self._token, status=status, error_message=error_message
+        )
+
+
 def _patched_create_fn(original: Any) -> Any:
     """Create a sync wrapper around the original create method."""
 
@@ -66,10 +256,10 @@ def _patched_create_fn(original: Any) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
-        if tracer is None or kwargs.get("stream"):
-            # TODO: streaming support
+        if tracer is None:
             return original(self, *args, **kwargs)
 
+        is_stream = kwargs.get("stream", False)
         model = kwargs.get("model", "unknown")
         span, token = tracer.start_span(
             name="openai.chat.completions",
@@ -89,6 +279,8 @@ def _patched_create_fn(original: Any) -> Any:
 
         try:
             response = original(self, *args, **kwargs)
+            if is_stream:
+                return OpenAIStreamWrapper(response, span, token, tracer, model)
             _apply_response_attributes(span, response, model)
             tracer.end_span(span, token, status=SpanStatus.OK)
             return response
@@ -108,10 +300,10 @@ def _patched_async_create_fn(original: Any) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
-        if tracer is None or kwargs.get("stream"):
-            # TODO: streaming support
+        if tracer is None:
             return await original(self, *args, **kwargs)
 
+        is_stream = kwargs.get("stream", False)
         model = kwargs.get("model", "unknown")
         span, token = tracer.start_span(
             name="openai.chat.completions",
@@ -131,6 +323,8 @@ def _patched_async_create_fn(original: Any) -> Any:
 
         try:
             response = await original(self, *args, **kwargs)
+            if is_stream:
+                return OpenAIAsyncStreamWrapper(response, span, token, tracer, model)
             _apply_response_attributes(span, response, model)
             tracer.end_span(span, token, status=SpanStatus.OK)
             return response
