@@ -9,6 +9,10 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- fix(sdk): LangChain `BeaconCallbackHandler` — update to `(span, token)` tuple API from `tracer.start_span()`, fix `end_span()` signature, add `tool.framework` and `llm.finish_reason` attributes, remove hard `langchain_core` import dependency
+- test(sdk): 19 new tests for LangChain callback handler covering chain/llm/tool/agent lifecycle, parent-child nesting, and error handling
+
 ### Added
 - feat(sdk): tool calls capture — serialize OpenAI `tool_calls` and Anthropic `tool_use` blocks into `llm.tool_calls` span attribute; render in frontend LLM detail panel
 - feat(sdk): Streaming support for OpenAI and Anthropic integrations — `OpenAIStreamWrapper`, `OpenAIAsyncStreamWrapper`, `AnthropicStreamWrapper`, `AnthropicAsyncStreamWrapper` intercept streaming chunks/events to create LLM spans with accumulated completion text, token usage, cost estimation, and finish reason

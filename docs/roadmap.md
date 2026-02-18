@@ -205,10 +205,10 @@ New developer opens `localhost:5173` → sees a welcoming Dashboard → can navi
 - [x] Add tests for tool_calls capture in both `sdk/tests/test_integrations_openai.py` and `sdk/tests/test_integrations_anthropic.py`
 
 **SDK: Fix LangChain Integration**
-- [ ] In `sdk/beacon_sdk/integrations/langchain.py`, update `BeaconCallbackHandler` to use the `(span, token)` tuple return from `tracer.start_span()` instead of the old single-span return API
-- [ ] Update all `on_*_end` and `on_*_error` methods to use the `end_span(span, token, ...)` signature
-- [ ] Store `(span, token)` tuples in the `_run_to_span` dict instead of just span_id strings
-- [ ] Add `sdk/tests/test_integrations_langchain.py` with mock LangChain runs testing the full callback lifecycle
+- [x] In `sdk/beacon_sdk/integrations/langchain.py`, update `BeaconCallbackHandler` to use the `(span, token)` tuple return from `tracer.start_span()` instead of the old single-span return API
+- [x] Update all `on_*_end` and `on_*_error` methods to use the `end_span(span, token, ...)` signature
+- [x] Store `(span, token)` tuples in the `_run_to_span` dict instead of just span_id strings
+- [x] Add `sdk/tests/test_integrations_langchain.py` with mock LangChain runs testing the full callback lifecycle
 
 **SDK: Async Batch Exporter**
 - [ ] In `sdk/beacon_sdk/exporters.py`, create `AsyncBatchExporter` class: thread-safe queue, background daemon thread that flushes every N ms or when batch_size is reached, uses `requests` in the background thread to avoid blocking the caller's event loop
