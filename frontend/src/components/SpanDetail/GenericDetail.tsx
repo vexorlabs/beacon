@@ -58,7 +58,7 @@ export default function GenericDetail({ span }: GenericDetailProps) {
     <div className="space-y-4">
       {groups.map((group) => (
         <div key={group.label}>
-          <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2 capitalize">
+          <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
             {group.label}
           </h4>
           <div className="space-y-1">
