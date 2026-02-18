@@ -14,35 +14,37 @@ from __future__ import annotations
 
 import json
 import logging
+from contextvars import Token
 from typing import Any
 from uuid import UUID
 
-from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.outputs import LLMResult
-
 from beacon_sdk import get_tracer
+from beacon_sdk.context import TraceContext
+from beacon_sdk.models import Span, SpanStatus, SpanType
+
+try:
+    from langchain_core.callbacks import BaseCallbackHandler
+except ImportError:
+
+    class BaseCallbackHandler:  # type: ignore[no-redef]
+        """Stub for when langchain_core is not installed."""
 
 logger = logging.getLogger(__name__)
 
 
-class BeaconCallbackHandler(BaseCallbackHandler):
+class BeaconCallbackHandler(BaseCallbackHandler):  # type: ignore[misc]
     """LangChain callback handler that creates Beacon spans for each event.
 
-    Maps LangChain's run_id/parent_run_id to Beacon span_id/parent_span_id,
-    maintaining proper parent-child relationships in the trace graph.
+    Parent-child relationships are maintained automatically via the tracer's
+    context system — LangChain fires callbacks in nested order, so the
+    contextvars-based span nesting works correctly.
     """
 
     def __init__(self) -> None:
         super().__init__()
         self._tracer = get_tracer()
-        # Maps LangChain run_id -> beacon span_id
-        self._run_to_span: dict[str, str] = {}
-
-    def _get_parent_span_id(self, parent_run_id: UUID | None) -> str | None:
-        if parent_run_id is None:
-            return None
-        return self._run_to_span.get(str(parent_run_id))
+        # Maps LangChain run_id (str) -> (Span, context Token)
+        self._run_to_span: dict[str, tuple[Span, Token[TraceContext | None]]] = {}
 
     # --- Chain callbacks ---
 
@@ -57,17 +59,15 @@ class BeaconCallbackHandler(BaseCallbackHandler):
     ) -> None:
         try:
             name = serialized.get("name") or serialized.get("id", ["chain"])[-1]
-            parent_span_id = self._get_parent_span_id(parent_run_id)
-            span = self._tracer.start_span(
+            span, token = self._tracer.start_span(
                 name=str(name),
-                span_type="chain",
-                parent_span_id=parent_span_id,
+                span_type=SpanType.CHAIN,
                 attributes={
                     "chain.type": str(name),
                     "chain.input": json.dumps(inputs, default=str)[:50000],
                 },
             )
-            self._run_to_span[str(run_id)] = span.span_id
+            self._run_to_span[str(run_id)] = (span, token)
         except Exception:
             logger.debug(
                 "BeaconCallbackHandler: error in on_chain_start", exc_info=True
@@ -81,15 +81,13 @@ class BeaconCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         try:
-            span_id = self._run_to_span.pop(str(run_id), None)
-            if span_id:
-                self._tracer.end_span(
-                    span_id=span_id,
-                    status="ok",
-                    attributes={
-                        "chain.output": json.dumps(outputs, default=str)[:50000],
-                    },
+            entry = self._run_to_span.pop(str(run_id), None)
+            if entry is not None:
+                span, token = entry
+                span.set_attribute(
+                    "chain.output", json.dumps(outputs, default=str)[:50000]
                 )
+                self._tracer.end_span(span, token, status=SpanStatus.OK)
         except Exception:
             logger.debug("BeaconCallbackHandler: error in on_chain_end", exc_info=True)
 
@@ -101,12 +99,11 @@ class BeaconCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         try:
-            span_id = self._run_to_span.pop(str(run_id), None)
-            if span_id:
+            entry = self._run_to_span.pop(str(run_id), None)
+            if entry is not None:
+                span, token = entry
                 self._tracer.end_span(
-                    span_id=span_id,
-                    status="error",
-                    error_message=str(error),
+                    span, token, status=SpanStatus.ERROR, error_message=str(error)
                 )
         except Exception:
             logger.debug(
@@ -129,11 +126,9 @@ class BeaconCallbackHandler(BaseCallbackHandler):
             model = invocation_params.get("model_name") or invocation_params.get(
                 "model", serialized.get("name", "unknown")
             )
-            parent_span_id = self._get_parent_span_id(parent_run_id)
-            span = self._tracer.start_span(
+            span, token = self._tracer.start_span(
                 name=str(model),
-                span_type="llm_call",
-                parent_span_id=parent_span_id,
+                span_type=SpanType.LLM_CALL,
                 attributes={
                     "llm.provider": (
                         serialized.get("id", ["unknown"])[0]
@@ -144,42 +139,54 @@ class BeaconCallbackHandler(BaseCallbackHandler):
                     "llm.prompt": json.dumps(prompts, default=str)[:50000],
                 },
             )
-            self._run_to_span[str(run_id)] = span.span_id
+            self._run_to_span[str(run_id)] = (span, token)
         except Exception:
             logger.debug("BeaconCallbackHandler: error in on_llm_start", exc_info=True)
 
     def on_llm_end(
         self,
-        response: LLMResult,
+        response: Any,
         *,
         run_id: UUID,
         **kwargs: Any,
     ) -> None:
         try:
-            span_id = self._run_to_span.pop(str(run_id), None)
-            if not span_id:
+            entry = self._run_to_span.pop(str(run_id), None)
+            if entry is None:
                 return
 
-            attrs: dict[str, Any] = {}
+            span, token = entry
 
             # Extract completion text
-            if response.generations and response.generations[0]:
+            if (
+                hasattr(response, "generations")
+                and response.generations
+                and response.generations[0]
+            ):
                 gen = response.generations[0][0]
-                attrs["llm.completion"] = gen.text[:50000]
+                span.set_attribute("llm.completion", gen.text[:50000])
+
+                # Extract finish reason from generation_info
+                generation_info = getattr(gen, "generation_info", None) or {}
+                finish_reason = generation_info.get("finish_reason")
+                if finish_reason:
+                    span.set_attribute("llm.finish_reason", finish_reason)
 
             # Extract token usage
-            llm_output = response.llm_output or {}
+            llm_output = getattr(response, "llm_output", None) or {}
             token_usage = llm_output.get("token_usage", {})
             if token_usage:
-                attrs["llm.tokens.input"] = token_usage.get("prompt_tokens", 0)
-                attrs["llm.tokens.output"] = token_usage.get("completion_tokens", 0)
-                attrs["llm.tokens.total"] = token_usage.get("total_tokens", 0)
+                span.set_attribute(
+                    "llm.tokens.input", token_usage.get("prompt_tokens", 0)
+                )
+                span.set_attribute(
+                    "llm.tokens.output", token_usage.get("completion_tokens", 0)
+                )
+                span.set_attribute(
+                    "llm.tokens.total", token_usage.get("total_tokens", 0)
+                )
 
-            self._tracer.end_span(
-                span_id=span_id,
-                status="ok",
-                attributes=attrs,
-            )
+            self._tracer.end_span(span, token, status=SpanStatus.OK)
         except Exception:
             logger.debug("BeaconCallbackHandler: error in on_llm_end", exc_info=True)
 
@@ -191,12 +198,11 @@ class BeaconCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         try:
-            span_id = self._run_to_span.pop(str(run_id), None)
-            if span_id:
+            entry = self._run_to_span.pop(str(run_id), None)
+            if entry is not None:
+                span, token = entry
                 self._tracer.end_span(
-                    span_id=span_id,
-                    status="error",
-                    error_message=str(error),
+                    span, token, status=SpanStatus.ERROR, error_message=str(error)
                 )
         except Exception:
             logger.debug("BeaconCallbackHandler: error in on_llm_error", exc_info=True)
@@ -214,17 +220,16 @@ class BeaconCallbackHandler(BaseCallbackHandler):
     ) -> None:
         try:
             tool_name = serialized.get("name", "unknown_tool")
-            parent_span_id = self._get_parent_span_id(parent_run_id)
-            span = self._tracer.start_span(
+            span, token = self._tracer.start_span(
                 name=str(tool_name),
-                span_type="tool_use",
-                parent_span_id=parent_span_id,
+                span_type=SpanType.TOOL_USE,
                 attributes={
                     "tool.name": str(tool_name),
                     "tool.input": input_str[:50000],
+                    "tool.framework": "langchain",
                 },
             )
-            self._run_to_span[str(run_id)] = span.span_id
+            self._run_to_span[str(run_id)] = (span, token)
         except Exception:
             logger.debug("BeaconCallbackHandler: error in on_tool_start", exc_info=True)
 
@@ -236,13 +241,11 @@ class BeaconCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         try:
-            span_id = self._run_to_span.pop(str(run_id), None)
-            if span_id:
-                self._tracer.end_span(
-                    span_id=span_id,
-                    status="ok",
-                    attributes={"tool.output": str(output)[:50000]},
-                )
+            entry = self._run_to_span.pop(str(run_id), None)
+            if entry is not None:
+                span, token = entry
+                span.set_attribute("tool.output", str(output)[:50000])
+                self._tracer.end_span(span, token, status=SpanStatus.OK)
         except Exception:
             logger.debug("BeaconCallbackHandler: error in on_tool_end", exc_info=True)
 
@@ -254,12 +257,11 @@ class BeaconCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         try:
-            span_id = self._run_to_span.pop(str(run_id), None)
-            if span_id:
+            entry = self._run_to_span.pop(str(run_id), None)
+            if entry is not None:
+                span, token = entry
                 self._tracer.end_span(
-                    span_id=span_id,
-                    status="error",
-                    error_message=str(error),
+                    span, token, status=SpanStatus.ERROR, error_message=str(error)
                 )
         except Exception:
             logger.debug("BeaconCallbackHandler: error in on_tool_error", exc_info=True)
@@ -268,18 +270,16 @@ class BeaconCallbackHandler(BaseCallbackHandler):
 
     def on_agent_action(
         self,
-        action: AgentAction,
+        action: Any,
         *,
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
         try:
-            parent_span_id = self._get_parent_span_id(parent_run_id)
-            span = self._tracer.start_span(
+            span, token = self._tracer.start_span(
                 name=f"Action: {action.tool}",
-                span_type="agent_step",
-                parent_span_id=parent_span_id,
+                span_type=SpanType.AGENT_STEP,
                 attributes={
                     "agent.framework": "langchain",
                     "agent.step_name": action.tool,
@@ -287,7 +287,7 @@ class BeaconCallbackHandler(BaseCallbackHandler):
                     "agent.thought": action.log[:50000] if action.log else "",
                 },
             )
-            self._run_to_span[str(run_id)] = span.span_id
+            self._run_to_span[str(run_id)] = (span, token)
         except Exception:
             logger.debug(
                 "BeaconCallbackHandler: error in on_agent_action", exc_info=True
@@ -295,23 +295,20 @@ class BeaconCallbackHandler(BaseCallbackHandler):
 
     def on_agent_finish(
         self,
-        finish: AgentFinish,
+        finish: Any,
         *,
         run_id: UUID,
         **kwargs: Any,
     ) -> None:
         try:
-            span_id = self._run_to_span.pop(str(run_id), None)
-            if span_id:
-                self._tracer.end_span(
-                    span_id=span_id,
-                    status="ok",
-                    attributes={
-                        "agent.output": json.dumps(finish.return_values, default=str)[
-                            :50000
-                        ],
-                    },
+            entry = self._run_to_span.pop(str(run_id), None)
+            if entry is not None:
+                span, token = entry
+                span.set_attribute(
+                    "agent.output",
+                    json.dumps(finish.return_values, default=str)[:50000],
                 )
+                self._tracer.end_span(span, token, status=SpanStatus.OK)
         except Exception:
             logger.debug(
                 "BeaconCallbackHandler: error in on_agent_finish", exc_info=True
