@@ -1,130 +1,119 @@
 # Beacon
 
-**The open-source debugger for AI agents.** Beacon gives you a unified, interactive view of your agent's entire execution — from LLM reasoning to browser clicks to file operations — so you can stop guessing and start debugging.
+**Beacon is an open-source, local-first debugger for AI agents.**
 
-> **Status:** Early development (Phase 5 complete — UI redesign). Under active development. Not yet ready for production use.
+Beacon gives you one unified trace for what your agent *thought* and what it *did*:
+- LLM calls (prompt, completion, tokens, cost)
+- tool calls
+- browser actions
+- file operations
+- shell commands
 
----
+You can inspect spans live, replay LLM calls with edited prompts, and step through runs with time-travel controls.
 
-## The Problem
-
-Debugging AI agents with existing tools means sifting through raw LLM logs and hoping you can piece together what went wrong. Tools like LangSmith show you LLM inputs and outputs but miss the crucial context of *what the agent actually did* — browser interactions, file writes, shell commands.
-
-You're left debugging by guesswork.
-
-## The Solution
-
-Beacon traces everything:
-
-- **LLM calls** — prompt, completion, tokens, cost
-- **Tool invocations** — input parameters, output, latency
-- **Browser actions** — clicks, navigations, keystrokes (via Playwright)
-- **File operations** — reads, writes, deletes
-- **Shell commands** — `subprocess` calls with stdout/stderr
-
-All of it appears as a single, interactive execution graph. Click any node to inspect the agent's state at that exact moment. Edit a prompt and replay just that step. Step forward and back through the execution timeline.
-
-**This is Chrome DevTools for AI agents.**
+> **Status:** Active development. Current codebase includes Dashboard, Traces debugger, Playground (chat + compare), Settings (API keys + trace data management), and demo agent scenarios.
 
 ---
 
-## Key Features
+## Why Beacon
 
-| Feature | Description |
-|---------|-------------|
-| **Unified Execution Graph** | Interactive React Flow graph showing the complete agent run — LLM calls, tool uses, and computer-use actions together |
-| **Time-Travel Debugging** | Step through your agent's execution. Inspect state at any point in time |
-| **Prompt Editor + Replay** | Edit any LLM prompt and replay that single step without re-running the whole agent |
-| **Real-Time Tracing** | Watch spans appear in the UI as your agent runs via WebSocket streaming |
-| **Framework-Agnostic SDK** | Works with LangChain, CrewAI, or any custom Python agent via `@observe` decorator |
-| **Local-First** | No cloud. No account. Runs entirely on your machine |
-| **Free & Open Source** | MIT license |
+Most agent tooling stops at LLM I/O. Beacon focuses on full execution debugging:
+- **Unified graph:** LLM + tools + computer-use spans in one DAG
+- **Replay:** edit prompt attributes and replay a single `llm_call`
+- **Time-travel:** scrub through execution order and inspect state
+- **Real-time updates:** WebSocket events stream new spans as they arrive
+- **Local-first:** SQLite + FastAPI + Vite on your machine
 
 ---
 
 ## Quick Start
 
 ```bash
-# Clone and start the platform
 git clone https://github.com/vexorlabs/beacon.git
 cd beacon
-make install          # Create venv, install all deps
-make dev              # Start backend (7474) + frontend (5173)
+make install
+make dev
 ```
 
-Open **http://localhost:5173** to see the UI.
+Open **http://localhost:5173**.
+
+Optional: generate sample traces (no external API keys required):
+
+```bash
+make demo
+```
+
+---
+
+## Instrument Your Agent
 
 ```python
-# Instrument your agent (one line)
+import beacon_sdk
 from beacon_sdk import observe
 
-@observe
-def run_agent(query: str):
-    # your agent code here
-    ...
+beacon_sdk.init()
+
+@observe(name="run_agent", span_type="agent_step")
+def run_agent(prompt: str) -> str:
+    # your agent code
+    return "done"
 ```
+
+Run your agent and inspect the trace in Beacon.
 
 ---
 
 ## Architecture
 
-Beacon has three components:
-
-```
-beacon-sdk (Python)   →   beacon-backend (FastAPI)   →   beacon-ui (React)
-   Captures spans          Stores + serves traces         Visualizes everything
+```text
+beacon-sdk (Python) -> beacon-backend (FastAPI + SQLite) -> beacon-ui (React + Vite)
 ```
 
-See [`docs/architecture.md`](docs/architecture.md) for the full system design.
+- **SDK (`sdk/`)** captures spans via decorators, tracer context, and integrations.
+- **Backend (`backend/`)** stores/query traces and serves REST + WebSocket APIs.
+- **Frontend (`frontend/`)** provides Dashboard, Traces, Playground, and Settings.
+
+See:
+- `docs/architecture.md`
+- `docs/api-contracts.md`
+- `docs/data-model.md`
 
 ---
 
-## Comparison
+## Developer Workflow
 
-| | Beacon | LangSmith | Braintrust | Helicone |
-|---|---|---|---|---|
-| LLM call tracing | ✅ | ✅ | ✅ | ✅ |
-| Tool use tracing | ✅ | ✅ | ✅ | ❌ |
-| Browser action tracing | ✅ | ❌ | ❌ | ❌ |
-| File/shell tracing | ✅ | ❌ | ❌ | ❌ |
-| Interactive replay | ✅ | ❌ | ❌ | ❌ |
-| Time-travel debugging | ✅ | ❌ | ❌ | ❌ |
-| Local-first | ✅ | ❌ | ❌ | ❌ |
-| Open source | ✅ | ❌ | ❌ | ❌ |
+```bash
+make dev           # backend + frontend
+make dev-backend   # backend only (7474)
+make dev-frontend  # frontend only (5173)
+make test          # backend + sdk tests
+make lint
+make format
+make stop
+```
+
+Backend docs: **http://localhost:7474/docs**
 
 ---
 
-## Project Structure
+## Repo Layout
 
-```
+```text
 beacon/
-├── sdk/         # Python instrumentation SDK
-├── backend/     # FastAPI backend (trace storage + API)
-├── frontend/    # Vite + React UI
-└── docs/        # Architecture, design system, roadmap
+├── backend/    # FastAPI + SQLite
+├── frontend/   # React + Vite + TypeScript
+├── sdk/        # beacon-sdk Python package
+└── docs/       # architecture, API, data model, conventions, roadmap
 ```
-
----
-
-## Roadmap
-
-See [`docs/roadmap.md`](docs/roadmap.md) for the detailed implementation plan.
-
-- ~~**Phase 1 (Weeks 1–2):** Backend + SQLite + OTEL schema + basic SDK~~ **Done**
-- ~~**Phase 2 (Weeks 3–4):** React UI + trace list + basic graph~~ **Done**
-- ~~**Phase 3 (Weeks 5–6):** Interactive graph + prompt editor + replay~~ **Done**
-- ~~**Phase 4 (Weeks 7–8):** Computer-use tracing + polish~~ **Done**
-- ~~**Phase 5:** UI redesign + Linear-inspired design system + sidebar navigation~~ **Done**
-- **Next:** Demo video, PyPI publish, launch
 
 ---
 
 ## Contributing
 
-Beacon is in active development. Contribution guidelines are coming soon — see [`docs/roadmap.md`](docs/roadmap.md) for current progress.
+See `docs/contributing.md` and `docs/conventions.md`.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see `LICENSE`.

@@ -62,7 +62,7 @@ Running `python sdk/examples/hello_world.py` with the backend running produces a
 - [x] Write example: `sdk/examples/langchain_agent.py`
 
 **Frontend**
-- [x] Initialize `frontend/` with Vite, React 18, TypeScript
+- [x] Initialize `frontend/` with Vite, React 19, TypeScript
 - [x] Configure Tailwind CSS + shadcn/ui (`init`)
 - [x] Add required shadcn components: Button, Badge, Separator, ScrollArea
 - [x] Implement `lib/types.ts` (all TypeScript interfaces)
@@ -165,7 +165,7 @@ A developer can `pip install beacon-sdk`, follow the README, and have a working 
 
 **Layout & Navigation**
 - [x] Replace tab-bar navigation with persistent 220px sidebar (Dashboard, Traces, Playground, Settings)
-- [x] Add Zustand-based page routing (`store/navigation.ts`)
+- [x] Add route-driven navigation (React Router) and keep Zustand state for sidebar/UI controls
 - [x] Linear-style inset content panel (bordered, rounded, shadowed)
 
 **Pages**

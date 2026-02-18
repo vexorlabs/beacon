@@ -1,49 +1,44 @@
 # SDK Design
 
-The `beacon-sdk` Python package is the instrumentation layer. It intercepts agent actions and sends them to the backend as OTEL-formatted spans.
+`beacon-sdk` is the Python instrumentation package used by agent code.
 
-**Package name:** `beacon-sdk`
-**Import name:** `beacon_sdk` (or `from beacon import observe` via top-level re-exports)
-**Location in repo:** `sdk/`
+Package name: `beacon-sdk`
+Import name: `beacon_sdk`
+Location: `sdk/`
 
 ---
 
 ## Design Goals
 
-1. **Zero-friction integration:** A developer should be able to add basic tracing with one import and one decorator.
-2. **Automatic instrumentation:** For supported libraries (OpenAI, Anthropic, LangChain, Playwright), instrumentation happens automatically at import time.
-3. **Correct context propagation:** The trace ID and parent span ID must be correctly threaded through async code and concurrent operations.
-4. **Non-intrusive:** The SDK must never raise an exception that crashes the developer's agent. All SDK errors are swallowed and logged.
-5. **OTEL-conformant:** All spans conform to the OpenTelemetry data model.
+1. Minimal integration friction (`init()` + `@observe`)
+2. Safe, non-fatal instrumentation
+3. Correct trace context propagation across nested/async calls
+4. Usable automatic instrumentation for common agent libraries
+5. Consistent span schema for backend/frontend consumption
 
 ---
 
 ## Package Structure
 
-```
+```text
 sdk/
 ├── beacon_sdk/
-│   ├── __init__.py          # Public API: observe, init, get_tracer
-│   ├── tracer.py            # BeaconTracer: span creation, context management
-│   ├── decorators.py        # @observe decorator
-│   ├── context.py           # ContextVar-based trace context
-│   ├── exporters.py         # HTTP exporter to backend
-│   ├── models.py            # Span dataclasses (mirrors data-model.md)
+│   ├── __init__.py
+│   ├── tracer.py
+│   ├── decorators.py
+│   ├── context.py
+│   ├── exporters.py
+│   ├── models.py
+│   ├── pricing.py
 │   └── integrations/
-│       ├── __init__.py
-│       ├── langchain.py     # BeaconCallbackHandler for LangChain
-│       ├── openai.py        # Monkey-patch openai SDK
-│       ├── anthropic.py     # Monkey-patch anthropic SDK
-│       └── playwright.py    # Monkey-patch playwright
-├── tests/
-│   ├── test_tracer.py
-│   ├── test_decorators.py
-│   ├── test_exporters.py
-│   └── integrations/
-│       ├── test_langchain.py
-│       └── test_openai.py
-├── pyproject.toml
-└── README.md
+│       ├── openai.py
+│       ├── anthropic.py
+│       ├── playwright.py
+│       ├── subprocess_patch.py
+│       ├── file_patch.py
+│       └── langchain.py
+├── examples/
+└── tests/
 ```
 
 ---
@@ -55,253 +50,163 @@ sdk/
 ```python
 import beacon_sdk
 
-# Option 1: Auto-init on first use (reads BEACON_BACKEND_URL from env)
 beacon_sdk.init()
 
-# Option 2: Explicit init with config
+# explicit options
 beacon_sdk.init(
     backend_url="http://localhost:7474",
-    auto_patch=True,   # Enable monkey-patching (default: True)
-    enabled=True,      # Set to False to disable all tracing
-    exporter="auto",   # "auto"/"async" (batched, default) or "sync" (blocking)
+    auto_patch=True,
+    enabled=True,
+    exporter="auto",  # "auto" | "async" | "sync"
 )
 ```
 
-Call `init()` once at the top of your script, before any imports of instrumented libraries. If you never call `init()`, the SDK does nothing (no-op mode).
+`init()` behavior:
+- `enabled=false` disables tracing (no-op tracer)
+- default exporter is async batching (`auto` -> async)
+- registers shutdown handler for queued spans
 
-### `@observe` Decorator
+### Decorator
 
 ```python
 from beacon_sdk import observe
 
 @observe
-def my_agent_step(query: str) -> str:
-    # This function creates a span of type 'custom'
-    return "result"
+def fn():
+    ...
 
-# With options:
-@observe(name="my custom step", span_type="agent_step")
-def my_agent_step(query: str) -> str:
-    return "result"
-
-# Works on async functions too:
-@observe
-async def my_async_step(query: str) -> str:
-    return "result"
+@observe(name="step", span_type="agent_step")
+def step():
+    ...
 ```
 
-The decorator:
-1. Creates a span when the function is entered
-2. Sets `start_time`
-3. Executes the function
-4. Sets `end_time` and `status = ok` on success
-5. Sets `status = error` and `error_message` on exception (re-raises the exception)
-6. Exports the span to the backend
+Works for sync and async functions.
 
-### Context Manager
+### Accessing Current Span
 
 ```python
-from beacon_sdk import tracer
+import beacon_sdk
 
-with tracer.span("my operation", span_type="custom") as span:
-    # Do work
-    span.set_attribute("my.key", "my.value")
-```
-
-### Setting Attributes on the Current Span
-
-```python
-from beacon_sdk import get_current_span
-
-span = get_current_span()
+span = beacon_sdk.get_current_span()
 if span:
-    span.set_attribute("agent.thought", "I should search for this...")
+    span.set_attribute("agent.note", "thinking")
+```
+
+### Low-Level Tracer Access
+
+```python
+import beacon_sdk
+
+tracer = beacon_sdk.get_tracer()
+if tracer:
+    with tracer.span("custom", span_type=beacon_sdk.SpanType.CUSTOM):
+        ...
+```
+
+### Exporter Lifecycle
+
+```python
+beacon_sdk.flush()
+beacon_sdk.shutdown()
 ```
 
 ---
 
-## Automatic Instrumentation
+## Auto Instrumentation
 
-When `auto_patch=True` (default), calling `beacon_sdk.init()` monkey-patches the following libraries if they are installed:
+When `auto_patch=True`, SDK attempts to patch installed libraries.
 
-### OpenAI SDK (`openai`)
+### OpenAI
+- patches chat completions sync + async
+- supports streaming wrappers
+- captures provider/model/prompt/completion/tokens/cost/tool_calls
 
-Patches `openai.chat.completions.create` and the async variant.
+### Anthropic
+- patches messages create sync + async
+- supports streaming wrappers
+- captures provider/model/prompt/completion/tokens/cost/tool_calls
 
-Captured attributes:
-- `llm.provider = "openai"`
-- `llm.model` from request params
-- `llm.prompt` from `messages` array (serialized to JSON string)
-- `llm.completion` from response
-- `llm.tokens.input`, `llm.tokens.output`, `llm.tokens.total` from `usage`
-- `llm.cost_usd` computed from model pricing table
-- `llm.finish_reason` from response
+### Playwright
+- patches sync/async `Page` actions (`goto`, `click`, `fill`, `type`, `screenshot`, `wait_for_selector`)
+- emits `browser_action` spans
 
-### Anthropic SDK (`anthropic`)
+### subprocess
+- patches `subprocess.run` and `subprocess.check_output`
+- emits `shell_command` spans (`shell.command`, `shell.returncode`, stdout/stderr)
 
-Patches `anthropic.messages.create` and async variant.
+### File operations (opt-in)
+- `builtins.open` patch lives in `integrations/file_patch.py`
+- only enabled when `BEACON_PATCH_FILE_OPS=true`
 
-Captured attributes: same structure as OpenAI, mapped from Anthropic's response format.
-
-### LangChain (`langchain_core`)
-
-**Option A: Callback Handler (preferred)**
-
-```python
-from beacon_sdk.integrations.langchain import BeaconCallbackHandler
-
-chain.invoke(input, config={"callbacks": [BeaconCallbackHandler()]})
-```
-
-**Option B: Auto-patch (less reliable, not recommended for LangChain)**
-
-The callback handler approach is more reliable because LangChain has a well-defined callback interface.
-
-`BeaconCallbackHandler` implements:
-- `on_chain_start` → creates `chain` span
-- `on_chain_end` → closes `chain` span
-- `on_llm_start` → creates `llm_call` span
-- `on_llm_end` → closes `llm_call` span with completion data
-- `on_tool_start` → creates `tool_use` span
-- `on_tool_end` → closes `tool_use` span
-- `on_agent_action` → creates `agent_step` span
-- `on_agent_finish` → closes `agent_step` span
-- `on_chain_error` / `on_llm_error` / `on_tool_error` → sets `status = error`
-
-### Playwright (`playwright`)
-
-Patches `Page.goto`, `Page.click`, `Page.fill`, `Page.type`, `Page.screenshot`, `Page.wait_for_selector`.
-
-Captured attributes:
-- `browser.action` = method name ("navigate", "click", etc.)
-- `browser.url` = `page.url` at time of action
-- `browser.selector` = selector argument if present
-- `browser.value` = text if action == "fill" or "type"
-- `browser.screenshot` = base64 PNG if action == "screenshot"
+### LangChain
+- callback-based integration via `BeaconCallbackHandler`
+- no auto monkey-patch path; caller passes callback explicitly
 
 ---
 
-## Trace Context Propagation
+## Trace Context
 
-The SDK uses Python's `contextvars.ContextVar` to store the current trace context. This works correctly with:
-- `asyncio` (context is automatically propagated to tasks created with `asyncio.create_task`)
-- `threading` (each thread has its own context — you must manually copy context for multi-threaded agents)
+Context is stored using `contextvars`:
+- root span starts a new `trace_id`
+- nested spans inherit `trace_id` and set `parent_span_id`
 
-```python
-# Internal implementation sketch:
-from contextvars import ContextVar
-from dataclasses import dataclass
-
-@dataclass
-class TraceContext:
-    trace_id: str
-    current_span_id: str | None
-
-_trace_context: ContextVar[TraceContext | None] = ContextVar(
-    "beacon_trace_context", default=None
-)
-```
-
-When a new root span is started (no active context), the SDK generates a new `trace_id`. When a child span is started, it inherits the `trace_id` and sets `parent_span_id = current_span_id`.
+`register_span` / `get_active_span` supports `get_current_span()` lookups.
 
 ---
 
-## Exporter
+## Exporters
 
-The SDK ships two exporters, selectable via the `exporter` parameter on `init()`:
+### `HttpSpanExporter`
+- synchronous HTTP POST per export call
+- useful for debugging SDK behavior
 
-| Mode | Class | Behavior |
-|------|-------|----------|
-| `"async"` (default) | `AsyncBatchExporter` | Queues spans in memory, flushes on a background daemon thread every 1 s or when 50 spans accumulate — whichever comes first. Non-blocking. |
-| `"sync"` | `HttpSpanExporter` | Sends each span immediately via a blocking HTTP POST. Useful for debugging the SDK itself. |
-| `"auto"` | same as `"async"` | Alias — always selects the async batch exporter. |
+### `AsyncBatchExporter` (default)
+- queue + background flush thread
+- flushes by interval and batch-size threshold
+- non-fatal on connection errors
 
-```python
-# Default — async batch exporter (recommended)
-beacon_sdk.init()
-
-# Explicit sync for debugging
-beacon_sdk.init(exporter="sync")
-```
-
-Both exporters POST to `{backend_url}/v1/spans` and silently drop spans on connection/timeout errors (logged at `DEBUG`).
-
-### Lifecycle
-
-```python
-beacon_sdk.flush()     # Force-flush any queued spans
-beacon_sdk.shutdown()  # Flush + stop the background thread
-```
-
-An `atexit` handler calls `shutdown()` automatically when the process exits, so spans are never silently lost.
-
----
-
-## Error Handling Philosophy
-
-**The SDK must never break the developer's agent.** All SDK code is wrapped in try/except. Errors are logged at `DEBUG` level. If the backend is unreachable, spans are silently dropped.
-
-```python
-try:
-    self.exporter.export([span])
-except Exception as e:
-    logger.debug(f"Beacon: span export failed (non-fatal): {e}")
-```
+Transport endpoint:
+- `{backend_url}/v1/spans`
 
 ---
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `BEACON_BACKEND_URL` | `http://localhost:7474` | Backend URL |
-| `BEACON_ENABLED` | `true` | Set to `false` to disable all tracing |
-| `BEACON_AUTO_PATCH` | `true` | Set to `false` to skip monkey-patching |
-| `BEACON_LOG_LEVEL` | `WARNING` | SDK internal log level |
+| Variable | Default | Purpose |
+|---|---|---|
+| `BEACON_BACKEND_URL` | `http://localhost:7474` | ingestion base URL |
+| `BEACON_ENABLED` | `true` | disable/enable instrumentation |
+| `BEACON_AUTO_PATCH` | `true` | toggle auto monkey-patching |
+| `BEACON_LOG_LEVEL` | `WARNING` | SDK logger verbosity |
+| `BEACON_PATCH_FILE_OPS` | `false` | opt-in file operation patch |
 
 ---
 
 ## Installation
 
 ```bash
-# Basic
 pip install beacon-sdk
-
-# With LangChain support
-pip install beacon-sdk[langchain]
-
-# With Playwright support
+pip install beacon-sdk[openai]
+pip install beacon-sdk[anthropic]
 pip install beacon-sdk[playwright]
-
-# All extras
 pip install beacon-sdk[all]
 ```
 
+For LangChain integration, install LangChain packages separately and use `BeaconCallbackHandler`.
+
 ---
 
-## Minimal Working Example
+## Minimal Example
 
 ```python
 import beacon_sdk
-from openai import OpenAI
+from beacon_sdk import observe
 
-# 1. Init (auto-patches OpenAI)
 beacon_sdk.init()
 
-client = OpenAI()
+@observe(name="run_agent", span_type="agent_step")
+def run_agent() -> str:
+    return "ok"
 
-# 2. Decorate your agent function
-@beacon_sdk.observe
-def run_agent(question: str) -> str:
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": question}]
-    )
-    return response.choices[0].message.content
-
-# 3. Run
-result = run_agent("What is the capital of France?")
-print(result)
-
-# Beacon UI at http://localhost:7474 will show the trace
+run_agent()
 ```
