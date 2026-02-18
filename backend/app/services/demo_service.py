@@ -657,7 +657,7 @@ async def _run_agent_loop(
         await _broadcast_span(db, root_end)
 
     except Exception as exc:
-        logger.exception("Demo agent %s failed: %s", scenario.key, exc)
+        logger.exception("Demo agent %s failed", scenario.key)
         # Close root span as ERROR
         try:
             root_err = SpanCreate(
