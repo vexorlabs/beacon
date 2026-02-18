@@ -1,17 +1,7 @@
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
-import type { SpanNodeData, SpanType } from "@/lib/types";
-
-const SPAN_TYPE_STYLES: Record<SpanType, string> = {
-  llm_call: "bg-blue-950/40 border-blue-500/40 text-blue-300",
-  tool_use: "bg-emerald-950/40 border-emerald-500/40 text-emerald-300",
-  browser_action: "bg-orange-950/40 border-orange-500/40 text-orange-300",
-  file_operation: "bg-amber-950/40 border-amber-500/40 text-amber-300",
-  shell_command: "bg-purple-950/40 border-purple-500/40 text-purple-300",
-  agent_step: "bg-zinc-800/40 border-zinc-500/40 text-zinc-300",
-  chain: "bg-zinc-800/40 border-zinc-500/40 text-zinc-300",
-  custom: "bg-zinc-800/40 border-zinc-500/40 text-zinc-300",
-};
+import type { SpanNodeData } from "@/lib/types";
+import { SPAN_TYPE_STYLES } from "@/lib/span-colors";
 
 function formatDuration(ms: number | null): string {
   if (ms === null) return "...";

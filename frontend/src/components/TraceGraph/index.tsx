@@ -18,18 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
 import SpanNode from "./SpanNode";
 import { useGraphLayout } from "./useGraphLayout";
-import type { SpanNodeData, SpanType } from "@/lib/types";
-
-const SPAN_TYPE_COLORS: Record<SpanType, string> = {
-  llm_call: "#3b82f6",
-  tool_use: "#10b981",
-  browser_action: "#f97316",
-  file_operation: "#f59e0b",
-  shell_command: "#a855f7",
-  agent_step: "#71717a",
-  chain: "#71717a",
-  custom: "#71717a",
-};
+import type { SpanNodeData } from "@/lib/types";
+import { SPAN_TYPE_COLORS } from "@/lib/span-colors";
 
 function TraceGraphInner() {
   const navigate = useNavigate();
