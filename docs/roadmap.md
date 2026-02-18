@@ -1,6 +1,6 @@
 # Implementation Roadmap
 
-Product roadmap from MVP through enterprise. Each phase has a clear goal, specific tasks, and a done condition. Phases 1–5 (MVP) are complete. Phases 6–10 define the path from open-source adoption to enterprise offering.
+Product roadmap from MVP through enterprise. Each phase has a clear goal, specific tasks, and a done condition. Phases 1–5 (MVP) are complete. Phases 6–11 define the path from open-source adoption to enterprise offering and developer workflow integration.
 
 **North Star:** Every decision should answer — "Does this make it easier and faster for a developer to debug their AI agent?"
 
@@ -263,6 +263,8 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [ ] Create `TimelineBar.tsx` sub-component with hover tooltip showing name, duration, cost
 - [ ] Add a toggle in `TracesPage` to switch between "Graph" and "Timeline" views
 - [ ] Highlight parallelism: overlapping spans at the same depth appear on separate rows
+- [ ] Highlight the critical path (longest chain of sequential spans determining total trace duration) with a distinct color/border
+- [ ] Add a "Slowest Spans" summary panel below the timeline showing the top 5 spans by duration
 
 **Backend: Full-Text Search**
 - [ ] Add `GET /v1/search` endpoint accepting `q` (search string), searching across `spans.name`, `spans.attributes` (JSON text), and `traces.name` using SQLite `LIKE`
@@ -282,11 +284,20 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 **Backend: Trace Export**
 - [ ] Add `GET /v1/traces/{trace_id}/export?format=json` — full trace with all spans in Beacon's JSON format
 - [ ] Add `format=otel` option converting spans to OTEL-compatible export format
+- [ ] Add `format=csv` option — flat CSV with one row per span (columns: trace_id, span_id, parent_span_id, name, span_type, start_time, end_time, duration_ms, status, cost, tokens)
 - [ ] Add `GET /v1/traces/export` for bulk export with optional `trace_ids` query param
 
+**Backend: Trace Import**
+- [ ] Add `POST /v1/traces/import` endpoint accepting Beacon JSON format (symmetric with export) — creates trace and spans from the imported file
+- [ ] Ship `docs/example-traces/` directory with 2–3 curated example trace JSON files (e.g., a LangChain RAG agent, a tool-calling agent with errors) so new users can import and explore a populated UI immediately
+
 **Frontend: Trace Export**
-- [ ] Add "Export" button to trace detail view (top bar of TraceGraph) with dropdown: "JSON", "OTEL JSON"
+- [ ] Add "Export" button to trace detail view (top bar of TraceGraph) with dropdown: "JSON", "OTEL JSON", "CSV"
 - [ ] Trigger browser download of the exported file
+
+**Frontend: Trace Import**
+- [ ] Add "Import Trace" button in Traces page header that opens a file picker for JSON files
+- [ ] Call `POST /v1/traces/import` with the selected file and navigate to the imported trace
 
 **Backend: Tags and Annotations**
 - [ ] Add `PUT /v1/traces/{trace_id}/tags` endpoint to set/update trace tags (the `tags` column already exists in the schema)
@@ -299,6 +310,16 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [ ] Add annotation input in `SpanDetail` — text area to add notes to any span
 - [ ] Add tag-based filtering in `TraceFilter`
 
+**Frontend: Token Count Preview**
+- [ ] In the Monaco prompt editor (`ReplayPanel.tsx`), show a live estimated token count as the user edits using `js-tiktoken` or a similar tokenizer
+- [ ] Display token count badge next to the Replay button
+
+**Frontend: Prompt Versioning**
+- [ ] Add `prompt_versions` table: `version_id`, `span_id`, `prompt_text`, `created_at`, `label` (optional)
+- [ ] Each replay automatically saves a prompt version; users can also manually save with an optional label
+- [ ] Add version history dropdown in the prompt editor to browse and restore previous prompt versions
+- [ ] Add `GET /v1/spans/{span_id}/prompt-versions` and `POST /v1/spans/{span_id}/prompt-versions` endpoints
+
 **Frontend: Test Infrastructure**
 - [ ] Add Vitest + React Testing Library to `frontend/package.json` dev dependencies
 - [ ] Add `vitest.config.ts` in the frontend root
@@ -309,7 +330,7 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [ ] Add `npm run test` script and integrate into `make test`
 
 ### Done Condition
-A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and land on the correct trace and span, (2) search for "error" and find all spans with errors, (3) compare two traces side by side, (4) view a timeline/waterfall of span execution, (5) export a trace as JSON, (6) tag traces and annotate spans, (7) delete old traces. Frontend has test coverage for critical components.
+A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and land on the correct trace and span, (2) search for "error" and find all spans with errors, (3) compare two traces side by side, (4) view a timeline/waterfall of span execution with critical path highlighted, (5) export a trace as JSON, OTEL, or CSV, (6) tag traces and annotate spans, (7) delete old traces, (8) import an example trace JSON file and explore it in the UI, (9) see token count update live while editing a prompt, (10) browse and restore previous prompt versions. Frontend has test coverage for critical components.
 
 ---
 
@@ -362,6 +383,12 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [ ] Add `sdk-js/tests/` with tests for tracer, exporter, and integrations
 - [ ] Add `sdk-js/examples/` with a basic Node.js agent example
 
+**Backend: OTLP-Compatible Ingestion**
+- [ ] Add `POST /v1/otlp/traces` endpoint accepting standard OpenTelemetry Protocol (OTLP) JSON format, mapping OTEL resource/scope/span fields to Beacon's span model
+- [ ] This allows existing OTEL-instrumented applications to send traces to Beacon without the Beacon SDK
+- [ ] Document the OTLP ingestion endpoint in `sdk/README.md`
+- [ ] Add tests in `backend/tests/test_otlp.py` with sample OTLP payloads
+
 **Backend: Multi-SDK Support**
 - [ ] In `backend/app/schemas.py`, add optional `sdk_language` field to `SpanCreate` (`"python"` | `"javascript"` | `"unknown"`) for analytics
 - [ ] In `backend/app/services/llm_client.py`, add Gemini models to the replay service
@@ -371,7 +398,7 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [ ] In `frontend/src/components/TraceList/TraceListItem.tsx`, show SDK language badge (Python/JS) if `sdk_language` is present
 
 ### Done Condition
-A developer using CrewAI, AutoGen, LlamaIndex, Google Gemini, Ollama, or the JS/TS SDK can `init()` Beacon and see complete, correctly structured traces. Framework badges appear in the graph view.
+A developer using CrewAI, AutoGen, LlamaIndex, Google Gemini, Ollama, or the JS/TS SDK can `init()` Beacon and see complete, correctly structured traces. Framework badges appear in the graph view. An existing OTEL-instrumented application can send traces to Beacon via the OTLP endpoint without using the Beacon SDK.
 
 ---
 
@@ -404,6 +431,17 @@ A developer using CrewAI, AutoGen, LlamaIndex, Google Gemini, Ollama, or the JS/
 - [ ] Add `POST /v1/analysis/anomalies` accepting `{ trace_id }` — compares trace against historical baselines (last 50 traces of the same name) and flags: cost spikes (>2x mean), latency spikes, unusual error patterns, missing expected spans
 - [ ] Return `{ anomalies: [{ type, severity, description, trace_id, span_id }] }`
 
+**Backend: Error Pattern Recognition**
+- [ ] Add `POST /v1/analysis/error-patterns` accepting `{ trace_ids }` (or defaults to last 50 error traces) — clusters similar failures by error message, failing span name, and execution structure
+- [ ] Return `{ patterns: [{ pattern_name, count, example_trace_ids, common_root_cause, category }] }`
+- [ ] Detect common anti-patterns: infinite loops (repeated identical spans), repeated tool failures (same tool failing 3+ times), context window overflow (token count approaching model limit)
+- [ ] Auto-tag traces with failure categories (timeout, rate_limit, context_overflow, tool_failure, hallucination) via `PUT /v1/traces/{trace_id}/tags`
+
+**Backend: AI-Powered Trace Comparison**
+- [ ] Add `POST /v1/analysis/compare` accepting `{ trace_id_a, trace_id_b }` — uses AI to identify structural divergence points (where execution paths differ), semantic differences in prompts/completions, and metric deltas
+- [ ] Return `{ divergence_points: [{ span_a, span_b, description }], metric_diff, summary }`
+- [ ] Support "Golden Baseline" concept: compare a trace against the most recent trace tagged `baseline`
+
 **Backend: Trace Summarization**
 - [ ] Add `POST /v1/analysis/summarize` accepting `{ trace_id }` — generates a natural language summary of what the agent did (e.g., "The agent received a request to book a flight. It called GPT-4o 3 times, searched for flights, encountered a rate limit, retried, and returned results in 12.4s at $0.023.")
 - [ ] Return `{ trace_id, summary, key_events }`
@@ -421,12 +459,31 @@ A developer using CrewAI, AutoGen, LlamaIndex, Google Gemini, Ollama, or the JS/
 - [ ] Create `frontend/src/store/analysis.ts` Zustand store for analysis state
 - [ ] When root cause analysis highlights affected spans, pulse/highlight those nodes in the React Flow graph
 
+**Frontend: Error Pattern Recognition**
+- [ ] Create `ErrorPatternsPanel.tsx` showing clustered failure groups with counts and links to example traces
+- [ ] Add "Error Patterns" option to the "Analyze" dropdown
+- [ ] When viewing a pattern, highlight all matching traces in the trace list
+
+**Frontend: Trace Comparison Enhancements**
+- [ ] In `ComparePage.tsx`, highlight AI-detected divergence points in the side-by-side graph view with distinct markers
+- [ ] Add "Mark as Baseline" button in trace detail header (stores `baseline` tag)
+- [ ] Add "Compare Against Baseline" action in trace detail that auto-selects the most recent baseline trace
+
+**Frontend: A/B Prompt Testing**
+- [ ] In the Playground's CompareView, add mode toggle: "Compare Models" (existing) vs "Compare Prompts" (new)
+- [ ] "Compare Prompts" mode: two prompt editors side by side, same model, run both and show results with diff
+- [ ] Track A/B test results in a simple `ab_tests` table for historical comparison
+
 **Dashboard: Analytics Upgrade**
-- [ ] In `frontend/src/pages/DashboardPage.tsx`, replace 4-stat-card layout with: trend charts (cost over time, tokens over time, trace count, error rate) using recharts, most expensive traces table, anomaly alerts section
+- [ ] In `frontend/src/pages/DashboardPage.tsx`, replace 4-stat-card layout with: trend charts (cost over time, tokens over time, trace count, error rate, success/failure rate) using recharts, most expensive traces table, anomaly alerts section
 - [ ] Add `GET /v1/stats/trends` backend endpoint returning time-bucketed aggregates (daily cost, tokens, traces, errors) for the last 30 days
+- [ ] Add "Most Expensive Prompts" table (top 10 LLM calls by cost across all traces)
+- [ ] Add "Most Expensive Tools" table (top 10 tool calls by duration)
+- [ ] Add cost forecasting widget: project next 30 days cost based on trailing 30-day trend
+- [ ] Add trace clustering visualization: group traces by structural similarity, render as a scatter plot or treemap
 
 ### Done Condition
-A developer clicks "Analyze" on a failed trace and receives: (1) a plain-English root cause explanation with highlighted spans, (2) cost optimization suggestions, (3) prompt improvement recommendations. The dashboard shows trend charts for cost, tokens, and error rate over time.
+A developer clicks "Analyze" on a failed trace and receives: (1) a plain-English root cause explanation with highlighted spans, (2) cost optimization suggestions, (3) prompt improvement recommendations, (4) error pattern clusters showing similar failures across traces. The developer can mark a trace as "baseline" and compare new traces against it with AI-detected divergence points. The Playground supports A/B prompt testing. The dashboard shows trend charts, cost forecasting, most expensive prompts/tools, and trace clustering.
 
 ---
 
@@ -495,6 +552,50 @@ Beacon can be deployed via `docker-compose up` with PostgreSQL, API key authenti
 
 ---
 
+## Phase 11: Developer Workflow Integration
+
+**Goal:** Meet developers where they work. Integrate Beacon into CI/CD pipelines and IDEs so debugging is part of the development workflow, not a separate step.
+
+### Tasks
+
+**CI/CD: GitHub Action**
+- [ ] Create `beacon-action/` directory with a reusable GitHub Action that starts Beacon backend, runs a user-specified test command with SDK instrumentation, and uploads trace artifacts
+- [ ] The action should output trace summary (total cost, duration, error count) as a PR comment
+- [ ] Support configurable thresholds: fail the build if cost exceeds $X or error rate exceeds Y%
+
+**CI/CD: pytest Plugin**
+- [ ] Create `beacon-pytest/` package (or add to `sdk/`) with a pytest plugin that auto-initializes Beacon SDK for test sessions
+- [ ] Automatically capture traces for each test function decorated with `@observe`
+- [ ] Generate a test report with trace links and cost summary
+- [ ] Support `--beacon-export` flag to save traces as JSON fixtures
+
+**CI/CD: Trace-as-Test-Fixture**
+- [ ] Add `beacon_sdk.testing.load_trace(path)` utility to load exported trace JSON files as test fixtures
+- [ ] Add `beacon_sdk.testing.assert_trace_matches(baseline, current, tolerances)` to compare a new trace against a baseline with configurable tolerances (cost +-10%, duration +-20%, same span structure)
+- [ ] Document the "golden trace" testing workflow in SDK README
+
+**CI/CD: Regression Detection**
+- [ ] Add `POST /v1/analysis/regression` accepting `{ baseline_trace_id, current_trace_id }` — compares metrics and structure, returns pass/fail with details
+- [ ] Integrate with the GitHub Action: compare traces from PR branch against main branch baseline
+
+**CI/CD: Performance Benchmarking**
+- [ ] Add `GET /v1/stats/benchmarks` endpoint returning trace metrics grouped by git commit hash (requires `git_commit` attribute in spans)
+- [ ] Add `git_commit` as an optional auto-detected attribute in `sdk/beacon_sdk/__init__.py` (read from `GIT_COMMIT` env var or `git rev-parse HEAD`)
+- [ ] Frontend: benchmarks page showing cost/duration/error trends across commits
+
+**VS Code Extension**
+- [ ] Create `vscode-beacon/` directory with VS Code extension scaffolding (TypeScript, vscode API)
+- [ ] Implement trace explorer sidebar: connect to running Beacon backend, list recent traces
+- [ ] Implement inline trace decorations: show cost/duration/error badges inline next to `@observe`-decorated functions
+- [ ] Implement "Quick Replay" command: right-click an `@observe` function → replay the most recent span for that function
+- [ ] Implement trace webview panel: embed a simplified version of the trace graph inside VS Code
+- [ ] Implement "Trace from Cursor" command: find the most recent trace containing a span for the function at cursor position
+
+### Done Condition
+A developer can: (1) add the Beacon GitHub Action to their CI pipeline and see trace summaries on PRs, (2) run `pytest --beacon-export` to capture and save traces as test fixtures, (3) compare traces across commits for regression detection, (4) install the VS Code extension and view traces inline while coding.
+
+---
+
 ## Strategic Notes
 
 **Phase ordering rationale:**
@@ -507,7 +608,9 @@ Beacon can be deployed via `docker-compose up` with PostgreSQL, API key authenti
 
 4. **Phase 9 fourth** — the viral "wow" feature positioned after ecosystem expansion for maximum impact. When a developer clicks "Analyze" and gets a plain-English explanation of why their agent failed, that's the screenshot moment that drives social sharing.
 
-5. **Phase 10 last** — highest-effort, lowest-individual-developer-value work. Auth, multi-tenancy, and PostgreSQL add zero value for solo developers. Build this when community traction (Phases 6-9) justifies it and enterprise design partners are ready.
+5. **Phase 10 fifth** — highest-effort, lowest-individual-developer-value work. Auth, multi-tenancy, and PostgreSQL add zero value for solo developers. Build this when community traction (Phases 6-9) justifies it and enterprise design partners are ready.
+
+6. **Phase 11 last** — developer workflow integration (CI/CD, VS Code) requires a mature product with stable APIs. The GitHub Action depends on Phase 7's export and Phase 9's analysis. The VS Code extension benefits from Phase 7's URL routing for deep links. These are adoption accelerators built on top of a complete product.
 
 **How each phase builds on the previous:**
 - Phase 6 fixes the data pipeline so traces are complete → all subsequent phases depend on this
@@ -515,6 +618,8 @@ Beacon can be deployed via `docker-compose up` with PostgreSQL, API key authenti
 - Phase 8 expands the user base that Phase 9's AI features will delight
 - Phase 9's analytics and anomaly detection naturally lead to Phase 10's retention policies
 - Phase 10's PostgreSQL support is needed at scale but not before
+- Phase 11's GitHub Action uses Phase 7's export format and Phase 9's regression analysis
+- Phase 11's VS Code extension connects to the same backend APIs built in Phases 6-10
 
 ---
 
