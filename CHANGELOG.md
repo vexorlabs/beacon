@@ -9,6 +9,9 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- refactor(sdk): consolidate duplicated price tables into unified `sdk/beacon_sdk/pricing.py` with per-1M-token pricing and prefix matching for dated model names; adds missing models (gpt-4.1 family, o3, o4-mini, claude-haiku-4, o1/o1-mini)
+
 ### Added
 - feat(sdk): `AsyncBatchExporter` — queues spans in memory and flushes on a background daemon thread (every 1s or 50 spans), replacing blocking per-span HTTP as the default exporter
 - feat(sdk): `init(exporter=...)` parameter accepting `"sync"`, `"async"`, or `"auto"` (default, selects async)

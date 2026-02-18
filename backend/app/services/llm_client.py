@@ -12,6 +12,8 @@ from typing import Any
 import httpx
 
 # Price table: (input_cost_per_1M, output_cost_per_1M)
+# NOTE: The SDK maintains a sister price table in sdk/beacon_sdk/pricing.py
+# with prefix-matching semantics. When updating prices here, also update there.
 PRICE_TABLE: dict[str, tuple[float, float]] = {
     # OpenAI — latest
     "gpt-4.1": (2.00, 8.00),
@@ -22,6 +24,8 @@ PRICE_TABLE: dict[str, tuple[float, float]] = {
     "o3": (2.00, 8.00),
     "o3-mini": (1.10, 4.40),
     "o4-mini": (1.10, 4.40),
+    "o1": (15.00, 60.00),
+    "o1-mini": (3.00, 12.00),
     # OpenAI — legacy
     "gpt-4-turbo": (10.00, 30.00),
     "gpt-4": (30.00, 60.00),
@@ -50,6 +54,8 @@ MODEL_PROVIDER: dict[str, str] = {
     "o3": "openai",
     "o3-mini": "openai",
     "o4-mini": "openai",
+    "o1": "openai",
+    "o1-mini": "openai",
     "gpt-4-turbo": "openai",
     "gpt-4": "openai",
     "gpt-3.5-turbo": "openai",

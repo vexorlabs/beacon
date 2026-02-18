@@ -218,10 +218,10 @@ New developer opens `localhost:5173` → sees a welcoming Dashboard → can navi
 - [x] Add tests in `sdk/tests/test_exporters.py` for batching, flush-on-shutdown, and thread safety
 
 **SDK: Consolidate Price Tables**
-- [ ] Create `sdk/beacon_sdk/pricing.py` with a unified `PRICE_TABLE: dict[str, tuple[float, float]]` using per-1M-token pricing and a shared `estimate_cost(model, input_tokens, output_tokens)` function
-- [ ] In `sdk/beacon_sdk/integrations/openai.py`, remove the local `_COST_PER_1K` dict and `_estimate_cost` function; import from `beacon_sdk.pricing`
-- [ ] In `sdk/beacon_sdk/integrations/anthropic.py`, do the same
-- [ ] Ensure the canonical price table includes all models from `backend/app/services/llm_client.py` (gpt-4.1, o4-mini, claude-opus-4-6, claude-sonnet-4-6, etc.)
+- [x] Create `sdk/beacon_sdk/pricing.py` with a unified `PRICE_TABLE: dict[str, tuple[float, float]]` using per-1M-token pricing and a shared `estimate_cost(model, input_tokens, output_tokens)` function
+- [x] In `sdk/beacon_sdk/integrations/openai.py`, remove the local `_COST_PER_1K` dict and `_estimate_cost` function; import from `beacon_sdk.pricing`
+- [x] In `sdk/beacon_sdk/integrations/anthropic.py`, do the same
+- [x] Ensure the canonical price table includes all models from `backend/app/services/llm_client.py` (gpt-4.1, o4-mini, claude-opus-4-6, claude-sonnet-4-6, etc.)
 
 **SDK: File Operation Auto-Patch**
 - [ ] Create `sdk/beacon_sdk/integrations/file_patch.py` that patches `builtins.open` to create `file_operation` spans with attributes: `file.operation`, `file.path`, `file.size_bytes`, `file.content` (truncated to 2000 chars)

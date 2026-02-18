@@ -7,32 +7,13 @@ import logging
 from typing import Any
 
 from beacon_sdk.models import SpanStatus, SpanType
+from beacon_sdk.pricing import estimate_cost as _estimate_cost
 
 logger = logging.getLogger("beacon_sdk")
 
 _patched: bool = False
 _original_create: Any = None
 _original_async_create: Any = None
-
-# Cost per 1K tokens: (input, output)
-_COST_PER_1K: dict[str, tuple[float, float]] = {
-    "claude-opus-4": (0.015, 0.075),
-    "claude-sonnet-4": (0.003, 0.015),
-    "claude-haiku-3-5": (0.0008, 0.004),
-    "claude-3-5-sonnet": (0.003, 0.015),
-    "claude-3-5-haiku": (0.0008, 0.004),
-    "claude-3-opus": (0.015, 0.075),
-    "claude-3-sonnet": (0.003, 0.015),
-    "claude-3-haiku": (0.00025, 0.00125),
-}
-
-
-def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Estimate cost in USD based on model and token counts."""
-    for prefix, (inp, out) in _COST_PER_1K.items():
-        if model.startswith(prefix):
-            return (input_tokens / 1000 * inp) + (output_tokens / 1000 * out)
-    return 0.0
 
 
 def _extract_completion(response: Any) -> str:
