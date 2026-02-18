@@ -10,6 +10,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- docs: expand roadmap with advisor-informed features (Phases 7–11) — trace import/export, critical path analysis, prompt versioning, OTLP ingestion, error pattern recognition, A/B prompt testing, CI/CD integration, VS Code extension
 - docs: post-MVP roadmap (Phases 6–10) — production readiness, deep debugging, ecosystem expansion, AI-powered debugging, enterprise foundation
 - feat(frontend): Collapsible sidebar with icon-only collapsed state and `Cmd+\` keyboard shortcut
 - feat(frontend): Fullscreen canvas toggle in CostSummaryBar — hides side panels, auto-reveals span detail on node click
