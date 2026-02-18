@@ -6,6 +6,7 @@ the same calling logic and price table.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
@@ -192,3 +193,168 @@ async def call_anthropic(
     input_tokens: int = usage.get("input_tokens", 0)
     output_tokens: int = usage.get("output_tokens", 0)
     return completion_text, input_tokens, output_tokens
+
+
+# ---------------------------------------------------------------------------
+# Tool-calling variants (used by demo agents)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class LlmToolResponse:
+    """Rich response from an LLM call that may include tool calls."""
+
+    completion: str
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
+    input_tokens: int = 0
+    output_tokens: int = 0
+    finish_reason: str = "stop"
+    raw_message: dict[str, Any] = field(default_factory=dict)
+
+
+async def call_openai_with_tools(
+    api_key: str,
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None = None,
+    temperature: float = 1.0,
+) -> LlmToolResponse:
+    """Call OpenAI chat completions with optional tool definitions.
+
+    Returns an LlmToolResponse with parsed tool_calls if the model
+    decided to invoke tools.
+    """
+    if not api_key:
+        raise ValueError("OpenAI API key is not configured")
+
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+    }
+    if tools:
+        payload["tools"] = tools
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+        if not response.is_success:
+            error_body = response.text[:200]
+            raise ValueError(
+                f"OpenAI API error {response.status_code}: {error_body}"
+            )
+        data = response.json()
+
+    choices = data.get("choices")
+    if not choices or not isinstance(choices, list):
+        raise ValueError("OpenAI returned an empty or invalid response")
+
+    message = choices[0].get("message", {})
+    completion_text: str = message.get("content") or ""
+    finish_reason: str = choices[0].get("finish_reason", "stop")
+
+    raw_tool_calls: list[dict[str, Any]] = message.get("tool_calls") or []
+    tool_calls: list[dict[str, Any]] = []
+    for tc in raw_tool_calls:
+        tool_calls.append({
+            "id": tc.get("id", ""),
+            "type": "function",
+            "function": {
+                "name": tc.get("function", {}).get("name", ""),
+                "arguments": tc.get("function", {}).get("arguments", "{}"),
+            },
+        })
+
+    usage = data.get("usage", {})
+    return LlmToolResponse(
+        completion=completion_text,
+        tool_calls=tool_calls,
+        input_tokens=usage.get("prompt_tokens", 0),
+        output_tokens=usage.get("completion_tokens", 0),
+        finish_reason=finish_reason,
+        raw_message=message,
+    )
+
+
+async def call_anthropic_with_tools(
+    api_key: str,
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None = None,
+    temperature: float = 1.0,
+) -> LlmToolResponse:
+    """Call Anthropic messages API with optional tool definitions.
+
+    Returns an LlmToolResponse with parsed tool_calls if the model
+    decided to invoke tools.
+    """
+    if not api_key:
+        raise ValueError("Anthropic API key is not configured")
+
+    system_text: str | None = None
+    anthropic_messages: list[dict[str, Any]] = []
+    for msg in messages:
+        if msg.get("role") == "system":
+            system_text = msg.get("content", "")
+        else:
+            anthropic_messages.append(msg)
+
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": anthropic_messages,
+        "temperature": temperature,
+        "max_tokens": 4096,
+    }
+    if system_text is not None:
+        payload["system"] = system_text
+    if tools:
+        payload["tools"] = tools
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+        if not response.is_success:
+            error_body = response.text[:200]
+            raise ValueError(
+                f"Anthropic API error {response.status_code}: {error_body}"
+            )
+        data = response.json()
+
+    content_blocks: list[dict[str, Any]] = data.get("content", [])
+    completion_text = ""
+    tool_calls: list[dict[str, Any]] = []
+
+    for block in content_blocks:
+        if block.get("type") == "text":
+            completion_text += block.get("text", "")
+        elif block.get("type") == "tool_use":
+            tool_calls.append({
+                "id": block.get("id", ""),
+                "name": block.get("name", ""),
+                "input": block.get("input", {}),
+            })
+
+    usage = data.get("usage", {})
+    stop_reason: str = data.get("stop_reason", "end_turn")
+
+    return LlmToolResponse(
+        completion=completion_text,
+        tool_calls=tool_calls,
+        input_tokens=usage.get("input_tokens", 0),
+        output_tokens=usage.get("output_tokens", 0),
+        finish_reason=stop_reason,
+        raw_message={"content": content_blocks},
+    )

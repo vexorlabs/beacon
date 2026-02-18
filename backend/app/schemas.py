@@ -210,3 +210,23 @@ class CompareResultItem(BaseModel):
 class PlaygroundCompareResponse(BaseModel):
     trace_id: str
     results: list[CompareResultItem]
+
+
+# --- Demo agent schemas ---
+
+
+class DemoScenarioResponse(BaseModel):
+    key: str
+    name: str
+    description: str
+    provider: str
+    model: str
+    api_key_configured: bool
+
+
+class DemoRunRequest(BaseModel):
+    scenario: str
+
+
+class DemoRunResponse(BaseModel):
+    trace_id: str
