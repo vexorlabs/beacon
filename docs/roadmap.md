@@ -191,12 +191,12 @@ New developer opens `localhost:5173` → sees a welcoming Dashboard → can navi
 ### Tasks
 
 **SDK: Streaming Support**
-- [ ] In `sdk/beacon_sdk/integrations/openai.py`, implement streaming in `_patched_create_fn`: when `kwargs.get("stream")` is `True`, wrap the returned iterator to accumulate chunks, extract the final completion text and token usage, and emit a completed span when the stream is exhausted
-- [ ] Implement the same streaming logic in `_patched_async_create_fn` for the async path, wrapping the `AsyncStream` object
-- [ ] In `sdk/beacon_sdk/integrations/anthropic.py`, implement streaming in `_patched_create_fn`: wrap the Anthropic `MessageStream` to accumulate `content_block_delta` events, extract final `message_stop` usage data, and emit a completed span
-- [ ] Implement the same streaming logic in `_patched_async_create_fn` for the async Anthropic path
-- [ ] Add tests in `sdk/tests/test_integrations_openai.py` for streaming: mock a chunked response iterator, assert the span captures the full accumulated completion, correct token counts, and cost
-- [ ] Add tests in `sdk/tests/test_integrations_anthropic.py` for streaming: mock Anthropic's event-based streaming, assert span correctness
+- [x] In `sdk/beacon_sdk/integrations/openai.py`, implement streaming in `_patched_create_fn`: when `kwargs.get("stream")` is `True`, wrap the returned iterator to accumulate chunks, extract the final completion text and token usage, and emit a completed span when the stream is exhausted
+- [x] Implement the same streaming logic in `_patched_async_create_fn` for the async path, wrapping the `AsyncStream` object
+- [x] In `sdk/beacon_sdk/integrations/anthropic.py`, implement streaming in `_patched_create_fn`: wrap the Anthropic `MessageStream` to accumulate `content_block_delta` events, extract final `message_stop` usage data, and emit a completed span
+- [x] Implement the same streaming logic in `_patched_async_create_fn` for the async Anthropic path
+- [x] Add tests in `sdk/tests/test_integrations_openai.py` for streaming: mock a chunked response iterator, assert the span captures the full accumulated completion, correct token counts, and cost
+- [x] Add tests in `sdk/tests/test_integrations_anthropic.py` for streaming: mock Anthropic's event-based streaming, assert span correctness
 
 **SDK: Tool Calls Capture**
 - [ ] In `sdk/beacon_sdk/integrations/openai.py`, extend `_apply_response_attributes` to check `choice.message.tool_calls` — if present, serialize the tool calls list (name + arguments) as JSON into `llm.tool_calls` attribute and set `llm.finish_reason` to `"tool_calls"`

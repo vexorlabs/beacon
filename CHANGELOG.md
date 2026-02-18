@@ -10,6 +10,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(sdk): Streaming support for OpenAI and Anthropic integrations — `OpenAIStreamWrapper`, `OpenAIAsyncStreamWrapper`, `AnthropicStreamWrapper`, `AnthropicAsyncStreamWrapper` intercept streaming chunks/events to create LLM spans with accumulated completion text, token usage, cost estimation, and finish reason
 - docs: expand roadmap with advisor-informed features (Phases 7–11) — trace import/export, critical path analysis, prompt versioning, OTLP ingestion, error pattern recognition, A/B prompt testing, CI/CD integration, VS Code extension
 - docs: post-MVP roadmap (Phases 6–10) — production readiness, deep debugging, ecosystem expansion, AI-powered debugging, enterprise foundation
 - feat(frontend): Collapsible sidebar with icon-only collapsed state and `Cmd+\` keyboard shortcut

@@ -44,8 +44,8 @@ Your trace appears in the UI with a full graph of spans, token counts, costs, an
 
 | Integration | Setup | What's traced |
 |---|---|---|
-| **OpenAI** | Automatic — just call `init()` | Chat completions, tokens, cost |
-| **Anthropic** | Automatic — just call `init()` | Messages, tokens, cost |
+| **OpenAI** | Automatic — just call `init()` | Chat completions (+ streaming), tokens, cost |
+| **Anthropic** | Automatic — just call `init()` | Messages (+ streaming), tokens, cost |
 | **Playwright** | Automatic — just call `init()` | Page navigation, clicks, screenshots |
 | **subprocess** | Automatic — just call `init()` | Shell commands, stdout, stderr |
 | **LangChain** | Pass `BeaconCallbackHandler()` to your chain | Chains, LLM calls, tool use, agent steps |
@@ -56,6 +56,19 @@ LangChain example:
 from beacon_sdk.integrations.langchain import BeaconCallbackHandler
 
 chain.invoke(input, config={"callbacks": [BeaconCallbackHandler()]})
+```
+
+Streaming is captured transparently — no extra code needed:
+
+```python
+# This is traced automatically, including the full completion text and token usage
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}],
+    stream=True,
+)
+for chunk in response:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
 ```
 
 Install extras for specific integrations:
