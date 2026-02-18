@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getDemoScenarios, runDemoAgent } from "@/lib/api";
-import { useNavigationStore } from "@/store/navigation";
-import { useTraceStore } from "@/store/trace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Play, Settings } from "lucide-react";
@@ -12,8 +11,7 @@ export default function DemoAgents() {
   const [loading, setLoading] = useState(true);
   const [runningKey, setRunningKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigationStore((s) => s.navigate);
-  const selectTrace = useTraceStore((s) => s.selectTrace);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getDemoScenarios()
@@ -27,9 +25,7 @@ export default function DemoAgents() {
     setError(null);
     try {
       const res = await runDemoAgent(key);
-      navigate("traces");
-      // Small delay so the traces page mounts and WebSocket connects
-      setTimeout(() => selectTrace(res.trace_id), 300);
+      navigate(`/traces/${res.trace_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start demo");
     } finally {
@@ -100,7 +96,7 @@ export default function DemoAgents() {
                 size="sm"
                 variant="outline"
                 className="w-full"
-                onClick={() => navigate("settings")}
+                onClick={() => navigate("/settings")}
               >
                 <Settings size={14} />
                 Configure {s.provider} key

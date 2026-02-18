@@ -24,6 +24,7 @@ def ingest_spans(
     for span_data in spans:
         try:
             _upsert_trace(db, span_data)
+            db.flush()  # ensure trace exists before inserting span (FK constraint)
             _upsert_span(db, span_data)
             db.commit()
             accepted += 1

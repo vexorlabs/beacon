@@ -217,3 +217,68 @@ def test_get_trace_graph_root_node_has_no_incoming_edge(client):
     response = client.get(f"/v1/traces/{trace_id}/graph")
     data = response.json()
     assert len(data["edges"]) == 0
+
+
+# --- DELETE /v1/traces/{trace_id} ---
+
+
+def test_delete_trace_removes_trace_and_spans(client):
+    trace_id = str(uuid.uuid4())
+    _ingest_span(client, trace_id=trace_id, name="span-a")
+    _ingest_span(client, trace_id=trace_id, name="span-b")
+
+    response = client.delete(f"/v1/traces/{trace_id}")
+    assert response.status_code == 200
+    assert response.json()["deleted_count"] == 1
+
+    # Verify trace is gone
+    response = client.get(f"/v1/traces/{trace_id}")
+    assert response.status_code == 404
+
+
+def test_delete_trace_not_found_returns_404(client):
+    response = client.delete(f"/v1/traces/{uuid.uuid4()}")
+    assert response.status_code == 404
+
+
+# --- DELETE /v1/traces (batch) ---
+
+
+def test_delete_traces_batch_by_ids(client):
+    trace_ids = [str(uuid.uuid4()) for _ in range(3)]
+    for tid in trace_ids:
+        _ingest_span(client, trace_id=tid)
+
+    response = client.request(
+        "DELETE", "/v1/traces", json={"trace_ids": trace_ids[:2]}
+    )
+    assert response.status_code == 200
+    assert response.json()["deleted_count"] == 2
+
+    # Third trace still exists
+    remaining = client.get("/v1/traces")
+    assert remaining.json()["total"] == 1
+
+
+def test_delete_traces_batch_by_older_than(client):
+    trace_a = str(uuid.uuid4())
+    trace_b = str(uuid.uuid4())
+    _ingest_span(client, trace_id=trace_a)
+    _ingest_span(client, trace_id=trace_b)
+
+    # Both traces have created_at ~ now; delete all with a future threshold
+    import time
+
+    response = client.request(
+        "DELETE", "/v1/traces", json={"older_than": time.time() + 100}
+    )
+    assert response.status_code == 200
+    assert response.json()["deleted_count"] == 2
+
+    remaining = client.get("/v1/traces")
+    assert remaining.json()["total"] == 0
+
+
+def test_delete_traces_batch_requires_criteria(client):
+    response = client.request("DELETE", "/v1/traces", json={})
+    assert response.status_code == 422

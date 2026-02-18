@@ -302,6 +302,102 @@ Re-execute a span (currently only supported for `llm_call` spans) with modified 
 
 ---
 
+### Trace Deletion
+
+#### `DELETE /v1/traces/{trace_id}`
+
+Delete a single trace and all its spans and replay runs (via CASCADE).
+
+**Response `200 OK`:**
+```json
+{
+  "deleted_count": 1
+}
+```
+
+**Response `404 Not Found`:**
+```json
+{ "detail": "Trace not found" }
+```
+
+---
+
+#### `DELETE /v1/traces`
+
+Batch delete traces. Must provide at least one criteria.
+
+**Request body:**
+```json
+{
+  "trace_ids": ["uuid-1", "uuid-2"],
+  "older_than": 1739800000.0
+}
+```
+
+Both fields are optional, but at least one must be provided. `older_than` deletes traces with `created_at` before the given timestamp.
+
+**Response `200 OK`:**
+```json
+{
+  "deleted_count": 5
+}
+```
+
+**Response `422 Unprocessable Entity`:** When neither `trace_ids` nor `older_than` is provided.
+
+---
+
+### Stats
+
+#### `GET /v1/stats`
+
+Get database statistics.
+
+**Response `200 OK`:**
+```json
+{
+  "database_size_bytes": 1048576,
+  "total_traces": 42,
+  "total_spans": 523,
+  "oldest_trace_timestamp": 1739800000.0
+}
+```
+
+---
+
+### Search
+
+#### `GET /v1/search`
+
+Full-text search across span names, span attributes, and trace names.
+
+**Query parameters:**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `q` | string | (required) | Search query |
+| `limit` | int | 50 | Max results |
+| `offset` | int | 0 | Pagination offset |
+
+**Response `200 OK`:**
+```json
+{
+  "results": [
+    {
+      "trace_id": "7c9e6679-...",
+      "span_id": "550e8400-...",
+      "name": "openai.chat.completions",
+      "match_context": "...matching text snippet..."
+    }
+  ],
+  "total": 3
+}
+```
+
+**Response `422 Unprocessable Entity`:** When `q` parameter is missing.
+
+---
+
 ### Health Check
 
 #### `GET /health`

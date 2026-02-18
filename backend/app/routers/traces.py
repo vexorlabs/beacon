@@ -8,7 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas import GraphData, SpanStatus, TraceDetailResponse, TracesResponse
+from app.schemas import (
+    DeleteTracesRequest,
+    DeleteTracesResponse,
+    GraphData,
+    SpanStatus,
+    TraceDetailResponse,
+    TracesResponse,
+)
 from app.services import trace_service
 
 router = APIRouter(prefix="/traces", tags=["traces"])
@@ -24,6 +31,33 @@ async def list_traces(
     return trace_service.list_traces(
         db, limit=limit, offset=offset, status=status
     )
+
+
+@router.delete("", response_model=DeleteTracesResponse)
+async def delete_traces_batch(
+    request: DeleteTracesRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> DeleteTracesResponse:
+    if request.trace_ids is None and request.older_than is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Provide trace_ids or older_than",
+        )
+    count = trace_service.delete_traces_batch(
+        db, trace_ids=request.trace_ids, older_than=request.older_than
+    )
+    return DeleteTracesResponse(deleted_count=count)
+
+
+@router.delete("/{trace_id}", response_model=DeleteTracesResponse)
+async def delete_trace(
+    trace_id: str,
+    db: Annotated[Session, Depends(get_db)],
+) -> DeleteTracesResponse:
+    deleted = trace_service.delete_trace(db, trace_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Trace not found")
+    return DeleteTracesResponse(deleted_count=1)
 
 
 @router.get("/{trace_id}", response_model=TraceDetailResponse)

@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Check, Trash2, Loader2 } from "lucide-react";
+import { KeyRound, Check, Trash2, Loader2, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getApiKeys, setApiKey, deleteApiKey } from "@/lib/api";
-import type { ApiKeyStatus } from "@/lib/types";
+import {
+  getApiKeys,
+  setApiKey,
+  deleteApiKey,
+  getStats,
+  deleteAllTraces,
+} from "@/lib/api";
+import { useTraceStore } from "@/store/trace";
+import type { ApiKeyStatus, StatsResponse } from "@/lib/types";
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: "OpenAI",
@@ -16,6 +23,10 @@ export default function SettingsPage() {
   const [keyInput, setKeyInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const loadTraces = useTraceStore((s) => s.loadTraces);
 
   const loadKeys = useCallback(() => {
     getApiKeys()
@@ -23,9 +34,32 @@ export default function SettingsPage() {
       .catch(() => setProviders([]));
   }, []);
 
+  const loadStats = useCallback(() => {
+    getStats()
+      .then(setStats)
+      .catch(() => setStats(null));
+  }, []);
+
   useEffect(() => {
     loadKeys();
-  }, [loadKeys]);
+    loadStats();
+  }, [loadKeys, loadStats]);
+
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      await deleteAllTraces();
+      setConfirmClear(false);
+      loadStats();
+      void loadTraces();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to clear traces",
+      );
+    } finally {
+      setClearing(false);
+    }
+  };
 
   const handleSave = async (provider: string) => {
     if (!keyInput.trim()) return;
@@ -191,7 +225,104 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Database size={16} className="text-muted-foreground" />
+            <h2 className="text-sm font-medium text-foreground">
+              Data Management
+            </h2>
+          </div>
+
+          {stats && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="border border-border rounded-lg p-3">
+                <div className="text-xs text-muted-foreground">Traces</div>
+                <div className="text-lg font-semibold text-foreground mt-0.5">
+                  {stats.total_traces}
+                </div>
+              </div>
+              <div className="border border-border rounded-lg p-3">
+                <div className="text-xs text-muted-foreground">Spans</div>
+                <div className="text-lg font-semibold text-foreground mt-0.5">
+                  {stats.total_spans.toLocaleString()}
+                </div>
+              </div>
+              <div className="border border-border rounded-lg p-3">
+                <div className="text-xs text-muted-foreground">
+                  Database Size
+                </div>
+                <div className="text-lg font-semibold text-foreground mt-0.5">
+                  {formatBytes(stats.database_size_bytes)}
+                </div>
+              </div>
+              <div className="border border-border rounded-lg p-3">
+                <div className="text-xs text-muted-foreground">
+                  Oldest Trace
+                </div>
+                <div className="text-lg font-semibold text-foreground mt-0.5">
+                  {stats.oldest_trace_timestamp
+                    ? new Date(
+                        stats.oldest_trace_timestamp * 1000,
+                      ).toLocaleDateString()
+                    : "—"}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <div>
+              <span className="text-[13px] font-medium text-foreground">
+                Clear All Traces
+              </span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Permanently delete all traces, spans, and replay data.
+              </p>
+            </div>
+            {confirmClear ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => void handleClearAll()}
+                  disabled={clearing}
+                >
+                  {clearing ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  Confirm Delete All
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmClear(false)}
+                  disabled={clearing}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmClear(true)}
+              >
+                <Trash2 size={14} />
+                Clear All Traces
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

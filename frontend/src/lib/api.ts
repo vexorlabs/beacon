@@ -7,7 +7,9 @@ import type {
   PlaygroundCompareResponse,
   PlaygroundMessage,
   ReplayResult,
+  SearchResponse,
   Span,
+  StatsResponse,
   TraceDetail,
   TracesResponse,
 } from "./types";
@@ -126,4 +128,38 @@ export function runDemoAgent(scenario: string): Promise<DemoRunResponse> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ scenario }),
   });
+}
+
+// --- Trace deletion ---
+
+export function deleteTrace(traceId: string): Promise<{ deleted_count: number }> {
+  return apiFetch(`/traces/${traceId}`, { method: "DELETE" });
+}
+
+export function deleteAllTraces(): Promise<{ deleted_count: number }> {
+  // Use a far-future timestamp to match all existing traces
+  const farFuture = Math.floor(Date.now() / 1000) + 999999;
+  return apiFetch("/traces", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ older_than: farFuture }),
+  });
+}
+
+// --- Stats ---
+
+export function getStats(): Promise<StatsResponse> {
+  return apiFetch<StatsResponse>("/stats");
+}
+
+// --- Search ---
+
+export function searchTraces(
+  query: string,
+  params?: { limit?: number; offset?: number },
+): Promise<SearchResponse> {
+  const search = new URLSearchParams({ q: query });
+  if (params?.limit !== undefined) search.set("limit", String(params.limit));
+  if (params?.offset !== undefined) search.set("offset", String(params.offset));
+  return apiFetch<SearchResponse>(`/search?${search.toString()}`);
 }

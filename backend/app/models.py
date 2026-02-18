@@ -49,6 +49,7 @@ class Span(Base):
         Index("idx_spans_parent_span_id", "parent_span_id"),
         Index("idx_spans_span_type", "span_type"),
         Index("idx_spans_start_time", "start_time"),
+        Index("idx_spans_name", "name"),
     )
 
 
@@ -57,10 +58,10 @@ class ReplayRun(Base):
 
     replay_id = Column(Text, primary_key=True)
     original_span_id = Column(
-        Text, ForeignKey("spans.span_id"), nullable=False
+        Text, ForeignKey("spans.span_id", ondelete="CASCADE"), nullable=False
     )
     trace_id = Column(
-        Text, ForeignKey("traces.trace_id"), nullable=False
+        Text, ForeignKey("traces.trace_id", ondelete="CASCADE"), nullable=False
     )
     modified_input = Column(Text, nullable=False)
     new_output = Column(Text, nullable=False)

@@ -215,6 +215,7 @@ CREATE INDEX idx_spans_trace_id ON spans (trace_id);
 CREATE INDEX idx_spans_parent_span_id ON spans (parent_span_id);
 CREATE INDEX idx_spans_span_type ON spans (span_type);
 CREATE INDEX idx_spans_start_time ON spans (start_time);
+CREATE INDEX idx_spans_name ON spans (name);
 ```
 
 ### `replay_runs` Table
@@ -231,8 +232,8 @@ CREATE TABLE replay_runs (
     diff                TEXT NOT NULL,     -- JSON: diff between old and new output
     created_at          REAL NOT NULL,
 
-    FOREIGN KEY (original_span_id) REFERENCES spans (span_id),
-    FOREIGN KEY (trace_id) REFERENCES traces (trace_id)
+    FOREIGN KEY (original_span_id) REFERENCES spans (span_id) ON DELETE CASCADE,
+    FOREIGN KEY (trace_id) REFERENCES traces (trace_id) ON DELETE CASCADE
 );
 ```
 

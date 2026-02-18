@@ -10,6 +10,15 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): URL-based routing with React Router — deep-link to `/traces/:traceId/:spanId` with full browser history support
+- feat(backend): `DELETE /v1/traces/{trace_id}` — single trace deletion with CASCADE cleanup of spans and replay runs
+- feat(backend): `DELETE /v1/traces` — batch delete traces by IDs or `older_than` timestamp
+- feat(backend): `GET /v1/stats` — database statistics (trace/span counts, DB size, oldest trace)
+- feat(backend): `GET /v1/search?q=` — full-text search across span names, attributes, and trace names
+- feat(frontend): Trace deletion UI — trash icon with inline confirm on trace list items, "Clear All Traces" in Settings
+- feat(frontend): Search bar with debounced dropdown results navigating to matched trace/span
+- feat(frontend): Data Management section in Settings — stats display and bulk trace cleanup
+- feat(backend): SQLite `PRAGMA foreign_keys=ON` enforcement for CASCADE deletes
 - feat(sdk): file operation auto-patch (`integrations/file_patch.py`) — patches `builtins.open` to create `file_operation` spans with `file.path`, `file.operation`, `file.size_bytes`, and `file.content` (truncated to 2000 chars); opt-in via `BEACON_PATCH_FILE_OPS=true` env var
 
 ### Changed

@@ -1,4 +1,4 @@
-import { useNavigationStore } from "@/store/navigation";
+import { useNavigate } from "react-router-dom";
 import { useTraceStore } from "@/store/trace";
 import { Bug, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import DemoAgents from "@/components/DemoAgents";
 import type { TraceSummary } from "@/lib/types";
 
 export default function DashboardPage() {
-  const navigate = useNavigationStore((s) => s.navigate);
+  const navigate = useNavigate();
   const traces = useTraceStore((s) => s.traces);
   const hasTraces = traces.length > 0;
 
@@ -20,7 +20,7 @@ export default function DashboardPage() {
 function GettingStarted({
   onNavigate,
 }: {
-  onNavigate: (page: "traces" | "playground") => void;
+  onNavigate: (path: string) => void;
 }) {
   return (
     <div className="flex-1 flex items-center justify-center p-8">
@@ -57,11 +57,11 @@ function GettingStarted({
         <DemoAgents />
 
         <div className="flex gap-3 pt-2">
-          <Button onClick={() => onNavigate("playground")}>
+          <Button onClick={() => onNavigate("/playground")}>
             <FlaskConical size={14} />
             Try the Playground
           </Button>
-          <Button variant="outline" onClick={() => onNavigate("traces")}>
+          <Button variant="outline" onClick={() => onNavigate("/traces")}>
             <Bug size={14} />
             View Traces
           </Button>
@@ -105,7 +105,7 @@ function Overview({
   onNavigate,
 }: {
   traces: TraceSummary[];
-  onNavigate: (page: "traces" | "playground") => void;
+  onNavigate: (path: string) => void;
 }) {
   const totalCost = traces.reduce((sum, t) => sum + (t.total_cost_usd ?? 0), 0);
   const totalTokens = traces.reduce((sum, t) => sum + (t.total_tokens ?? 0), 0);
@@ -150,7 +150,7 @@ function Overview({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onNavigate("traces")}
+              onClick={() => onNavigate("/traces")}
             >
               View All
             </Button>
@@ -160,7 +160,7 @@ function Overview({
               <button
                 key={trace.trace_id}
                 type="button"
-                onClick={() => onNavigate("traces")}
+                onClick={() => onNavigate(`/traces/${trace.trace_id}`)}
                 className="w-full text-left border border-border rounded-lg p-3 hover:bg-secondary/50 transition-colors"
               >
                 <div className="flex items-center justify-between">
@@ -196,7 +196,7 @@ function Overview({
         <DemoAgents />
 
         <div className="flex gap-3">
-          <Button onClick={() => onNavigate("playground")}>
+          <Button onClick={() => onNavigate("/playground")}>
             <FlaskConical size={14} />
             Open Playground
           </Button>
