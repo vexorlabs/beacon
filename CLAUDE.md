@@ -46,7 +46,8 @@ Read these in order:
 1. `AGENTS.md` — Complete instructions, repo structure, all rules
 2. `VISION.md` — Project vision and philosophy
 3. `docs/architecture.md` — System design
-4. `docs/roadmap.md` — What to build next
-5. `docs/conventions.md` — Code style
-6. `docs/api-contracts.md` — API specs
-7. `docs/data-model.md` — Database schema
+4. `docs/design-system.md` — UI design tokens, component patterns, layout conventions
+5. `docs/roadmap.md` — What to build next
+6. `docs/conventions.md` — Code style
+7. `docs/api-contracts.md` — API specs
+8. `docs/data-model.md` — Database schema

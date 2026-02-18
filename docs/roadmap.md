@@ -151,6 +151,39 @@ A developer can `pip install beacon-sdk`, follow the README, and have a working 
 
 ---
 
+## Phase 5: UI Redesign + Design System
+
+**Goal:** Intuitive UX for new developers, consistent design language, proper navigation.
+
+### Tasks
+
+**Design System**
+- [x] Replace generic shadcn color tokens with Linear-inspired blue-hued oklch palette (dark-first)
+- [x] Add Inter Variable font (13px base, feature settings)
+- [x] Create `docs/design-system.md` as a living reference for developers and AI agents
+- [x] Define typography scale, spacing conventions, component patterns
+
+**Layout & Navigation**
+- [x] Replace tab-bar navigation with persistent 220px sidebar (Dashboard, Traces, Playground, Settings)
+- [x] Add Zustand-based page routing (`store/navigation.ts`)
+- [x] Linear-style inset content panel (bordered, rounded, shadowed)
+
+**Pages**
+- [x] Create `DashboardPage` — getting-started guide (empty state) + stats overview (returning user)
+- [x] Extract `TracesPage` — the existing 3-panel debugger
+- [x] Create `PlaygroundPage` — wrapper around existing Playground
+- [x] Create `SettingsPage` — full page replacing the modal ApiKeyDialog
+
+**Dark Mode Fixes**
+- [x] Fix SpanNode graph colors (was light-mode-only, now dark-friendly)
+- [x] Set React Flow to dark color mode
+- [x] Consistent typography across all components (13px base)
+
+### Done Condition
+New developer opens `localhost:5173` → sees a welcoming Dashboard → can navigate via sidebar to Traces, Playground, and Settings → all views are visually consistent with the design system.
+
+---
+
 ## Post-MVP Backlog (Do Not Build Yet)
 
 These are explicitly out of scope for v1.0. Add them after the launch:

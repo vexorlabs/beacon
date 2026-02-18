@@ -14,7 +14,8 @@ The `beacon-ui` is a Vite + React + TypeScript application. It is the developer'
 frontend/
 ├── src/
 │   ├── main.tsx                    # React entry point
-│   ├── App.tsx                     # Root component + layout
+│   ├── App.tsx                     # Root layout: Sidebar + page routing
+│   ├── index.css                   # Design system tokens (oklch colors, typography, spacing)
 │   │
 │   ├── components/
 │   │   ├── ui/                     # shadcn/ui copy-pasted components (DO NOT edit)
@@ -23,41 +24,58 @@ frontend/
 │   │   │   ├── separator.tsx
 │   │   │   └── ...
 │   │   │
-│   │   ├── TraceList/              # Left panel
-│   │   │   ├── index.tsx           # TraceList component
-│   │   │   ├── TraceListItem.tsx   # Single row in the list
-│   │   │   └── TraceList.types.ts  # Local TypeScript types
+│   │   ├── Sidebar/                # Persistent left sidebar navigation
+│   │   │   └── index.tsx
 │   │   │
-│   │   ├── TraceGraph/             # Center panel
-│   │   │   ├── index.tsx           # TraceGraph component (React Flow wrapper)
-│   │   │   ├── SpanNode.tsx        # Custom React Flow node renderer
-│   │   │   ├── useGraphLayout.ts   # dagre layout hook
-│   │   │   └── TraceGraph.types.ts
+│   │   ├── TraceList/              # Trace list panel (used in TracesPage)
+│   │   │   ├── index.tsx
+│   │   │   ├── TraceListItem.tsx
+│   │   │   └── TraceFilter.tsx
 │   │   │
-│   │   ├── SpanDetail/             # Right panel
-│   │   │   ├── index.tsx           # SpanDetail component
-│   │   │   ├── LlmCallDetail.tsx   # Detail view for llm_call spans
-│   │   │   ├── ToolUseDetail.tsx   # Detail view for tool_use spans
-│   │   │   ├── BrowserDetail.tsx   # Detail view for browser_action spans
-│   │   │   ├── PromptEditor.tsx    # Monaco Editor for prompt editing
-│   │   │   └── ReplayPanel.tsx     # Replay trigger + diff view
+│   │   ├── TraceGraph/             # Graph panel (used in TracesPage)
+│   │   │   ├── index.tsx
+│   │   │   ├── SpanNode.tsx
+│   │   │   └── useGraphLayout.ts
 │   │   │
-│   │   └── TimeTravel/             # Bottom panel
-│   │       ├── index.tsx           # TimeTravelSlider component
-│   │       └── TimeTravel.types.ts
+│   │   ├── SpanDetail/             # Span detail panel (used in TracesPage)
+│   │   │   ├── index.tsx
+│   │   │   ├── LlmCallDetail.tsx
+│   │   │   ├── ToolUseDetail.tsx
+│   │   │   ├── BrowserDetail.tsx
+│   │   │   ├── PromptEditor.tsx
+│   │   │   └── ReplayPanel.tsx
+│   │   │
+│   │   ├── Playground/             # Chat + Compare mode components
+│   │   │   ├── index.tsx
+│   │   │   ├── ChatPanel.tsx
+│   │   │   ├── CompareView.tsx
+│   │   │   ├── MessageBubble.tsx
+│   │   │   └── ModelSelector.tsx
+│   │   │
+│   │   └── TimeTravel/             # Time-travel slider
+│   │       └── index.tsx
+│   │
+│   ├── pages/                      # Page-level components
+│   │   ├── DashboardPage.tsx       # Getting-started guide + stats overview
+│   │   ├── TracesPage.tsx          # 3-panel debugger layout
+│   │   ├── PlaygroundPage.tsx      # Playground wrapper
+│   │   └── SettingsPage.tsx        # API key management
 │   │
 │   ├── lib/
 │   │   ├── api.ts                  # REST API client (fetch wrappers)
 │   │   ├── ws.ts                   # WebSocket client + reconnect logic
-│   │   └── types.ts                # TypeScript interfaces mirroring backend schemas
+│   │   ├── types.ts                # TypeScript interfaces mirroring backend schemas
+│   │   ├── utils.ts                # Utility functions (cn for classname merging)
+│   │   └── useResizablePanels.ts   # Custom hook for resizable panel state
 │   │
 │   └── store/
-│       └── trace.ts                # Zustand store (selected trace, selected span)
+│       ├── trace.ts                # Zustand store (traces, spans, graph, time-travel, replay)
+│       ├── playground.ts           # Zustand store (chat, compare, messages)
+│       └── navigation.ts          # Zustand store (page routing)
 │
 ├── index.html
 ├── package.json
 ├── vite.config.ts
-├── tailwind.config.ts
 └── tsconfig.json
 ```
 
@@ -65,7 +83,26 @@ frontend/
 
 ## Layout
 
-The UI uses a four-panel layout:
+The UI uses a sidebar + content panel layout inspired by Linear:
+
+```
+┌── Sidebar ──┬── Main Content ─────────────────────────┐
+│             │                                          │
+│  Beacon     │  ┌─ Page Content ─────────────────────┐  │
+│             │  │                                     │  │
+│  Dashboard  │  │  (varies by page)                   │  │
+│  Traces  *  │  │                                     │  │
+│  Playground │  │  Traces page uses 3-panel layout:   │  │
+│  Settings   │  │  TraceList | TraceGraph | SpanDetail │  │
+│             │  │                                     │  │
+│             │  └─────────────────────────────────────┘  │
+│   220px     │           bordered, rounded panel         │
+└─────────────┴──────────────────────────────────────────┘
+```
+
+The main content area is a bordered, rounded container with a subtle shadow (Linear-style inset panel). The sidebar has no border — the contrast between sidebar background and content panel provides visual separation.
+
+### Traces Page (3-panel debugger)
 
 ```
 ┌──────────────┬──────────────────────────┬──────────────┐
@@ -76,17 +113,38 @@ The UI uses a four-panel layout:
 │              │                          │              │
 │              │                          │              │
 ├──────────────┴──────────────────────────┴──────────────┤
-│                    TimeTravel (bottom)  ~80px           │
+│                    TimeTravel (bottom)  ~48px           │
 └────────────────────────────────────────────────────────┘
 ```
 
-All panels are resizable (via a simple drag-to-resize handle) in a future iteration. For MVP, use fixed widths.
+All three panels are resizable via drag handles.
+
+### Navigation
+
+Page routing uses a Zustand store (`store/navigation.ts`) — no React Router. Four pages: `dashboard`, `traces`, `playground`, `settings`.
+
+---
+
+## Design System
+
+See `docs/design-system.md` for the full reference. Key points:
+
+- **Dark-first** — oklch color tokens with blue-purple hue (272)
+- **Inter Variable** font at 13px base
+- **Linear-inspired** — subtle borders, muted backgrounds, accent blue-purple for CTAs
+- All colors are CSS custom properties consumed by Tailwind and shadcn/ui components
 
 ---
 
 ## State Management (Zustand)
 
-`store/trace.ts` is the single Zustand store. It holds:
+Three Zustand stores:
+
+- `store/trace.ts` — Trace, span, graph, time-travel, and replay state
+- `store/playground.ts` — Chat messages, model selection, compare mode
+- `store/navigation.ts` — Page routing (`currentPage`, `navigate()`)
+
+`store/trace.ts` holds:
 
 ```typescript
 interface TraceStore {
@@ -315,14 +373,15 @@ npm run lint      # eslint
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `react` | 18.x | UI framework |
+| `react` | 19.x | UI framework |
 | `@xyflow/react` | latest | Graph visualization (React Flow) |
 | `@monaco-editor/react` | latest | Code editor for prompt editing |
-| `zustand` | latest | Global state management |
+| `zustand` | 5.x | Global state management |
 | `@dagrejs/dagre` | latest | Graph layout algorithm |
-| `tailwindcss` | 3.x | Utility CSS |
+| `tailwindcss` | 4.x | Utility CSS |
 | `typescript` | 5.x | Type safety |
-| `vite` | 5.x | Dev server + build |
+| `vite` | 7.x | Dev server + build |
+| `lucide-react` | latest | Icon library |
 
 ---
 

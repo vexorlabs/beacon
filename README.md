@@ -2,7 +2,7 @@
 
 **The open-source debugger for AI agents.** Beacon gives you a unified, interactive view of your agent's entire execution — from LLM reasoning to browser clicks to file operations — so you can stop guessing and start debugging.
 
-> **Status:** Early development (Phase 3 complete). Under active development. Not yet ready for production use.
+> **Status:** Early development (Phase 5 complete — UI redesign). Under active development. Not yet ready for production use.
 
 ---
 
@@ -100,7 +100,8 @@ See [`docs/architecture.md`](docs/architecture.md) for the full system design.
 beacon/
 ├── sdk/         # Python instrumentation SDK
 ├── backend/     # FastAPI backend (trace storage + API)
-└── frontend/    # Vite + React UI
+├── frontend/    # Vite + React UI
+└── docs/        # Architecture, design system, roadmap
 ```
 
 ---
@@ -112,7 +113,9 @@ See [`docs/roadmap.md`](docs/roadmap.md) for the detailed implementation plan.
 - ~~**Phase 1 (Weeks 1–2):** Backend + SQLite + OTEL schema + basic SDK~~ **Done**
 - ~~**Phase 2 (Weeks 3–4):** React UI + trace list + basic graph~~ **Done**
 - ~~**Phase 3 (Weeks 5–6):** Interactive graph + prompt editor + replay~~ **Done**
-- **Phase 4 (Weeks 7–8):** Computer-use tracing + polish + launch
+- ~~**Phase 4 (Weeks 7–8):** Computer-use tracing + polish~~ **Done**
+- ~~**Phase 5:** UI redesign + Linear-inspired design system + sidebar navigation~~ **Done**
+- **Next:** Demo video, PyPI publish, launch
 
 ---
 
