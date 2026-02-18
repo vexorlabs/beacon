@@ -9,6 +9,13 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- feat(sdk): `AsyncBatchExporter` — queues spans in memory and flushes on a background daemon thread (every 1s or 50 spans), replacing blocking per-span HTTP as the default exporter
+- feat(sdk): `init(exporter=...)` parameter accepting `"sync"`, `"async"`, or `"auto"` (default, selects async)
+- feat(sdk): `beacon_sdk.flush()` and `beacon_sdk.shutdown()` public helpers for manual exporter lifecycle control
+- feat(sdk): `atexit` handler to flush remaining spans on process exit
+- feat(sdk): `FlushableExporter` protocol for exporters with lifecycle management
+
 ### Fixed
 - fix(sdk): LangChain `BeaconCallbackHandler` — update to `(span, token)` tuple API from `tracer.start_span()`, fix `end_span()` signature, add `tool.framework` and `llm.finish_reason` attributes, remove hard `langchain_core` import dependency
 - test(sdk): 19 new tests for LangChain callback handler covering chain/llm/tool/agent lifecycle, parent-child nesting, and error handling
