@@ -9,8 +9,10 @@ import pytest
 
 import beacon_sdk
 from beacon_sdk.integrations.anthropic import (
+    AnthropicAsyncStreamWrapper,
     AnthropicStreamWrapper,
     _estimate_cost,
+    _patched_async_create_fn,
     _patched_create_fn,
 )
 from beacon_sdk.models import SpanStatus, SpanType
@@ -386,3 +388,201 @@ def test_anthropic_cost_estimation() -> None:
     assert _estimate_cost("claude-sonnet-4-6-20250514", 1000, 1000) > 0
     assert _estimate_cost("claude-opus-4-6-20250514", 1000, 1000) > 0
     assert _estimate_cost("unknown-model", 1000, 1000) == 0.0
+
+
+# --- Async streaming tests ---
+
+
+class MockAsyncAnthropicStream:
+    """Mock async Anthropic stream that yields events."""
+
+    def __init__(self, events: list[SimpleNamespace]) -> None:
+        self._events = iter(events)
+
+    def __aiter__(self) -> MockAsyncAnthropicStream:
+        return self
+
+    async def __anext__(self) -> SimpleNamespace:
+        try:
+            return next(self._events)
+        except StopIteration:
+            raise StopAsyncIteration from None
+
+    async def __aenter__(self) -> MockAsyncAnthropicStream:
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        pass
+
+
+class MockAsyncErrorAnthropicStream:
+    """Mock async stream that raises an error after yielding some events."""
+
+    def __init__(
+        self, events: list[SimpleNamespace], error: Exception
+    ) -> None:
+        self._events = iter(events)
+        self._error = error
+
+    def __aiter__(self) -> MockAsyncErrorAnthropicStream:
+        return self
+
+    async def __anext__(self) -> SimpleNamespace:
+        try:
+            return next(self._events)
+        except StopIteration:
+            raise self._error from None
+
+    async def __aenter__(self) -> MockAsyncErrorAnthropicStream:
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        pass
+
+
+def _make_fake_async_original(
+    response: SimpleNamespace | None = None,
+    error: Exception | None = None,
+    stream: MockAsyncAnthropicStream | MockAsyncErrorAnthropicStream | None = None,
+) -> Any:
+    """Create a fake original async create function."""
+
+    async def fake_create(self: Any, **kwargs: Any) -> Any:
+        if error is not None:
+            raise error
+        if kwargs.get("stream"):
+            if stream is not None:
+                return stream
+            return MockAsyncAnthropicStream([])
+        return response or _make_mock_response(
+            model=kwargs.get("model", "claude-sonnet-4-6-20250514")
+        )
+
+    return fake_create
+
+
+async def test_anthropic_async_stream_creates_span(
+    exporter: InMemoryExporter,
+) -> None:
+    events = _make_anthropic_events(["Hello", " async", "!"])
+    mock_stream = MockAsyncAnthropicStream(events)
+    wrapper = _patched_async_create_fn(
+        _make_fake_async_original(stream=mock_stream)
+    )
+
+    result = await wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+    assert isinstance(result, AnthropicAsyncStreamWrapper)
+
+    collected = [event async for event in result]
+    assert len(collected) == len(events)
+
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.span_type == SpanType.LLM_CALL
+    assert span.name == "anthropic.messages.create"
+    assert span.status == SpanStatus.OK
+    assert span.attributes["llm.completion"] == "Hello async!"
+
+
+async def test_anthropic_async_stream_captures_tokens(
+    exporter: InMemoryExporter,
+) -> None:
+    events = _make_anthropic_events(
+        ["Hi"], input_tokens=25, output_tokens=10
+    )
+    mock_stream = MockAsyncAnthropicStream(events)
+    wrapper = _patched_async_create_fn(
+        _make_fake_async_original(stream=mock_stream)
+    )
+
+    result = await wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+    async for _ in result:
+        pass
+
+    span = exporter.spans[0]
+    assert span.attributes["llm.tokens.input"] == 25
+    assert span.attributes["llm.tokens.output"] == 10
+    assert span.attributes["llm.tokens.total"] == 35
+    expected_cost = _estimate_cost("claude-sonnet-4-6-20250514", 25, 10)
+    assert span.attributes["llm.cost_usd"] == expected_cost
+    assert expected_cost > 0
+
+
+async def test_anthropic_async_stream_error_midstream(
+    exporter: InMemoryExporter,
+) -> None:
+    partial_events = [
+        SimpleNamespace(
+            type="message_start",
+            message=SimpleNamespace(
+                usage=SimpleNamespace(input_tokens=10),
+            ),
+        ),
+        SimpleNamespace(
+            type="content_block_delta",
+            delta=SimpleNamespace(type="text_delta", text="partial"),
+        ),
+    ]
+    error_stream = MockAsyncErrorAnthropicStream(
+        partial_events, RuntimeError("Async stream interrupted")
+    )
+    wrapper = _patched_async_create_fn(
+        _make_fake_async_original(stream=error_stream)
+    )
+
+    result = await wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+
+    collected: list[SimpleNamespace] = []
+    with pytest.raises(RuntimeError, match="Async stream interrupted"):
+        async for event in result:
+            collected.append(event)
+
+    assert len(collected) == 2
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.status == SpanStatus.ERROR
+    assert span.error_message == "Async stream interrupted"
+    assert span.attributes["llm.completion"] == "partial"
+
+
+async def test_anthropic_async_stream_context_manager(
+    exporter: InMemoryExporter,
+) -> None:
+    events = _make_anthropic_events(["one", "two", "three"])
+    mock_stream = MockAsyncAnthropicStream(events)
+    wrapper = _patched_async_create_fn(
+        _make_fake_async_original(stream=mock_stream)
+    )
+
+    result = await wrapper(
+        None,
+        model="claude-sonnet-4-6-20250514",
+        messages=[],
+        max_tokens=100,
+        stream=True,
+    )
+    async with result:
+        first = await result.__anext__()
+        assert first.type == "message_start"
+
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.status == SpanStatus.OK

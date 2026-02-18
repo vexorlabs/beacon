@@ -9,8 +9,10 @@ import pytest
 
 import beacon_sdk
 from beacon_sdk.integrations.openai import (
+    OpenAIAsyncStreamWrapper,
     OpenAIStreamWrapper,
     _estimate_cost,
+    _patched_async_create_fn,
     _patched_create_fn,
 )
 from beacon_sdk.models import SpanStatus, SpanType
@@ -351,3 +353,170 @@ def test_openai_cost_estimation() -> None:
     assert _estimate_cost("gpt-4o", 1000, 1000) > 0
     assert _estimate_cost("gpt-4o-mini", 1000, 1000) > 0
     assert _estimate_cost("unknown-model", 1000, 1000) == 0.0
+
+
+# --- Async streaming tests ---
+
+
+class MockAsyncOpenAIStream:
+    """Mock async OpenAI stream that yields chunks."""
+
+    def __init__(self, chunks: list[SimpleNamespace]) -> None:
+        self._chunks = iter(chunks)
+
+    def __aiter__(self) -> MockAsyncOpenAIStream:
+        return self
+
+    async def __anext__(self) -> SimpleNamespace:
+        try:
+            return next(self._chunks)
+        except StopIteration:
+            raise StopAsyncIteration from None
+
+    async def __aenter__(self) -> MockAsyncOpenAIStream:
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        pass
+
+
+class MockAsyncErrorStream:
+    """Mock async stream that raises an error after yielding some chunks."""
+
+    def __init__(
+        self, chunks: list[SimpleNamespace], error: Exception
+    ) -> None:
+        self._chunks = iter(chunks)
+        self._error = error
+
+    def __aiter__(self) -> MockAsyncErrorStream:
+        return self
+
+    async def __anext__(self) -> SimpleNamespace:
+        try:
+            return next(self._chunks)
+        except StopIteration:
+            raise self._error from None
+
+    async def __aenter__(self) -> MockAsyncErrorStream:
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        pass
+
+
+def _make_fake_async_original(
+    response: SimpleNamespace | None = None,
+    error: Exception | None = None,
+    stream: MockAsyncOpenAIStream | MockAsyncErrorStream | None = None,
+) -> Any:
+    """Create a fake original async create function."""
+
+    async def fake_create(self: Any, **kwargs: Any) -> Any:
+        if error is not None:
+            raise error
+        if kwargs.get("stream"):
+            if stream is not None:
+                return stream
+            return MockAsyncOpenAIStream([])
+        return response or _make_mock_response(model=kwargs.get("model", "gpt-4o"))
+
+    return fake_create
+
+
+async def test_openai_async_stream_creates_span(
+    exporter: InMemoryExporter,
+) -> None:
+    chunks = [
+        _make_openai_chunk(content="Hello"),
+        _make_openai_chunk(content=" async"),
+        _make_openai_chunk(content="!"),
+        _make_openai_chunk(finish_reason="stop"),
+    ]
+    mock_stream = MockAsyncOpenAIStream(chunks)
+    wrapper = _patched_async_create_fn(_make_fake_async_original(stream=mock_stream))
+
+    result = await wrapper(None, model="gpt-4o", messages=[], stream=True)
+    assert isinstance(result, OpenAIAsyncStreamWrapper)
+
+    collected = [chunk async for chunk in result]
+    assert len(collected) == 4
+
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.span_type == SpanType.LLM_CALL
+    assert span.name == "openai.chat.completions"
+    assert span.status == SpanStatus.OK
+    assert span.attributes["llm.completion"] == "Hello async!"
+    assert span.attributes["llm.finish_reason"] == "stop"
+
+
+async def test_openai_async_stream_captures_usage(
+    exporter: InMemoryExporter,
+) -> None:
+    usage = SimpleNamespace(prompt_tokens=20, completion_tokens=10, total_tokens=30)
+    chunks = [
+        _make_openai_chunk(content="Hi"),
+        _make_openai_chunk(finish_reason="stop", usage=usage),
+    ]
+    mock_stream = MockAsyncOpenAIStream(chunks)
+    wrapper = _patched_async_create_fn(_make_fake_async_original(stream=mock_stream))
+
+    result = await wrapper(None, model="gpt-4o", messages=[], stream=True)
+    async for _ in result:
+        pass
+
+    span = exporter.spans[0]
+    assert span.attributes["llm.tokens.input"] == 20
+    assert span.attributes["llm.tokens.output"] == 10
+    assert span.attributes["llm.tokens.total"] == 30
+    assert span.attributes["llm.cost_usd"] == _estimate_cost("gpt-4o", 20, 10)
+
+
+async def test_openai_async_stream_error_midstream(
+    exporter: InMemoryExporter,
+) -> None:
+    chunks = [
+        _make_openai_chunk(content="Hello"),
+        _make_openai_chunk(content=" world"),
+    ]
+    error_stream = MockAsyncErrorStream(chunks, RuntimeError("Async connection lost"))
+    wrapper = _patched_async_create_fn(
+        _make_fake_async_original(stream=error_stream)
+    )
+
+    result = await wrapper(None, model="gpt-4o", messages=[], stream=True)
+
+    collected: list[SimpleNamespace] = []
+    with pytest.raises(RuntimeError, match="Async connection lost"):
+        async for chunk in result:
+            collected.append(chunk)
+
+    assert len(collected) == 2
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.status == SpanStatus.ERROR
+    assert span.error_message == "Async connection lost"
+    assert span.attributes["llm.completion"] == "Hello world"
+
+
+async def test_openai_async_stream_context_manager(
+    exporter: InMemoryExporter,
+) -> None:
+    chunks = [
+        _make_openai_chunk(content="one"),
+        _make_openai_chunk(content="two"),
+        _make_openai_chunk(content="three"),
+    ]
+    mock_stream = MockAsyncOpenAIStream(chunks)
+    wrapper = _patched_async_create_fn(_make_fake_async_original(stream=mock_stream))
+
+    result = await wrapper(None, model="gpt-4o", messages=[], stream=True)
+    async with result:
+        first = await result.__anext__()
+        assert first.choices[0].delta.content == "one"
+
+    assert len(exporter.spans) == 1
+    span = exporter.spans[0]
+    assert span.status == SpanStatus.OK
+    assert span.attributes["llm.completion"] == "one"
