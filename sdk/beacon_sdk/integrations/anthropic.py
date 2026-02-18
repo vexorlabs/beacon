@@ -59,6 +59,17 @@ def _apply_response_attributes(span: Any, response: Any, model: str) -> None:
     """Extract attributes from an Anthropic message response."""
     span.set_attribute("llm.completion", _extract_completion(response))
 
+    if hasattr(response, "content") and response.content:
+        tool_calls = [
+            {"id": block.id, "name": block.name, "input": block.input}
+            for block in response.content
+            if hasattr(block, "type") and block.type == "tool_use"
+        ]
+        if tool_calls:
+            span.set_attribute(
+                "llm.tool_calls", json.dumps(tool_calls, default=str)
+            )
+
     if hasattr(response, "stop_reason"):
         span.set_attribute("llm.finish_reason", response.stop_reason)
 

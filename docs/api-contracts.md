@@ -41,7 +41,8 @@ Ingest one or more spans from the SDK.
         "llm.tokens.output": 1,
         "llm.tokens.total": 15,
         "llm.cost_usd": 0.000075,
-        "llm.finish_reason": "stop"
+        "llm.finish_reason": "tool_calls",
+        "llm.tool_calls": "[{\"id\": \"call_abc123\", \"function\": {\"name\": \"get_weather\", \"arguments\": \"{\\\"location\\\": \\\"San Francisco\\\"}\"}}]"
       }
     }
   ]

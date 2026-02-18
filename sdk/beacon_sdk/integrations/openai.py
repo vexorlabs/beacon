@@ -43,6 +43,22 @@ def _apply_response_attributes(span: Any, response: Any, model: str) -> None:
             span.set_attribute("llm.completion", choice.message.content or "")
         if hasattr(choice, "finish_reason"):
             span.set_attribute("llm.finish_reason", choice.finish_reason)
+        if (
+            hasattr(choice, "message")
+            and hasattr(choice.message, "tool_calls")
+            and choice.message.tool_calls
+        ):
+            tool_calls = [
+                {
+                    "id": tc.id,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    },
+                }
+                for tc in choice.message.tool_calls
+            ]
+            span.set_attribute("llm.tool_calls", json.dumps(tool_calls))
 
     if hasattr(response, "usage") and response.usage is not None:
         input_tokens = response.usage.prompt_tokens or 0

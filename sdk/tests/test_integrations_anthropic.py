@@ -5,6 +5,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
+import json
+
 import pytest
 
 import beacon_sdk
@@ -382,6 +384,41 @@ def test_anthropic_stream_records_prompt_and_model(
     assert span.attributes["llm.provider"] == "anthropic"
     assert span.attributes["llm.model"] == "claude-sonnet-4-6-20250514"
     assert '"role": "user"' in span.attributes["llm.prompt"]
+
+
+def test_anthropic_captures_tool_use_blocks(exporter: InMemoryExporter) -> None:
+    response = SimpleNamespace(
+        content=[
+            SimpleNamespace(type="text", text="I'll check the weather."),
+            SimpleNamespace(
+                type="tool_use",
+                id="toolu_abc123",
+                name="get_weather",
+                input={"location": "San Francisco"},
+            ),
+        ],
+        usage=SimpleNamespace(input_tokens=20, output_tokens=15),
+        model="claude-sonnet-4-6-20250514",
+        stop_reason="tool_use",
+    )
+    wrapper = _patched_create_fn(_make_fake_original(response=response))
+    wrapper(None, model="claude-sonnet-4-6-20250514", messages=[], max_tokens=100)
+
+    span = exporter.spans[0]
+    tool_calls = json.loads(span.attributes["llm.tool_calls"])
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["name"] == "get_weather"
+    assert tool_calls[0]["id"] == "toolu_abc123"
+    assert tool_calls[0]["input"] == {"location": "San Francisco"}
+    assert span.attributes["llm.completion"] == "I'll check the weather."
+
+
+def test_anthropic_no_tool_calls_when_text_only(exporter: InMemoryExporter) -> None:
+    wrapper = _patched_create_fn(_make_fake_original())
+    wrapper(None, model="claude-sonnet-4-6-20250514", messages=[], max_tokens=100)
+
+    span = exporter.spans[0]
+    assert "llm.tool_calls" not in span.attributes
 
 
 def test_anthropic_cost_estimation() -> None:
