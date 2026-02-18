@@ -10,6 +10,10 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): Collapsible sidebar with icon-only collapsed state and `Cmd+\` keyboard shortcut
+- feat(frontend): Fullscreen canvas toggle in CostSummaryBar — hides side panels, auto-reveals span detail on node click
+- feat(frontend): Draggable graph nodes, animated edges, zoom controls, double-click-to-focus, color-coded MiniMap
+
 - feat(frontend): Linear-inspired design system — dark-first oklch color tokens with blue-purple hue, Inter Variable font at 13px base
 - feat(frontend): Sidebar navigation — persistent 220px sidebar replacing tab bar (Dashboard, Traces, Playground, Settings)
 - feat(frontend): DashboardPage — getting-started guide (empty state) + stats overview with recent traces (returning user)
