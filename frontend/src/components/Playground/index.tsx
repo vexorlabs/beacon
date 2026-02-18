@@ -41,7 +41,7 @@ export default function Playground({ onViewInDebugger }: Props) {
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-2 border-b border-border flex-none">
         {/* Mode toggle */}
-        <div className="flex items-center border border-border rounded-md overflow-hidden">
+        <div className="flex items-center border-[0.5px] border-border rounded-md overflow-hidden">
           <button
             type="button"
             onClick={() => setCompareMode(false)}

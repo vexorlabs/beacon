@@ -56,7 +56,7 @@ export default function DemoAgents() {
         {scenarios.map((s) => (
           <div
             key={s.key}
-            className="border border-border rounded-lg p-4 space-y-3 flex flex-col"
+            className="bg-card border-[0.5px] border-border rounded-lg p-4 space-y-3 flex flex-col shadow-[0_2px_8px_oklch(0_0_0/0.15)]"
           >
             <div className="space-y-1.5 flex-1">
               <div className="flex items-center justify-between">

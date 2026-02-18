@@ -133,8 +133,40 @@ body {
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.300 0.012 272) transparent;
   }
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* WebKit scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.300 0.012 272);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.400 0.012 272);
+}
+
+/* Button depth shadows */
+[data-slot="button"][data-variant="default"] {
+  box-shadow:
+    0px 4px 4px -1px oklch(0 0 0 / 0.08),
+    0px 1px 1px 0px oklch(0 0 0 / 0.12);
+}
+
+[data-slot="button"][data-variant="outline"] {
+  box-shadow: 0px 1px 2px 0px oklch(0 0 0 / 0.1);
 }

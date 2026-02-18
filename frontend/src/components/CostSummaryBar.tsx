@@ -14,7 +14,7 @@ export default function CostSummaryBar({
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
 
   return (
-    <div className="flex items-center gap-4 px-3 py-2 border-b border-border text-xs text-muted-foreground bg-muted/30">
+    <div className="flex items-center gap-4 px-3 py-2 border-b border-border/60 text-xs text-muted-foreground bg-card/50">
       {selectedTrace ? (
         <>
           <span className="font-medium text-foreground truncate max-w-xs">

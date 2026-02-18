@@ -73,9 +73,11 @@ export default function LlmCallDetail({ span }: LlmCallDetailProps) {
 
       {/* Prompt */}
       <div>
-        <h4 className="text-xs font-semibold mb-1">Prompt</h4>
+        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+          Prompt
+        </h4>
         {Array.isArray(messages) ? (
-          <div className="space-y-2 max-h-[300px] overflow-auto">
+          <div className="space-y-2 max-h-[300px] overflow-auto border-[0.5px] border-border rounded-md p-0.5">
             {messages.map((msg: Record<string, unknown>, i: number) => (
               <div key={i} className="bg-muted rounded p-2 text-xs">
                 <span className="font-semibold text-muted-foreground">
@@ -90,7 +92,7 @@ export default function LlmCallDetail({ span }: LlmCallDetailProps) {
             ))}
           </div>
         ) : (
-          <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto">
+          <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto border-[0.5px] border-border">
             {typeof promptRaw === "string"
               ? promptRaw
               : JSON.stringify(promptRaw, null, 2)}
@@ -100,8 +102,10 @@ export default function LlmCallDetail({ span }: LlmCallDetailProps) {
 
       {/* Completion */}
       <div>
-        <h4 className="text-xs font-semibold mb-1">Completion</h4>
-        <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto">
+        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+          Completion
+        </h4>
+        <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto border-[0.5px] border-border">
           {typeof completion === "string"
             ? completion
             : JSON.stringify(completion, null, 2)}
@@ -115,7 +119,9 @@ export default function LlmCallDetail({ span }: LlmCallDetailProps) {
           return null;
         return (
           <div>
-            <h4 className="text-xs font-semibold mb-1">Tool Calls</h4>
+            <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+              Tool Calls
+            </h4>
             <div className="space-y-2">
               {toolCallsRaw.map(
                 (tc: Record<string, unknown>, i: number) => {
@@ -172,7 +178,9 @@ export default function LlmCallDetail({ span }: LlmCallDetailProps) {
         finishReason !== undefined ||
         tokensTotal !== undefined) && (
         <div>
-          <h4 className="text-xs font-semibold mb-1">Parameters</h4>
+          <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+            Parameters
+          </h4>
           <div className="text-xs text-muted-foreground space-y-0.5">
             {temperature !== undefined && (
               <div>Temperature: {String(temperature)}</div>

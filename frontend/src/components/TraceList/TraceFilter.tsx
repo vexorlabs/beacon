@@ -14,7 +14,7 @@ export default function TraceFilter() {
         placeholder="Filter traces..."
         value={traceFilter.nameQuery}
         onChange={(e) => setTraceFilter({ nameQuery: e.target.value })}
-        className="flex-1 bg-background border border-input rounded-sm px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+        className="flex-1 bg-background border-[0.5px] border-input rounded-md px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
       />
       <select
         value={traceFilter.status}
@@ -22,7 +22,7 @@ export default function TraceFilter() {
           // Safe: values come from hardcoded <option> elements below
           setTraceFilter({ status: e.target.value as FilterStatus })
         }
-        className="bg-background border border-input rounded-sm px-1 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+        className="bg-background border-[0.5px] border-input rounded-md px-1 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
       >
         <option value="all">All</option>
         <option value="ok">OK</option>

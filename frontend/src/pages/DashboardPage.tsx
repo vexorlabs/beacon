@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useTraceStore } from "@/store/trace";
-import { Bug, FlaskConical } from "lucide-react";
+import { Bug, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DemoAgents from "@/components/DemoAgents";
 import type { TraceSummary } from "@/lib/types";
@@ -24,12 +24,15 @@ function GettingStarted({
 }) {
   return (
     <div className="flex-1 flex items-center justify-center p-8">
-      <div className="max-w-lg w-full space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-foreground">
+      <div className="max-w-2xl w-full space-y-10">
+        <div className="space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Radar size={20} className="text-primary" />
+          </div>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
             Welcome to Beacon
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-[13px] max-w-md leading-relaxed">
             Debug your AI agents with interactive execution graphs, time-travel,
             and prompt replay.
           </p>
@@ -57,11 +60,10 @@ function GettingStarted({
         <DemoAgents />
 
         <div className="flex gap-3 pt-2">
-          <Button onClick={() => onNavigate("/playground")}>
-            <FlaskConical size={14} />
-            Try the Playground
-          </Button>
-          <Button variant="outline" onClick={() => onNavigate("/traces")}>
+          <Button
+            variant="outline"
+            onClick={() => onNavigate("/traces")}
+          >
             <Bug size={14} />
             View Traces
           </Button>
@@ -83,14 +85,14 @@ function Step({
   description?: string;
 }) {
   return (
-    <div className="border border-border rounded-lg p-4 space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-medium">
+    <div className="bg-card border-[0.5px] border-border rounded-lg p-4 space-y-2.5 shadow-[0_2px_8px_oklch(0_0_0/0.2)]">
+      <div className="flex items-center gap-2.5">
+        <span className="flex items-center justify-center w-5 h-5 rounded-md bg-primary/15 text-primary text-[11px] font-semibold">
           {number}
         </span>
-        <span className="text-sm font-medium text-foreground">{title}</span>
+        <span className="text-[13px] font-medium text-foreground">{title}</span>
       </div>
-      <pre className="bg-background rounded-md px-3 py-2 text-xs font-mono text-muted-foreground overflow-x-auto">
+      <pre className="bg-background/80 rounded-md px-3 py-2 text-xs font-mono text-muted-foreground overflow-x-auto border-[0.5px] border-border">
         {code}
       </pre>
       {description && (
@@ -120,8 +122,10 @@ function Overview({
     <div className="flex-1 overflow-y-auto p-8">
       <div className="max-w-3xl space-y-8">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground text-[13px] mt-1">
             Overview of your agent traces.
           </p>
         </div>
@@ -161,25 +165,25 @@ function Overview({
                 key={trace.trace_id}
                 type="button"
                 onClick={() => onNavigate(`/traces/${trace.trace_id}`)}
-                className="w-full text-left border border-border rounded-lg p-3 hover:bg-secondary/50 transition-colors"
+                className="w-full text-left bg-card border-[0.5px] border-border rounded-lg p-3.5 hover:bg-secondary/50 transition-colors shadow-[0_1px_3px_oklch(0_0_0/0.1)]"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-medium text-foreground truncate">
                     {trace.name}
                   </span>
                   <span
-                    className={`text-[11px] font-medium ${
+                    className={`text-[11px] font-medium px-1.5 py-0.5 rounded-md ${
                       trace.status === "error"
-                        ? "text-red-400"
+                        ? "text-red-400 bg-red-500/10"
                         : trace.status === "ok"
-                          ? "text-emerald-400"
-                          : "text-muted-foreground"
+                          ? "text-emerald-400 bg-emerald-500/10"
+                          : "text-muted-foreground bg-muted"
                     }`}
                   >
                     {trace.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                   <span>{trace.span_count} spans</span>
                   {trace.duration_ms !== null && (
                     <span>{formatDuration(trace.duration_ms)}</span>
@@ -194,13 +198,6 @@ function Overview({
         </div>
 
         <DemoAgents />
-
-        <div className="flex gap-3">
-          <Button onClick={() => onNavigate("/playground")}>
-            <FlaskConical size={14} />
-            Open Playground
-          </Button>
-        </div>
       </div>
     </div>
   );
@@ -208,9 +205,9 @@ function Overview({
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-border rounded-lg p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-lg font-semibold text-foreground mt-0.5">
+    <div className="bg-card border-[0.5px] border-border rounded-lg p-4 shadow-[0_2px_8px_oklch(0_0_0/0.15)]">
+      <div className="text-xs text-muted-foreground font-medium">{label}</div>
+      <div className="text-xl font-semibold text-foreground mt-1 tracking-tight">
         {value}
       </div>
     </div>

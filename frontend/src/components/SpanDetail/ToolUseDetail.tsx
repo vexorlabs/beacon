@@ -37,16 +37,20 @@ export default function ToolUseDetail({ span }: ToolUseDetailProps) {
 
       {/* Input */}
       <div>
-        <h4 className="text-xs font-semibold mb-1">Input</h4>
-        <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto">
+        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+          Input
+        </h4>
+        <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto border-[0.5px] border-border">
           {formatJson(input)}
         </pre>
       </div>
 
       {/* Output */}
       <div>
-        <h4 className="text-xs font-semibold mb-1">Output</h4>
-        <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto">
+        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+          Output
+        </h4>
+        <pre className="text-xs bg-muted rounded p-2 whitespace-pre-wrap max-h-[300px] overflow-auto border-[0.5px] border-border">
           {formatJson(output)}
         </pre>
       </div>
