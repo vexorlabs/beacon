@@ -95,6 +95,7 @@ export default function TraceGraph() {
       fitViewOptions={{ padding: 0.2 }}
       minZoom={0.1}
       maxZoom={2}
+      colorMode="dark"
       proOptions={{ hideAttribution: true }}
     >
       <Background />

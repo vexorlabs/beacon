@@ -3,14 +3,14 @@ import type { NodeProps, Node } from "@xyflow/react";
 import type { SpanNodeData, SpanType } from "@/lib/types";
 
 const SPAN_TYPE_STYLES: Record<SpanType, string> = {
-  llm_call: "bg-blue-50 border-blue-400 text-blue-900",
-  tool_use: "bg-green-50 border-green-400 text-green-900",
-  browser_action: "bg-orange-50 border-orange-400 text-orange-900",
-  file_operation: "bg-yellow-50 border-yellow-400 text-yellow-900",
-  shell_command: "bg-purple-50 border-purple-400 text-purple-900",
-  agent_step: "bg-gray-50 border-gray-400 text-gray-900",
-  chain: "bg-gray-50 border-gray-400 text-gray-900",
-  custom: "bg-gray-50 border-gray-400 text-gray-900",
+  llm_call: "bg-blue-950/40 border-blue-500/40 text-blue-300",
+  tool_use: "bg-emerald-950/40 border-emerald-500/40 text-emerald-300",
+  browser_action: "bg-orange-950/40 border-orange-500/40 text-orange-300",
+  file_operation: "bg-amber-950/40 border-amber-500/40 text-amber-300",
+  shell_command: "bg-purple-950/40 border-purple-500/40 text-purple-300",
+  agent_step: "bg-zinc-800/40 border-zinc-500/40 text-zinc-300",
+  chain: "bg-zinc-800/40 border-zinc-500/40 text-zinc-300",
+  custom: "bg-zinc-800/40 border-zinc-500/40 text-zinc-300",
 };
 
 function formatDuration(ms: number | null): string {
@@ -23,11 +23,11 @@ type SpanNodeType = Node<SpanNodeData, "spanNode">;
 
 export default function SpanNode({ data }: NodeProps<SpanNodeType>) {
   const baseStyle = SPAN_TYPE_STYLES[data.span_type] ?? SPAN_TYPE_STYLES.custom;
-  const errorRing = data.status === "error" ? "ring-2 ring-red-500" : "";
+  const errorRing = data.status === "error" ? "ring-2 ring-red-500/60" : "";
 
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!bg-gray-400" />
+      <Handle type="target" position={Position.Top} className="!bg-zinc-500" />
       <div
         className={`px-3 py-2 rounded-md border-2 min-w-[160px] max-w-[220px] ${baseStyle} ${errorRing}`}
       >
@@ -43,7 +43,7 @@ export default function SpanNode({ data }: NodeProps<SpanNodeType>) {
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!bg-gray-400"
+        className="!bg-zinc-500"
       />
     </>
   );

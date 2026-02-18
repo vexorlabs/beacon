@@ -10,6 +10,15 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): Linear-inspired design system — dark-first oklch color tokens with blue-purple hue, Inter Variable font at 13px base
+- feat(frontend): Sidebar navigation — persistent 220px sidebar replacing tab bar (Dashboard, Traces, Playground, Settings)
+- feat(frontend): DashboardPage — getting-started guide (empty state) + stats overview with recent traces (returning user)
+- feat(frontend): TracesPage — extracted 3-panel debugger layout from App.tsx
+- feat(frontend): PlaygroundPage — wrapper around Playground component with sidebar integration
+- feat(frontend): SettingsPage — full-page API key management replacing modal dialog
+- feat(frontend): Zustand navigation store for page routing (`store/navigation.ts`)
+- docs: `docs/design-system.md` — living reference for colors, typography, spacing, component patterns, layout conventions
+
 - feat(frontend): Playground tab — multi-turn chat interface with model selector, system prompt, inline cost/token/latency metrics
 - feat(frontend): Multi-model comparison view — send one prompt to 2+ models, see side-by-side results with metrics
 - feat(frontend): API Key management dialog — store/update/delete keys per provider with masked display
@@ -22,10 +31,17 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 - docs: `docs/contributing.md` with prerequisites, dev setup, code style, and PR guidelines
 
 ### Changed
+- refactor(frontend): replace tab-bar navigation with sidebar + page-based routing
+- refactor(frontend): remove `ApiKeyDialog` modal in favor of full `SettingsPage`
+- refactor(frontend): remove `onOpenSettings` prop from Playground component
 - refactor(sdk): simplify `langchain_agent.py` example from 99 to 47 lines using `create_tool_calling_agent`
+- docs: update roadmap, README, AGENTS.md, frontend.md, CLAUDE.md for Phase 5
 - docs: mark sdk/README.md, contributing.md, and examples as complete in roadmap
 
 ### Fixed
+- fix(frontend): SpanNode graph colors — replaced light-mode-only styles with dark-friendly alternatives
+- fix(frontend): React Flow graph background set to dark color mode
+- fix(frontend): Settings page API key overflow — masked key and buttons stay within card boundaries
 - fix(frontend): surface replay errors to user instead of silently swallowing them
 - fix(frontend): key ReplayPanel by span_id to prevent stale content when switching spans
 - fix(frontend): guard `.toFixed()` on potentially undefined cost value in ReplayPanel

@@ -57,6 +57,7 @@ beacon/
 │   ├── architecture.md
 │   ├── data-model.md
 │   ├── api-contracts.md
+│   ├── design-system.md       # Living design system reference (colors, typography, components)
 │   ├── sdk.md
 │   ├── backend.md
 │   ├── frontend.md
@@ -96,18 +97,29 @@ beacon/
 │
 └── frontend/                  # Vite + React UI
     ├── src/
+    │   ├── App.tsx            # Root layout: Sidebar + page routing
+    │   ├── index.css          # Design system tokens (oklch colors, typography)
     │   ├── components/
     │   │   ├── ui/            # shadcn/ui (DO NOT edit)
+    │   │   ├── Sidebar/       # Persistent left sidebar navigation
     │   │   ├── TraceList/
     │   │   ├── TraceGraph/
     │   │   ├── SpanDetail/
+    │   │   ├── Playground/
     │   │   └── TimeTravel/
+    │   ├── pages/             # Page-level components
+    │   │   ├── DashboardPage.tsx
+    │   │   ├── TracesPage.tsx
+    │   │   ├── PlaygroundPage.tsx
+    │   │   └── SettingsPage.tsx
     │   ├── lib/
     │   │   ├── api.ts
     │   │   ├── ws.ts
     │   │   └── types.ts
     │   └── store/
-    │       └── trace.ts
+    │       ├── trace.ts
+    │       ├── playground.ts
+    │       └── navigation.ts  # Page routing state
     ├── package.json
     └── vite.config.ts
 ```
