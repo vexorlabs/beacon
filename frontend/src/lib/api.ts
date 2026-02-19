@@ -11,6 +11,8 @@ import type {
   Span,
   StatsResponse,
   TraceDetail,
+  TraceExportData,
+  TraceImportResponse,
   TracesResponse,
 } from "./types";
 
@@ -150,6 +152,36 @@ export function deleteAllTraces(): Promise<{ deleted_count: number }> {
 
 export function getStats(): Promise<StatsResponse> {
   return apiFetch<StatsResponse>("/stats");
+}
+
+// --- Export / Import ---
+
+export async function exportTrace(
+  traceId: string,
+  format: "json" | "otel" | "csv",
+): Promise<Blob> {
+  const res = await fetch(
+    `${BASE_URL}/traces/${traceId}/export?format=${format}`,
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    const detail =
+      typeof body === "object" && body !== null && "detail" in body
+        ? String(body.detail)
+        : `HTTP ${res.status}`;
+    throw new Error(detail);
+  }
+  return res.blob();
+}
+
+export function importTrace(
+  data: TraceExportData,
+): Promise<TraceImportResponse> {
+  return apiFetch<TraceImportResponse>("/traces/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 }
 
 // --- Search ---

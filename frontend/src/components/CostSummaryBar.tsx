@@ -1,7 +1,21 @@
-import { GitGraph, GanttChart, Maximize2, Minimize2 } from "lucide-react";
+import { useCallback } from "react";
+import {
+  GitGraph,
+  GanttChart,
+  Maximize2,
+  Minimize2,
+  Download,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
+import { exportTrace } from "@/lib/api";
 
 export type ViewMode = "graph" | "timeline";
 
@@ -12,6 +26,17 @@ interface CostSummaryBarProps {
   onViewModeChange: (mode: ViewMode) => void;
 }
 
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function CostSummaryBar({
   expanded,
   onToggleExpand,
@@ -19,6 +44,21 @@ export default function CostSummaryBar({
   onViewModeChange,
 }: CostSummaryBarProps) {
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
+
+  const handleExport = useCallback(
+    async (format: "json" | "otel" | "csv") => {
+      if (!selectedTrace) return;
+      const blob = await exportTrace(selectedTrace.trace_id, format);
+      const prefix = selectedTrace.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .slice(0, 30);
+      const idShort = selectedTrace.trace_id.slice(0, 8);
+      const ext = format === "otel" ? "otel.json" : format === "csv" ? "csv" : "json";
+      triggerDownload(blob, `${prefix}-${idShort}.${ext}`);
+    },
+    [selectedTrace],
+  );
 
   return (
     <div className="flex items-center gap-4 px-3 py-2 border-b border-border/60 text-xs text-muted-foreground bg-card/50">
@@ -44,8 +84,32 @@ export default function CostSummaryBar({
         <span className="text-muted-foreground">No trace selected</span>
       )}
 
-      {/* View toggle + fullscreen */}
+      {/* Export + View toggle + fullscreen */}
       <div className="ml-auto flex items-center gap-1">
+        {selectedTrace && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                title="Export trace"
+                className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                <Download size={13} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void handleExport("json")}>
+                JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("otel")}>
+                OTEL JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <button
           type="button"
           onClick={() => onViewModeChange("graph")}

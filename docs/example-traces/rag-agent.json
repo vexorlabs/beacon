@@ -1,0 +1,129 @@
+{
+  "version": "1",
+  "format": "beacon",
+  "exported_at": 1708300000.0,
+  "trace": {
+    "trace_id": "example-rag-agent-001",
+    "name": "RAG Agent: What is retrieval-augmented generation?",
+    "start_time": 1708299900.0,
+    "end_time": 1708299906.5,
+    "duration_ms": 6500.0,
+    "span_count": 5,
+    "status": "ok",
+    "total_cost_usd": 0.0082,
+    "total_tokens": 3420,
+    "tags": {
+      "framework": "langchain",
+      "agent_type": "rag"
+    }
+  },
+  "spans": [
+    {
+      "span_id": "rag-span-chain-root",
+      "trace_id": "example-rag-agent-001",
+      "parent_span_id": null,
+      "span_type": "chain",
+      "name": "RAG Agent: What is retrieval-augmented generation?",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708299900.0,
+      "end_time": 1708299906.5,
+      "duration_ms": 6500.0,
+      "attributes": {
+        "chain.type": "rag_pipeline",
+        "chain.input": "What is retrieval-augmented generation and how does it work?",
+        "chain.output": "Retrieval-Augmented Generation (RAG) is a technique that enhances LLM responses by first retrieving relevant documents from a knowledge base, then using those documents as context for the language model to generate more accurate, grounded answers."
+      }
+    },
+    {
+      "span_id": "rag-span-llm-rewrite",
+      "trace_id": "example-rag-agent-001",
+      "parent_span_id": "rag-span-chain-root",
+      "span_type": "llm_call",
+      "name": "Query Rewriting",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708299900.1,
+      "end_time": 1708299901.3,
+      "duration_ms": 1200.0,
+      "attributes": {
+        "llm.provider": "openai",
+        "llm.model": "gpt-4o-mini",
+        "llm.prompt": "[{\"role\": \"system\", \"content\": \"Rewrite the user query for optimal vector search retrieval. Output only the rewritten query.\"}, {\"role\": \"user\", \"content\": \"What is retrieval-augmented generation and how does it work?\"}]",
+        "llm.completion": "retrieval augmented generation RAG architecture components workflow vector database embedding",
+        "llm.tokens.input": 280,
+        "llm.tokens.output": 45,
+        "llm.tokens.total": 325,
+        "llm.cost_usd": 0.0003,
+        "llm.temperature": 0.0,
+        "llm.finish_reason": "stop"
+      }
+    },
+    {
+      "span_id": "rag-span-tool-search",
+      "trace_id": "example-rag-agent-001",
+      "parent_span_id": "rag-span-chain-root",
+      "span_type": "tool_use",
+      "name": "Vector Search",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708299901.4,
+      "end_time": 1708299902.6,
+      "duration_ms": 1200.0,
+      "attributes": {
+        "tool.name": "pinecone_search",
+        "tool.input": "{\"query\": \"retrieval augmented generation RAG architecture components workflow vector database embedding\", \"top_k\": 5}",
+        "tool.output": "[{\"id\": \"doc-42\", \"score\": 0.94, \"text\": \"RAG combines retrieval and generation...\"}, {\"id\": \"doc-17\", \"score\": 0.91, \"text\": \"The RAG architecture consists of an embedding model, vector store, and LLM...\"}]",
+        "tool.framework": "langchain"
+      }
+    },
+    {
+      "span_id": "rag-span-llm-rerank",
+      "trace_id": "example-rag-agent-001",
+      "parent_span_id": "rag-span-chain-root",
+      "span_type": "llm_call",
+      "name": "Document Reranking",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708299902.7,
+      "end_time": 1708299903.8,
+      "duration_ms": 1100.0,
+      "attributes": {
+        "llm.provider": "openai",
+        "llm.model": "gpt-4o-mini",
+        "llm.prompt": "[{\"role\": \"system\", \"content\": \"Score each document 1-10 for relevance to the query. Return JSON array of {id, score}.\"}, {\"role\": \"user\", \"content\": \"Query: What is retrieval-augmented generation?\\nDocuments: [doc-42, doc-17, doc-8, doc-31, doc-55]\"}]",
+        "llm.completion": "[{\"id\": \"doc-42\", \"score\": 9}, {\"id\": \"doc-17\", \"score\": 8}, {\"id\": \"doc-8\", \"score\": 5}]",
+        "llm.tokens.input": 520,
+        "llm.tokens.output": 65,
+        "llm.tokens.total": 585,
+        "llm.cost_usd": 0.0005,
+        "llm.temperature": 0.0,
+        "llm.finish_reason": "stop"
+      }
+    },
+    {
+      "span_id": "rag-span-llm-answer",
+      "trace_id": "example-rag-agent-001",
+      "parent_span_id": "rag-span-chain-root",
+      "span_type": "llm_call",
+      "name": "Answer Generation",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708299903.9,
+      "end_time": 1708299906.4,
+      "duration_ms": 2500.0,
+      "attributes": {
+        "llm.provider": "openai",
+        "llm.model": "gpt-4o",
+        "llm.prompt": "[{\"role\": \"system\", \"content\": \"Answer the user's question using ONLY the provided context. Cite sources.\"}, {\"role\": \"user\", \"content\": \"Context:\\n[doc-42] RAG combines retrieval and generation...\\n[doc-17] The RAG architecture consists of...\\n\\nQuestion: What is retrieval-augmented generation and how does it work?\"}]",
+        "llm.completion": "Retrieval-Augmented Generation (RAG) is a technique that enhances LLM responses by first retrieving relevant documents from a knowledge base, then using those documents as context for the language model to generate more accurate, grounded answers. The architecture consists of three main components: an embedding model that converts text to vectors, a vector database for storing and searching document embeddings, and a language model that generates the final answer using retrieved context [doc-42, doc-17].",
+        "llm.tokens.input": 1350,
+        "llm.tokens.output": 1160,
+        "llm.tokens.total": 2510,
+        "llm.cost_usd": 0.0074,
+        "llm.temperature": 0.3,
+        "llm.finish_reason": "stop"
+      }
+    }
+  ]
+}

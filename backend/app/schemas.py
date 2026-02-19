@@ -268,3 +268,32 @@ class SearchResultItem(BaseModel):
 class SearchResponse(BaseModel):
     results: list[SearchResultItem]
     total: int
+
+
+# --- Export / Import schemas ---
+
+
+class ExportFormat(str, enum.Enum):
+    JSON = "json"
+    OTEL = "otel"
+    CSV = "csv"
+
+
+class TraceExportData(BaseModel):
+    version: str = "1"
+    format: str = "beacon"
+    exported_at: float
+    trace: TraceSummary
+    spans: list[SpanResponse]
+
+
+class BulkTraceExportData(BaseModel):
+    version: str = "1"
+    format: str = "beacon"
+    exported_at: float
+    traces: list[TraceExportData]
+
+
+class TraceImportResponse(BaseModel):
+    trace_id: str
+    span_count: int
