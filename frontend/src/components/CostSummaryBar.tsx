@@ -1,17 +1,18 @@
 import { useCallback } from "react";
 import {
-  GitGraph,
+  Check,
+  Download,
   GanttChart,
+  GitGraph,
   Maximize2,
   Minimize2,
-  Download,
+  SlidersHorizontal,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
@@ -61,88 +62,94 @@ export default function CostSummaryBar({
   );
 
   return (
-    <div className="flex items-center gap-4 px-3 py-2 border-b border-border/60 text-xs text-muted-foreground bg-card/50">
+    <div className="h-11 flex items-center gap-2 px-3 border-b border-border text-xs text-muted-foreground bg-card/50">
       {selectedTrace ? (
-        <>
-          <span className="font-medium text-foreground truncate max-w-xs">
+        <div className="min-w-0 flex flex-1 items-center gap-2">
+          <span
+            className="font-medium text-foreground truncate max-w-[170px] sm:max-w-[240px] lg:max-w-[340px]"
+            title={selectedTrace.name}
+          >
             {selectedTrace.name}
           </span>
-          <Separator orientation="vertical" className="h-4" />
-          <span>{selectedTrace.total_tokens.toLocaleString()} tokens</span>
-          <Separator orientation="vertical" className="h-4" />
-          <span>${selectedTrace.total_cost_usd.toFixed(4)}</span>
+          <span className="inline-flex shrink-0 items-center rounded-md border border-border bg-background/50 px-1.5 py-0.5 text-[11px]">
+            {selectedTrace.span_count} spans
+          </span>
           {selectedTrace.duration_ms !== null && (
-            <>
-              <Separator orientation="vertical" className="h-4" />
-              <span>{(selectedTrace.duration_ms / 1000).toFixed(1)}s</span>
-            </>
+            <span className="hidden sm:inline-flex shrink-0 items-center rounded-md border border-border bg-background/50 px-1.5 py-0.5 text-[11px]">
+              {(selectedTrace.duration_ms / 1000).toFixed(1)}s
+            </span>
           )}
-          <Separator orientation="vertical" className="h-4" />
-          <span>{selectedTrace.span_count} spans</span>
-        </>
+          <span className="hidden md:inline-flex shrink-0 items-center rounded-md border border-border bg-background/50 px-1.5 py-0.5 text-[11px]">
+            {selectedTrace.total_tokens.toLocaleString()} tokens
+          </span>
+          <span className="hidden lg:inline-flex shrink-0 items-center rounded-md border border-border bg-background/50 px-1.5 py-0.5 text-[11px]">
+            ${selectedTrace.total_cost_usd.toFixed(4)}
+          </span>
+        </div>
       ) : (
-        <span className="text-muted-foreground">No trace selected</span>
+        <span className="text-muted-foreground flex-1">No trace selected</span>
       )}
 
-      {/* Export + View toggle + fullscreen */}
-      <div className="ml-auto flex items-center gap-1">
-        {selectedTrace && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                title="Export trace"
-                className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-              >
-                <Download size={13} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => void handleExport("json")}>
-                JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport("otel")}>
-                OTEL JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport("csv")}>
-                CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        <button
-          type="button"
-          onClick={() => onViewModeChange("graph")}
-          title="Graph view"
-          className={cn(
-            "flex items-center justify-center w-6 h-6 rounded-md transition-colors",
-            viewMode === "graph"
-              ? "bg-secondary text-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
-          )}
-        >
-          <GitGraph size={13} />
-        </button>
-        <button
-          type="button"
-          onClick={() => onViewModeChange("timeline")}
-          title="Timeline view"
-          className={cn(
-            "flex items-center justify-center w-6 h-6 rounded-md transition-colors",
-            viewMode === "timeline"
-              ? "bg-secondary text-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
-          )}
-        >
-          <GanttChart size={13} />
-        </button>
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              title="Canvas options"
+              className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            >
+              <SlidersHorizontal size={14} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={() => onViewModeChange("graph")}
+              className="justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <GitGraph size={13} />
+                Graph view
+              </span>
+              {viewMode === "graph" && <Check size={12} className="text-primary" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onViewModeChange("timeline")}
+              className="justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <GanttChart size={13} />
+                Timeline view
+              </span>
+              {viewMode === "timeline" && (
+                <Check size={12} className="text-primary" />
+              )}
+            </DropdownMenuItem>
+            {selectedTrace && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => void handleExport("json")}>
+                  <Download size={13} className="mr-2" />
+                  Export JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleExport("otel")}>
+                  <Download size={13} className="mr-2" />
+                  Export OTEL JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                  <Download size={13} className="mr-2" />
+                  Export CSV
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <button
           type="button"
           onClick={onToggleExpand}
           title={expanded ? "Exit fullscreen" : "Fullscreen canvas"}
-          className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+          className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
         >
-          {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
         </button>
       </div>
     </div>

@@ -79,9 +79,14 @@ export default function TraceListItem({
               )}
             </div>
           )}
-          <span className="font-medium text-[13px] truncate">{trace.name}</span>
+          <span
+            className="font-medium text-[13px] truncate max-w-[150px] sm:max-w-[220px]"
+            title={trace.name}
+          >
+            {trace.name}
+          </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {!compareMode && confirming ? (
             <span
               className="flex items-center gap-1"
@@ -118,7 +123,10 @@ export default function TraceListItem({
               <Trash2 size={12} />
             </button>
           ) : null}
-          <Badge variant={STATUS_VARIANT[trace.status] ?? "secondary"}>
+          <Badge
+            variant={STATUS_VARIANT[trace.status] ?? "secondary"}
+            className="shrink-0"
+          >
             {trace.status}
           </Badge>
         </div>

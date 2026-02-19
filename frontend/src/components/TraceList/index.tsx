@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload } from "lucide-react";
+import { MoreHorizontal, Search, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
 import { useCompareStore } from "@/store/compare";
 import { importTrace } from "@/lib/api";
+import type { SpanStatus } from "@/lib/types";
 import type { TraceExportData } from "@/lib/types";
 import TraceListItem from "./TraceListItem";
-import TraceFilter from "./TraceFilter";
 import SearchBar from "./SearchBar";
 
 export default function TraceList() {
@@ -19,6 +26,7 @@ export default function TraceList() {
   const loadTraces = useTraceStore((s) => s.loadTraces);
   const deleteTrace = useTraceStore((s) => s.deleteTrace);
   const traceFilter = useTraceStore((s) => s.traceFilter);
+  const setTraceFilter = useTraceStore((s) => s.setTraceFilter);
 
   const compareMode = useCompareStore((s) => s.compareMode);
   const selectedTraceIds = useCompareStore((s) => s.selectedTraceIds);
@@ -27,6 +35,7 @@ export default function TraceList() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   useEffect(() => {
     void loadTraces();
@@ -35,11 +44,6 @@ export default function TraceList() {
   const filteredTraces = useMemo(() => {
     return traces.filter((t) => {
       if (traceFilter.status !== "all" && t.status !== traceFilter.status)
-        return false;
-      if (
-        traceFilter.nameQuery &&
-        !t.name.toLowerCase().includes(traceFilter.nameQuery.toLowerCase())
-      )
         return false;
       return true;
     });
@@ -77,19 +81,84 @@ export default function TraceList() {
     [loadTraces, navigate],
   );
 
+  const hasActiveFilter = traceFilter.status !== "all";
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isEditable =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target?.isContentEditable;
+
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "k" &&
+        !isEditable
+      ) {
+        event.preventDefault();
+        setShowSearchModal(true);
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setShowSearchModal(false);
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const handleStatusFilterChange = (value: string) => {
+    setTraceFilter({ status: value as "all" | SpanStatus });
+  };
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold">Traces</h2>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            title="Import trace"
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary/50 flex items-center justify-center w-6 h-6 rounded-md transition-colors"
-          >
-            <Upload size={13} />
-          </button>
+    <div className="relative flex h-full flex-col">
+      <div className="relative border-b border-border bg-card/30">
+        <div className="h-11 px-3 flex items-center justify-between gap-2">
+          <div className="min-w-0 flex items-center gap-2">
+            <h2 className="text-[13px] font-semibold">Traces</h2>
+            <Badge variant="secondary" className="text-[10px]">
+              {filteredTraces.length}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              title="Search spans (Cmd/Ctrl+K)"
+              onClick={() => setShowSearchModal(true)}
+              className={`flex items-center justify-center w-7 h-7 rounded-md transition-colors ${
+                showSearchModal || hasActiveFilter
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+              }`}
+            >
+              <Search size={14} />
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  title="Trace actions"
+                  className="text-muted-foreground hover:text-foreground hover:bg-secondary/60 flex items-center justify-center w-7 h-7 rounded-md transition-colors"
+                >
+                  <MoreHorizontal size={14} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={toggleCompareMode}>
+                  {compareMode ? `Exit compare (${selectedTraceIds.length}/2)` : "Compare"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  Import
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <input
             ref={fileInputRef}
             type="file"
@@ -97,19 +166,70 @@ export default function TraceList() {
             className="hidden"
             onChange={(e) => void handleImport(e)}
           />
-          <button
-            type="button"
-            onClick={toggleCompareMode}
-            className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
-              compareMode
-                ? "bg-primary/20 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            }`}
-          >
-            {compareMode ? "Cancel" : "Compare"}
-          </button>
         </div>
       </div>
+
+      {showSearchModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px] p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowSearchModal(false);
+            }
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search spans"
+        >
+          <div className="mx-auto mt-16 w-full max-w-xl rounded-xl border border-border bg-popover shadow-2xl">
+            <div className="flex h-11 items-center justify-between border-b border-border px-3">
+              <div className="flex items-center gap-2">
+                <Search size={13} className="text-muted-foreground" />
+                <span className="text-xs font-semibold">Search spans</span>
+              </div>
+              <button
+                type="button"
+                aria-label="Close search"
+                onClick={() => setShowSearchModal(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="p-3 space-y-3">
+              <SearchBar
+                autoFocus
+                onResultSelect={() => setShowSearchModal(false)}
+                placeholder="Search spans and jump to a result..."
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-muted-foreground shrink-0">
+                  Trace status
+                </span>
+                <select
+                  value={traceFilter.status}
+                  onChange={(e) => handleStatusFilterChange(e.target.value)}
+                  className="h-8 w-28 shrink-0 bg-background border border-input rounded-md px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="all">All</option>
+                  <option value="ok">OK</option>
+                  <option value="error">Error</option>
+                  <option value="unset">Running</option>
+                </select>
+                {traceFilter.status !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => setTraceFilter({ status: "all" })}
+                    className="text-[11px] text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {importError && (
         <div className="px-3 py-2 border-b border-border bg-destructive/10 text-destructive text-[11px]">
@@ -142,8 +262,6 @@ export default function TraceList() {
         </div>
       )}
 
-      <SearchBar />
-      <TraceFilter />
       <ScrollArea className="flex-1 min-h-0">
         {isLoading && traces.length === 0 && (
           <div className="flex flex-col gap-0">
