@@ -8,13 +8,13 @@ export default function TraceFilter() {
   const setTraceFilter = useTraceStore((s) => s.setTraceFilter);
 
   return (
-    <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+    <div className="flex items-center gap-2">
       <input
         type="search"
-        placeholder="Filter traces..."
+        placeholder="Filter trace names..."
         value={traceFilter.nameQuery}
         onChange={(e) => setTraceFilter({ nameQuery: e.target.value })}
-        className="flex-1 bg-background border-[0.5px] border-input rounded-md px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+        className="h-8 min-w-0 flex-1 bg-background border border-input rounded-md px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
       />
       <select
         value={traceFilter.status}
@@ -22,7 +22,7 @@ export default function TraceFilter() {
           // Safe: values come from hardcoded <option> elements below
           setTraceFilter({ status: e.target.value as FilterStatus })
         }
-        className="bg-background border-[0.5px] border-input rounded-md px-1 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+        className="h-8 w-24 shrink-0 bg-background border border-input rounded-md px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
       >
         <option value="all">All</option>
         <option value="ok">OK</option>

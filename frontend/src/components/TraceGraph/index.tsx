@@ -152,16 +152,18 @@ function TraceGraphInner() {
     >
       <Background />
       <Controls
+        showZoom={false}
         showInteractive={false}
-        position="bottom-left"
-        className="!bg-zinc-900 !border-zinc-700 !rounded-md !shadow-lg [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!fill-zinc-300 [&>button:hover]:!bg-zinc-700"
+        position="top-left"
+        className="!bg-zinc-900/85 !border-zinc-700 !rounded-md !shadow-md !opacity-70 hover:!opacity-100 transition-opacity [&>button]:!bg-zinc-800/90 [&>button]:!border-zinc-700 [&>button]:!fill-zinc-300 [&>button:hover]:!bg-zinc-700"
       />
       <MiniMap
         nodeStrokeWidth={3}
         nodeColor={miniMapNodeColor}
         maskColor="oklch(0.13 0.004 272 / 0.7)"
         position="bottom-right"
-        style={{ width: 120, height: 80, background: "#1a1a1e" }}
+        className="hidden md:block !border !border-zinc-700/70 !rounded-md !shadow-md"
+        style={{ width: 110, height: 72, background: "#1a1a1e" }}
       />
     </ReactFlow>
   );

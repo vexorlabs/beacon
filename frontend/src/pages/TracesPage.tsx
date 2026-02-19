@@ -17,7 +17,7 @@ export default function TracesPage() {
   }>();
 
   const { leftWidth, rightWidth, leftHandleProps, rightHandleProps } =
-    useResizablePanels(280, 380);
+    useResizablePanels(250, 330);
 
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("graph");
@@ -97,7 +97,7 @@ export default function TracesPage() {
           />
           <div
             style={{ width: rightWidth, flexShrink: 0 }}
-            className="border-l border-border"
+            className="border-l border-border flex flex-col min-h-0"
           >
             <SpanDetail />
           </div>

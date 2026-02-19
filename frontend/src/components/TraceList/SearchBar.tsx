@@ -4,13 +4,24 @@ import { Search, X } from "lucide-react";
 import { searchTraces } from "@/lib/api";
 import type { SearchResultItem } from "@/lib/types";
 
-export default function SearchBar() {
+interface SearchBarProps {
+  autoFocus?: boolean;
+  onResultSelect?: () => void;
+  placeholder?: string;
+}
+
+export default function SearchBar({
+  autoFocus = false,
+  onResultSelect,
+  placeholder = "Search spans across traces...",
+}: SearchBarProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const doSearch = useCallback(async (q: string) => {
@@ -58,29 +69,37 @@ export default function SearchBar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  useEffect(() => {
+    if (!autoFocus) return;
+    const id = setTimeout(() => inputRef.current?.focus(), 0);
+    return () => clearTimeout(id);
+  }, [autoFocus]);
+
   const handleSelect = (item: SearchResultItem) => {
     navigate(`/traces/${item.trace_id}/${item.span_id}`);
     setQuery("");
     setResults([]);
     setOpen(false);
+    onResultSelect?.();
   };
 
   return (
-    <div ref={containerRef} className="relative px-3 py-2 border-b border-border">
+    <div ref={containerRef} className="relative">
       <div className="relative">
         <Search
           size={12}
           className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
         />
         <input
+          ref={inputRef}
           type="search"
-          placeholder="Search spans..."
+          placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             if (results.length > 0) setOpen(true);
           }}
-          className="w-full bg-background border border-input rounded-sm pl-7 pr-7 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+          className="h-8 w-full bg-background border border-input rounded-md pl-7 pr-7 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
         />
         {query && (
           <button
@@ -98,7 +117,7 @@ export default function SearchBar() {
       </div>
 
       {open && (
-        <div className="absolute left-3 right-3 top-full mt-1 z-50 bg-popover border border-border rounded-md shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-popover border border-border rounded-md shadow-lg max-h-64 overflow-y-auto">
           {loading && (
             <div className="px-3 py-2 text-xs text-muted-foreground">
               Searching...

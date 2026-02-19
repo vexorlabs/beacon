@@ -7,7 +7,7 @@ interface ResizablePanels {
   rightHandleProps: { onMouseDown: (e: React.MouseEvent) => void };
 }
 
-const MIN_WIDTH = 200;
+const MIN_WIDTH = 170;
 const MAX_LEFT = 480;
 const MAX_RIGHT = 600;
 
