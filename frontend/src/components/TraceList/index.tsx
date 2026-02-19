@@ -51,6 +51,12 @@ export default function TraceList() {
       const file = e.target.files?.[0];
       if (!file) return;
 
+      const MAX_IMPORT_SIZE = 50 * 1024 * 1024; // 50 MB
+      if (file.size > MAX_IMPORT_SIZE) {
+        setImportError("File too large (max 50 MB)");
+        return;
+      }
+
       try {
         const text = await file.text();
         const data = JSON.parse(text) as TraceExportData;

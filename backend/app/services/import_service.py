@@ -32,6 +32,7 @@ def import_trace(db: Session, data: TraceExportData) -> tuple[str, int]:
     ).scalar_one_or_none()
 
     if existing is not None:
+        logger.warning("Duplicate trace rejected: %s", trace_data.trace_id)
         raise ValueError(f"Trace {trace_data.trace_id} already exists")
 
     # Compute aggregates from spans
@@ -83,9 +84,9 @@ def import_trace(db: Session, data: TraceExportData) -> tuple[str, int]:
                 span_id=span.span_id,
                 trace_id=trace_data.trace_id,
                 parent_span_id=span.parent_span_id,
-                span_type=span.span_type.value if hasattr(span.span_type, "value") else span.span_type,
+                span_type=span.span_type.value,
                 name=span.name,
-                status=span.status.value if hasattr(span.status, "value") else span.status,
+                status=span.status.value,
                 error_message=span.error_message,
                 start_time=span.start_time,
                 end_time=span.end_time,
@@ -99,4 +100,7 @@ def import_trace(db: Session, data: TraceExportData) -> tuple[str, int]:
         db.rollback()
         raise
 
+    logger.info(
+        "Imported trace %s with %d spans", trace_data.trace_id, len(spans_data)
+    )
     return trace_data.trace_id, len(spans_data)

@@ -98,6 +98,16 @@ async def import_trace(
     data: TraceExportData,
     db: Annotated[Session, Depends(get_db)],
 ) -> TraceImportResponse:
+    if data.format != "beacon":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported export format: {data.format!r} (expected 'beacon')",
+        )
+    if data.version != "1":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported export version: {data.version!r} (expected '1')",
+        )
     try:
         trace_id, span_count = import_service.import_trace(db, data)
     except ValueError as exc:
