@@ -176,10 +176,43 @@ def test_get_trace_graph_returns_nodes_and_edges(client):
     assert node["data"]["name"] == "llm-call"
     assert node["position"] == {"x": 0, "y": 0}
 
+    # Verify sequence numbers are present
+    sequences = sorted(n["data"]["sequence"] for n in data["nodes"])
+    assert sequences == [1, 2]
+
     # Verify edge
     edge = data["edges"][0]
     assert edge["source"] == root_id
     assert edge["target"] == child_id
+
+
+def test_get_trace_graph_sequence_follows_start_time_order(client):
+    trace_id = str(uuid.uuid4())
+    early_id = str(uuid.uuid4())
+    late_id = str(uuid.uuid4())
+
+    _ingest_span(
+        client,
+        span_id=early_id,
+        trace_id=trace_id,
+        name="first",
+        start_time=1700000000.0,
+        end_time=1700000001.0,
+    )
+    _ingest_span(
+        client,
+        span_id=late_id,
+        trace_id=trace_id,
+        name="second",
+        start_time=1700000002.0,
+        end_time=1700000003.0,
+    )
+
+    response = client.get(f"/v1/traces/{trace_id}/graph")
+    data = response.json()
+    node_map = {n["id"]: n["data"]["sequence"] for n in data["nodes"]}
+    assert node_map[early_id] == 1
+    assert node_map[late_id] == 2
 
 
 def test_get_trace_graph_not_found_returns_404(client):

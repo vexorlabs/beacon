@@ -101,7 +101,7 @@ def get_trace_graph(db: Session, trace_id: str) -> GraphData | None:
     nodes: list[GraphNode] = []
     edges: list[GraphEdge] = []
 
-    for span in spans:
+    for seq, span in enumerate(spans, start=1):
         attrs = json.loads(span.attributes or "{}")
         duration_ms = (
             (span.end_time - span.start_time) * 1000
@@ -120,6 +120,7 @@ def get_trace_graph(db: Session, trace_id: str) -> GraphData | None:
                 status=span.status,
                 duration_ms=duration_ms,
                 cost_usd=cost_usd,
+                sequence=seq,
             ),
             position={"x": 0, "y": 0},
         ))

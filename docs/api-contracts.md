@@ -153,7 +153,8 @@ Response `200 OK`:
         "name": "gpt-4.1",
         "status": "ok",
         "duration_ms": 2333.0,
-        "cost_usd": 0.000075
+        "cost_usd": 0.000075,
+        "sequence": 1
       },
       "position": { "x": 0, "y": 0 }
     }

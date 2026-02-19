@@ -51,6 +51,7 @@ export interface SpanNodeData {
   status: SpanStatus;
   duration_ms: number | null;
   cost_usd: number | null;
+  sequence: number;
 }
 
 export interface GraphNode {

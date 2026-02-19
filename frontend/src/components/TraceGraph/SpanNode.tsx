@@ -22,6 +22,8 @@ export default function SpanNode({ data }: NodeProps<SpanNodeType>) {
         className={`px-3 py-2 rounded-md border-2 min-w-[160px] max-w-[220px] ${baseStyle} ${errorRing}`}
       >
         <div className="text-[10px] font-medium uppercase tracking-wide opacity-60">
+          <span className="opacity-100 tabular-nums">#{data.sequence}</span>
+          <span className="mx-1">&middot;</span>
           {data.span_type.replace("_", " ")}
         </div>
         <div className="text-xs font-semibold truncate mt-0.5">{data.name}</div>
