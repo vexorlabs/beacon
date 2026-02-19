@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { TraceSummary } from "@/lib/types";
 
@@ -8,6 +8,9 @@ interface TraceListItemProps {
   isSelected: boolean;
   onSelect: (traceId: string) => void;
   onDelete: (traceId: string) => void;
+  compareMode?: boolean;
+  isCompareSelected?: boolean;
+  onCompareToggle?: (traceId: string) => void;
 }
 
 const STATUS_VARIANT: Record<string, "default" | "destructive" | "secondary"> =
@@ -39,21 +42,47 @@ export default function TraceListItem({
   isSelected,
   onSelect,
   onDelete,
+  compareMode,
+  isCompareSelected,
+  onCompareToggle,
 }: TraceListItemProps) {
   const [confirming, setConfirming] = useState(false);
+
+  const handleClick = () => {
+    if (compareMode && onCompareToggle) {
+      onCompareToggle(trace.trace_id);
+    } else {
+      onSelect(trace.trace_id);
+    }
+  };
 
   return (
     <button
       type="button"
       className={`group w-full text-left px-3 py-2 border-b border-border/60 hover:bg-accent transition-colors ${
-        isSelected ? "bg-accent" : ""
-      }`}
-      onClick={() => onSelect(trace.trace_id)}
+        isSelected && !compareMode ? "bg-accent" : ""
+      } ${isCompareSelected ? "border-l-2 border-l-primary bg-primary/5" : ""}`}
+      onClick={handleClick}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-[13px] truncate">{trace.name}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          {compareMode && (
+            <div
+              className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors ${
+                isCompareSelected
+                  ? "bg-primary border-primary"
+                  : "border-muted-foreground/40"
+              }`}
+            >
+              {isCompareSelected && (
+                <Check size={10} className="text-primary-foreground" />
+              )}
+            </div>
+          )}
+          <span className="font-medium text-[13px] truncate">{trace.name}</span>
+        </div>
         <div className="flex items-center gap-1.5">
-          {confirming ? (
+          {!compareMode && confirming ? (
             <span
               className="flex items-center gap-1"
               onClick={(e) => e.stopPropagation()}
@@ -76,7 +105,7 @@ export default function TraceListItem({
                 Cancel
               </button>
             </span>
-          ) : (
+          ) : !compareMode ? (
             <button
               type="button"
               className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-opacity p-0.5"
@@ -88,7 +117,7 @@ export default function TraceListItem({
             >
               <Trash2 size={12} />
             </button>
-          )}
+          ) : null}
           <Badge variant={STATUS_VARIANT[trace.status] ?? "secondary"}>
             {trace.status}
           </Badge>

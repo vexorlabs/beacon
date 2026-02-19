@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
+import { useCompareStore } from "@/store/compare";
 import TraceListItem from "./TraceListItem";
 import TraceFilter from "./TraceFilter";
 import SearchBar from "./SearchBar";
@@ -15,6 +16,11 @@ export default function TraceList() {
   const loadTraces = useTraceStore((s) => s.loadTraces);
   const deleteTrace = useTraceStore((s) => s.deleteTrace);
   const traceFilter = useTraceStore((s) => s.traceFilter);
+
+  const compareMode = useCompareStore((s) => s.compareMode);
+  const selectedTraceIds = useCompareStore((s) => s.selectedTraceIds);
+  const toggleCompareMode = useCompareStore((s) => s.toggleCompareMode);
+  const toggleTraceSelection = useCompareStore((s) => s.toggleTraceSelection);
 
   useEffect(() => {
     void loadTraces();
@@ -35,12 +41,49 @@ export default function TraceList() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border">
+      <div className="px-3 py-2 border-b border-border flex items-center justify-between">
         <h2 className="text-[13px] font-semibold">Traces</h2>
+        <button
+          type="button"
+          onClick={toggleCompareMode}
+          className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
+            compareMode
+              ? "bg-primary/20 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          }`}
+        >
+          {compareMode ? "Cancel" : "Compare"}
+        </button>
       </div>
+
+      {/* Compare action bar — visible when in compare mode */}
+      {compareMode && (
+        <div className="px-3 py-2 border-b border-border bg-card/50">
+          {selectedTraceIds.length < 2 ? (
+            <p className="text-[11px] text-muted-foreground text-center">
+              Select {2 - selectedTraceIds.length} trace
+              {selectedTraceIds.length === 0 ? "s" : ""} to compare
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="group w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+              onClick={() =>
+                navigate(
+                  `/compare/${selectedTraceIds[0]}/${selectedTraceIds[1]}`,
+                )
+              }
+            >
+              <span>Compare</span>
+              <span className="text-primary/60 group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+            </button>
+          )}
+        </div>
+      )}
+
       <SearchBar />
       <TraceFilter />
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         {isLoading && traces.length === 0 && (
           <div className="flex flex-col gap-0">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -80,6 +123,9 @@ export default function TraceList() {
                 navigate("/traces");
               }
             }}
+            compareMode={compareMode}
+            isCompareSelected={selectedTraceIds.includes(trace.trace_id)}
+            onCompareToggle={toggleTraceSelection}
           />
         ))}
       </ScrollArea>
