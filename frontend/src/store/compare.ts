@@ -53,6 +53,10 @@ export const useCompareStore = create<CompareStore>((set, get) => ({
   },
 
   loadComparison: async (traceIdA: string, traceIdB: string) => {
+    if (traceIdA === traceIdB) {
+      set({ error: "Select two different traces to compare" });
+      return;
+    }
     set({
       isLoading: true,
       error: null,

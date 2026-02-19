@@ -39,10 +39,10 @@ function formatPercent(rate: number): string {
 
 function formatDelta(a: number, b: number, formatter: (n: number) => string): string {
   const diff = b - a;
-  const sign = diff > 0 ? "+" : "";
+  const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
   if (a === 0 && b === 0) return "-";
-  const pct = a !== 0 ? ` (${sign}${((diff / a) * 100).toFixed(0)}%)` : "";
-  return `${sign}${formatter(diff)}${pct}`;
+  const pct = a !== 0 ? ` (${sign}${Math.abs(Math.round((diff / a) * 100))}%)` : "";
+  return `${sign}${formatter(Math.abs(diff))}${pct}`;
 }
 
 function buildMetrics(traceA: TraceDetail, traceB: TraceDetail): MetricRow[] {
@@ -81,9 +81,9 @@ function buildMetrics(traceA: TraceDetail, traceB: TraceDetail): MetricRow[] {
     },
     {
       label: "Spans",
-      valueA: String(traceA.span_count),
-      valueB: String(traceB.span_count),
-      delta: formatDelta(traceA.span_count, traceB.span_count, String),
+      valueA: formatTokens(traceA.span_count),
+      valueB: formatTokens(traceB.span_count),
+      delta: formatDelta(traceA.span_count, traceB.span_count, formatTokens),
       direction: "neutral",
     },
     {
