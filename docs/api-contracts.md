@@ -212,6 +212,145 @@ Response `200 OK`:
 
 Response `422 Unprocessable Entity` when both fields are omitted.
 
+#### `GET /v1/traces/{trace_id}/export`
+
+Export a single trace with all spans.
+
+Query params:
+- `format` (`json | otel | csv`, default `json`)
+
+Response `200 OK` (format=json):
+
+```json
+{
+  "version": "1",
+  "format": "beacon",
+  "exported_at": 1739800000.0,
+  "trace": {
+    "trace_id": "7c9e6679-...",
+    "name": "My Agent Run",
+    "start_time": 1739800000.0,
+    "end_time": 1739800045.3,
+    "duration_ms": 45300.0,
+    "span_count": 2,
+    "status": "ok",
+    "total_cost_usd": 0.005,
+    "total_tokens": 500,
+    "tags": {}
+  },
+  "spans": [
+    {
+      "span_id": "550e8400-...",
+      "trace_id": "7c9e6679-...",
+      "parent_span_id": null,
+      "span_type": "agent_step",
+      "name": "root",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1739800000.0,
+      "end_time": 1739800045.3,
+      "duration_ms": 45300.0,
+      "attributes": {}
+    }
+  ]
+}
+```
+
+Response `200 OK` (format=otel): OTLP JSON with `resourceSpans[].scopeSpans[].spans[]` structure.
+
+Response `200 OK` (format=csv): `text/csv` with `Content-Disposition: attachment`. Columns: `trace_id, span_id, parent_span_id, name, span_type, start_time, end_time, duration_ms, status, cost, tokens`.
+
+Response `404 Not Found`:
+
+```json
+{ "detail": "Trace not found" }
+```
+
+#### `GET /v1/traces/export`
+
+Bulk export multiple traces (JSON format only).
+
+Query params:
+- `format` (`json`, default `json`) — only JSON supported for bulk export
+- `trace_ids` (required, comma-separated trace IDs)
+
+Response `200 OK`:
+
+```json
+{
+  "version": "1",
+  "format": "beacon",
+  "exported_at": 1739800000.0,
+  "traces": [
+    { "version": "1", "format": "beacon", "exported_at": 1739800000.0, "trace": {}, "spans": [] }
+  ]
+}
+```
+
+Response `400 Bad Request` for non-JSON format.
+
+Response `422 Unprocessable Entity` when `trace_ids` is missing.
+
+#### `POST /v1/traces/import`
+
+Import a trace from Beacon JSON export format.
+
+Request (same shape as single-trace export):
+
+```json
+{
+  "version": "1",
+  "format": "beacon",
+  "exported_at": 1739800000.0,
+  "trace": {
+    "trace_id": "imported-trace-001",
+    "name": "Imported Agent Run",
+    "start_time": 1739800000.0,
+    "end_time": 1739800010.0,
+    "duration_ms": 10000.0,
+    "span_count": 1,
+    "status": "ok",
+    "total_cost_usd": 0.0,
+    "total_tokens": 0,
+    "tags": {}
+  },
+  "spans": [
+    {
+      "span_id": "span-001",
+      "trace_id": "imported-trace-001",
+      "parent_span_id": null,
+      "span_type": "agent_step",
+      "name": "root",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1739800000.0,
+      "end_time": 1739800010.0,
+      "duration_ms": 10000.0,
+      "attributes": {}
+    }
+  ]
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id": "imported-trace-001",
+  "span_count": 1
+}
+```
+
+Response `400 Bad Request` for unsupported `format` or `version`.
+
+Response `409 Conflict` when trace_id already exists:
+
+```json
+{ "detail": "Trace imported-trace-001 already exists" }
+```
+
+Response `422 Unprocessable Entity` for request validation errors.
+
 ---
 
 ### Replay

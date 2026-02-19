@@ -10,6 +10,12 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(backend): `GET /v1/traces/{id}/export?format=json|otel|csv` — single trace export in Beacon JSON, OTEL JSON, or CSV formats
+- feat(backend): `GET /v1/traces/export?trace_ids=...` — bulk trace export (JSON)
+- feat(backend): `POST /v1/traces/import` — import traces from Beacon JSON export format with duplicate detection
+- feat(frontend): Export dropdown on trace detail bar — download trace as JSON, OTEL JSON, or CSV
+- feat(frontend): Import button in trace list header — file picker for JSON import with auto-navigation
+- docs: two curated example trace files (`docs/example-traces/`) — RAG agent and tool-calling agent with errors
 - feat: chronological sequence numbers (`#1`, `#2`, `#3`...) on canvas span nodes, computed by `start_time` order
 - feat(frontend): Timeline/Waterfall View — Gantt-chart visualization of trace spans with wall-clock positioning, parallel span detection (separate swim-lane rows), critical path highlighting (gold ring), hover tooltips (name/duration/cost), collapsible "Slowest Spans" summary panel, and Graph/Timeline toggle in CostSummaryBar
 - refactor(frontend): extract shared span-type color constants into `lib/span-colors.ts` (reused by TraceGraph, SpanNode, and TimelineView)
