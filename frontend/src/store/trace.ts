@@ -19,7 +19,6 @@ import type {
 
 export interface TraceFilter {
   status: "all" | SpanStatus;
-  nameQuery: string;
 }
 
 interface TraceStore {
@@ -68,7 +67,7 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
   isReplaying: false,
   replayError: null,
   backendError: null,
-  traceFilter: { status: "all", nameQuery: "" },
+  traceFilter: { status: "all" },
 
   loadTraces: async () => {
     set({ isLoadingTraces: true });
