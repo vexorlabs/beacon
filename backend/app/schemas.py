@@ -89,6 +89,7 @@ class GraphNodeData(BaseModel):
     status: SpanStatus
     duration_ms: float | None
     cost_usd: float | None
+    sequence: int
 
 
 class GraphNode(BaseModel):

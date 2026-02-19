@@ -177,6 +177,7 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
             typeof span.attributes["llm.cost_usd"] === "number"
               ? span.attributes["llm.cost_usd"]
               : null,
+          sequence: graphData.nodes.length + 1,
         },
         position: { x: 0, y: 0 },
       };
