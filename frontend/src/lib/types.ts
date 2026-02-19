@@ -174,6 +174,35 @@ export interface SearchResponse {
   total: number;
 }
 
+// --- Export / Import types ---
+
+export interface TraceExportData {
+  version: string;
+  format: string;
+  exported_at: number;
+  trace: TraceSummary;
+  spans: SpanResponse[];
+}
+
+export interface SpanResponse {
+  span_id: string;
+  trace_id: string;
+  parent_span_id: string | null;
+  span_type: SpanType;
+  name: string;
+  status: SpanStatus;
+  error_message: string | null;
+  start_time: number;
+  end_time: number | null;
+  duration_ms: number | null;
+  attributes: Record<string, unknown>;
+}
+
+export interface TraceImportResponse {
+  trace_id: string;
+  span_count: number;
+}
+
 // --- WebSocket types ---
 
 export type WsEvent =

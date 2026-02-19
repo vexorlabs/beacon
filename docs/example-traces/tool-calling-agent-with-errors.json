@@ -1,0 +1,152 @@
+{
+  "version": "1",
+  "format": "beacon",
+  "exported_at": 1708300000.0,
+  "trace": {
+    "trace_id": "example-tool-agent-002",
+    "name": "Tool Agent: Look up weather and send notification",
+    "start_time": 1708298000.0,
+    "end_time": 1708298012.0,
+    "duration_ms": 12000.0,
+    "span_count": 6,
+    "status": "ok",
+    "total_cost_usd": 0.0145,
+    "total_tokens": 4850,
+    "tags": {
+      "framework": "custom",
+      "agent_type": "tool_calling",
+      "has_errors": "true"
+    }
+  },
+  "spans": [
+    {
+      "span_id": "tool-span-agent-root",
+      "trace_id": "example-tool-agent-002",
+      "parent_span_id": null,
+      "span_type": "agent_step",
+      "name": "Tool Agent: Look up weather and send notification",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708298000.0,
+      "end_time": 1708298012.0,
+      "duration_ms": 12000.0,
+      "attributes": {
+        "agent.framework": "custom",
+        "agent.step_name": "main_loop",
+        "agent.input": "Check the weather in San Francisco and send a Slack notification if it's going to rain today.",
+        "agent.output": "Weather checked — 60% chance of rain in San Francisco. Slack notification sent to #weather-alerts channel."
+      }
+    },
+    {
+      "span_id": "tool-span-llm-plan",
+      "trace_id": "example-tool-agent-002",
+      "parent_span_id": "tool-span-agent-root",
+      "span_type": "llm_call",
+      "name": "Planning Step",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708298000.2,
+      "end_time": 1708298002.0,
+      "duration_ms": 1800.0,
+      "attributes": {
+        "llm.provider": "anthropic",
+        "llm.model": "claude-sonnet-4-20250514",
+        "llm.prompt": "[{\"role\": \"system\", \"content\": \"You are a helpful assistant with access to tools: weather_api, slack_send. Plan your steps.\"}, {\"role\": \"user\", \"content\": \"Check the weather in San Francisco and send a Slack notification if it's going to rain today.\"}]",
+        "llm.completion": "I'll help with that. Let me first check the weather in San Francisco, then send a Slack notification if rain is expected.\n\nStep 1: Call weather_api for San Francisco\nStep 2: Check if rain is in the forecast\nStep 3: If yes, send Slack notification",
+        "llm.tokens.input": 420,
+        "llm.tokens.output": 180,
+        "llm.tokens.total": 600,
+        "llm.cost_usd": 0.0024,
+        "llm.temperature": 0.2,
+        "llm.finish_reason": "stop",
+        "llm.tool_calls": "[{\"name\": \"weather_api\", \"arguments\": {\"city\": \"San Francisco\", \"forecast\": \"today\"}}]"
+      }
+    },
+    {
+      "span_id": "tool-span-weather-fail",
+      "trace_id": "example-tool-agent-002",
+      "parent_span_id": "tool-span-agent-root",
+      "span_type": "tool_use",
+      "name": "weather_api (failed — rate limit)",
+      "status": "error",
+      "error_message": "HTTP 429: Rate limit exceeded. Retry after 2 seconds.",
+      "start_time": 1708298002.1,
+      "end_time": 1708298002.8,
+      "duration_ms": 700.0,
+      "attributes": {
+        "tool.name": "weather_api",
+        "tool.input": "{\"city\": \"San Francisco\", \"forecast\": \"today\"}",
+        "tool.output": "{\"error\": \"HTTP 429: Rate limit exceeded. Retry after 2 seconds.\"}",
+        "tool.framework": "custom"
+      }
+    },
+    {
+      "span_id": "tool-span-llm-recover",
+      "trace_id": "example-tool-agent-002",
+      "parent_span_id": "tool-span-agent-root",
+      "span_type": "llm_call",
+      "name": "Error Recovery",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708298002.9,
+      "end_time": 1708298004.2,
+      "duration_ms": 1300.0,
+      "attributes": {
+        "llm.provider": "anthropic",
+        "llm.model": "claude-sonnet-4-20250514",
+        "llm.prompt": "[{\"role\": \"system\", \"content\": \"You are a helpful assistant. The previous tool call failed.\"}, {\"role\": \"user\", \"content\": \"weather_api returned HTTP 429: Rate limit exceeded. Retry after 2 seconds. What should I do?\"}, {\"role\": \"assistant\", \"content\": \"The API is rate-limited. I'll wait 2 seconds and retry the weather_api call.\"}]",
+        "llm.completion": "Retrying weather_api after waiting 2 seconds.",
+        "llm.tokens.input": 380,
+        "llm.tokens.output": 50,
+        "llm.tokens.total": 430,
+        "llm.cost_usd": 0.0017,
+        "llm.temperature": 0.2,
+        "llm.finish_reason": "stop",
+        "llm.tool_calls": "[{\"name\": \"weather_api\", \"arguments\": {\"city\": \"San Francisco\", \"forecast\": \"today\"}}]"
+      }
+    },
+    {
+      "span_id": "tool-span-weather-retry",
+      "trace_id": "example-tool-agent-002",
+      "parent_span_id": "tool-span-agent-root",
+      "span_type": "tool_use",
+      "name": "weather_api (retry — success)",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708298006.3,
+      "end_time": 1708298007.5,
+      "duration_ms": 1200.0,
+      "attributes": {
+        "tool.name": "weather_api",
+        "tool.input": "{\"city\": \"San Francisco\", \"forecast\": \"today\"}",
+        "tool.output": "{\"city\": \"San Francisco\", \"date\": \"2024-02-19\", \"conditions\": \"Partly cloudy with 60% chance of rain\", \"high\": 58, \"low\": 48, \"humidity\": 78, \"wind\": \"12 mph SW\"}",
+        "tool.framework": "custom"
+      }
+    },
+    {
+      "span_id": "tool-span-llm-final",
+      "trace_id": "example-tool-agent-002",
+      "parent_span_id": "tool-span-agent-root",
+      "span_type": "llm_call",
+      "name": "Final Answer + Slack Notification",
+      "status": "ok",
+      "error_message": null,
+      "start_time": 1708298007.6,
+      "end_time": 1708298011.8,
+      "duration_ms": 4200.0,
+      "attributes": {
+        "llm.provider": "anthropic",
+        "llm.model": "claude-sonnet-4-20250514",
+        "llm.prompt": "[{\"role\": \"system\", \"content\": \"You are a helpful assistant with access to tools: weather_api, slack_send.\"}, {\"role\": \"user\", \"content\": \"Weather result: Partly cloudy, 60% rain, high 58F. Should I send a Slack notification?\"}]",
+        "llm.completion": "Yes, there's a 60% chance of rain today in San Francisco. I'll send a notification to the #weather-alerts Slack channel.\n\nNotification sent: '🌧️ Rain Alert: San Francisco has a 60% chance of rain today. High of 58°F, low of 48°F. Bring an umbrella!'",
+        "llm.tokens.input": 650,
+        "llm.tokens.output": 3170,
+        "llm.tokens.total": 3820,
+        "llm.cost_usd": 0.0104,
+        "llm.temperature": 0.3,
+        "llm.finish_reason": "stop",
+        "llm.tool_calls": "[{\"name\": \"slack_send\", \"arguments\": {\"channel\": \"#weather-alerts\", \"message\": \"Rain Alert: San Francisco has a 60% chance of rain today. High of 58F, low of 48F. Bring an umbrella!\"}}]"
+      }
+    }
+  ]
+}

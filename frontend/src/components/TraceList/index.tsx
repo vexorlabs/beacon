@@ -1,9 +1,12 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Upload } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
 import { useCompareStore } from "@/store/compare";
+import { importTrace } from "@/lib/api";
+import type { TraceExportData } from "@/lib/types";
 import TraceListItem from "./TraceListItem";
 import TraceFilter from "./TraceFilter";
 import SearchBar from "./SearchBar";
@@ -22,6 +25,9 @@ export default function TraceList() {
   const toggleCompareMode = useCompareStore((s) => s.toggleCompareMode);
   const toggleTraceSelection = useCompareStore((s) => s.toggleTraceSelection);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+
   useEffect(() => {
     void loadTraces();
   }, [loadTraces]);
@@ -39,22 +45,71 @@ export default function TraceList() {
     });
   }, [traces, traceFilter]);
 
+  const handleImport = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      setImportError(null);
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text) as TraceExportData;
+        const result = await importTrace(data);
+        await loadTraces();
+        navigate(`/traces/${result.trace_id}`);
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Import failed";
+        setImportError(msg);
+      } finally {
+        // Reset input so the same file can be re-selected
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    },
+    [loadTraces, navigate],
+  );
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2 border-b border-border flex items-center justify-between">
         <h2 className="text-[13px] font-semibold">Traces</h2>
-        <button
-          type="button"
-          onClick={toggleCompareMode}
-          className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
-            compareMode
-              ? "bg-primary/20 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-          }`}
-        >
-          {compareMode ? "Cancel" : "Compare"}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Import trace"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/50 flex items-center justify-center w-6 h-6 rounded-md transition-colors"
+          >
+            <Upload size={13} />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={(e) => void handleImport(e)}
+          />
+          <button
+            type="button"
+            onClick={toggleCompareMode}
+            className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
+              compareMode
+                ? "bg-primary/20 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            }`}
+          >
+            {compareMode ? "Cancel" : "Compare"}
+          </button>
+        </div>
       </div>
+
+      {importError && (
+        <div className="px-3 py-2 border-b border-border bg-destructive/10 text-destructive text-[11px]">
+          Import failed: {importError}
+        </div>
+      )}
 
       {/* Compare action bar — visible when in compare mode */}
       {compareMode && (
