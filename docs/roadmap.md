@@ -276,10 +276,10 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [x] Display search results as a list linking to specific traces/spans via URL routing
 
 **Frontend: Trace Comparison**
-- [ ] Create `frontend/src/pages/ComparePage.tsx` — side-by-side view of two traces
-- [ ] Add "Compare" action: user selects two traces via checkboxes in TraceList, clicks "Compare"
-- [ ] Render two React Flow graphs side by side with synchronized zoom/pan
-- [ ] Show diff table: metrics comparison (total cost, tokens, duration, span count, error rate)
+- [x] Create `frontend/src/pages/ComparePage.tsx` — side-by-side view of two traces
+- [x] Add "Compare" action: user selects two traces via checkboxes in TraceList, clicks "Compare"
+- [x] Render two React Flow graphs side by side with synchronized zoom/pan
+- [x] Show diff table: metrics comparison (total cost, tokens, duration, span count, error rate)
 
 **Backend: Trace Export**
 - [ ] Add `GET /v1/traces/{trace_id}/export?format=json` — full trace with all spans in Beacon's JSON format

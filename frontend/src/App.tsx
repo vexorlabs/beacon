@@ -6,6 +6,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import TracesPage from "@/pages/TracesPage";
 import PlaygroundPage from "@/pages/PlaygroundPage";
 import SettingsPage from "@/pages/SettingsPage";
+import ComparePage from "@/pages/ComparePage";
 import { BeaconWebSocket } from "@/lib/ws";
 import { useTraceStore } from "@/store/trace";
 
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="/traces/:traceId/:spanId" element={<TracesPage />} />
           <Route path="/playground" element={<PlaygroundPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/compare/:traceIdA/:traceIdB" element={<ComparePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
