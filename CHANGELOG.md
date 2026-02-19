@@ -10,6 +10,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat: chronological sequence numbers (`#1`, `#2`, `#3`...) on canvas span nodes, computed by `start_time` order
 - feat(frontend): Timeline/Waterfall View — Gantt-chart visualization of trace spans with wall-clock positioning, parallel span detection (separate swim-lane rows), critical path highlighting (gold ring), hover tooltips (name/duration/cost), collapsible "Slowest Spans" summary panel, and Graph/Timeline toggle in CostSummaryBar
 - refactor(frontend): extract shared span-type color constants into `lib/span-colors.ts` (reused by TraceGraph, SpanNode, and TimelineView)
 - feat(frontend): URL-based routing with React Router — deep-link to `/traces/:traceId/:spanId` with full browser history support
