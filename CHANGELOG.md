@@ -13,6 +13,8 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 - feat(backend): `GET /v1/stats/trends` — time-bucketed trend aggregates (cost, tokens, trace count, error rate) with day/hour granularity and gap-filling
 - feat(backend): `GET /v1/stats/top-costs` — top N most expensive LLM call spans by cost via SQL-level JSON extraction
 - feat(backend): `GET /v1/stats/top-duration` — top N longest-running tool call spans by duration via SQL-level sorting
+- feat(frontend): Dashboard analytics upgrade — recharts trend charts (cost, tokens, traces, error rate), cost forecast with linear regression, ranked tables (most expensive prompts, slowest tools), AI anomaly alerts with graceful degradation
+- feat(frontend): Add `cursor-pointer` to all `<Button>` components and trace list items
 
 ### Fixed
 - fix(backend): trace status now set from first ingested span instead of hardcoded `"unset"`
