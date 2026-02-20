@@ -10,6 +10,10 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): Vitest + React Testing Library test infrastructure — 37 tests across 5 files covering trace store, API utilities, TraceList, LlmCallDetail, and tokenizer
+- feat(frontend): Live token count preview in prompt editor using `js-tiktoken` with debounced updates
+- feat(backend): `GET/POST /v1/spans/{span_id}/prompt-versions` — prompt versioning with auto-save on replay and manual save with optional labels
+- feat(frontend): Prompt version history dropdown — browse and restore previous prompt versions in the replay editor
 - feat(backend): `GET /v1/traces/{id}/export?format=json|otel|csv` — single trace export in Beacon JSON, OTEL JSON, or CSV formats
 - feat(backend): `GET /v1/traces/export?trace_ids=...` — bulk trace export (JSON)
 - feat(backend): `POST /v1/traces/import` — import traces from Beacon JSON export format with duplicate detection

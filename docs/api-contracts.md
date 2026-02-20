@@ -353,6 +353,77 @@ Response `422 Unprocessable Entity` for request validation errors.
 
 ---
 
+### Prompt Versions
+
+#### `GET /v1/spans/{span_id}/prompt-versions`
+
+List all prompt versions for a span, newest first.
+
+Response `200 OK`:
+
+```json
+{
+  "versions": [
+    {
+      "version_id": "uuid-1",
+      "span_id": "550e8400-e29b-41d4-a716-446655440000",
+      "prompt_text": "[{\"role\": \"user\", \"content\": \"What is 2+2?\"}]",
+      "label": "v1-improved",
+      "created_at": 1739800050.0
+    }
+  ]
+}
+```
+
+Response `404 Not Found`:
+
+```json
+{ "detail": "Span not found" }
+```
+
+#### `POST /v1/spans/{span_id}/prompt-versions`
+
+Create a new prompt version for an `llm_call` span.
+
+Request:
+
+```json
+{
+  "prompt_text": "[{\"role\": \"user\", \"content\": \"What is 2+2? Show your work.\"}]",
+  "label": "v1-improved"
+}
+```
+
+`label` is optional (defaults to `null`).
+
+Response `201 Created`:
+
+```json
+{
+  "version_id": "uuid-1",
+  "span_id": "550e8400-e29b-41d4-a716-446655440000",
+  "prompt_text": "[{\"role\": \"user\", \"content\": \"What is 2+2? Show your work.\"}]",
+  "label": "v1-improved",
+  "created_at": 1739800050.0
+}
+```
+
+Response `400 Bad Request` when span is not an `llm_call`:
+
+```json
+{ "detail": "Prompt versions only supported for llm_call spans" }
+```
+
+Response `404 Not Found`:
+
+```json
+{ "detail": "Span not found" }
+```
+
+Note: Replaying an LLM call (`POST /v1/replay`) automatically creates a prompt version with label `"Replay"`.
+
+---
+
 ### Replay
 
 #### `POST /v1/replay`
