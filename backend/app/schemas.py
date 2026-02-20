@@ -459,3 +459,43 @@ class TraceSummaryAnalysisResponse(BaseModel):
     trace_id: str = ""
     summary: str
     key_events: list[KeyEvent]
+
+
+# --- Dashboard trends schemas ---
+
+
+class TrendBucket(BaseModel):
+    date: str
+    total_cost: float
+    total_tokens: int
+    trace_count: int
+    error_count: int
+    success_rate: float
+
+
+class TrendsResponse(BaseModel):
+    buckets: list[TrendBucket]
+
+
+class TopCostItem(BaseModel):
+    span_id: str
+    trace_id: str
+    name: str
+    model: str
+    cost: float
+    tokens: int
+
+
+class TopCostsResponse(BaseModel):
+    prompts: list[TopCostItem]
+
+
+class TopDurationItem(BaseModel):
+    span_id: str
+    trace_id: str
+    name: str
+    duration_ms: float
+
+
+class TopDurationResponse(BaseModel):
+    tools: list[TopDurationItem]

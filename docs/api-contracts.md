@@ -849,6 +849,85 @@ Response `200 OK`:
 }
 ```
 
+#### `GET /v1/stats/trends`
+
+Time-bucketed aggregates for dashboard charts. Returns cost, tokens, trace count, error count, and success rate per bucket with gap-filling for empty periods.
+
+Query parameters:
+- `days` (int, default 30, range 1–365) — lookback window
+- `bucket` (`"day"` | `"hour"`, default `"day"`) — bucket granularity
+
+Response `200 OK`:
+
+```json
+{
+  "buckets": [
+    {
+      "date": "2025-06-01",
+      "total_cost": 0.0042,
+      "total_tokens": 1500,
+      "trace_count": 3,
+      "error_count": 0,
+      "success_rate": 1.0
+    },
+    {
+      "date": "2025-06-02",
+      "total_cost": 0.0,
+      "total_tokens": 0,
+      "trace_count": 0,
+      "error_count": 0,
+      "success_rate": 1.0
+    }
+  ]
+}
+```
+
+#### `GET /v1/stats/top-costs`
+
+Most expensive LLM call spans by cost.
+
+Query parameters:
+- `limit` (int, default 10, range 1–100) — number of results
+
+Response `200 OK`:
+
+```json
+{
+  "prompts": [
+    {
+      "span_id": "abc-123",
+      "trace_id": "def-456",
+      "name": "chat_completion",
+      "model": "gpt-4o",
+      "cost": 0.0315,
+      "tokens": 4200
+    }
+  ]
+}
+```
+
+#### `GET /v1/stats/top-duration`
+
+Longest-running tool call spans by duration.
+
+Query parameters:
+- `limit` (int, default 10, range 1–100) — number of results
+
+Response `200 OK`:
+
+```json
+{
+  "tools": [
+    {
+      "span_id": "abc-123",
+      "trace_id": "def-456",
+      "name": "web_search",
+      "duration_ms": 3520.5
+    }
+  ]
+}
+```
+
 ---
 
 ### Analysis (AI-Powered)

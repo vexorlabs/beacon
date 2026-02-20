@@ -9,6 +9,14 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- feat(backend): `GET /v1/stats/trends` — time-bucketed trend aggregates (cost, tokens, trace count, error rate) with day/hour granularity and gap-filling
+- feat(backend): `GET /v1/stats/top-costs` — top N most expensive LLM call spans by cost via SQL-level JSON extraction
+- feat(backend): `GET /v1/stats/top-duration` — top N longest-running tool call spans by duration via SQL-level sorting
+
+### Fixed
+- fix(backend): trace status now set from first ingested span instead of hardcoded `"unset"`
+
 ### Changed
 - feat(frontend): Darken sidebar to near-black (`oklch(0.070)`) for Linear-style contrast with content area
 - feat(frontend): Simplify trace list items to single row — name, duration, and status icon (removed tags, span count, relative time, SDK badge)
