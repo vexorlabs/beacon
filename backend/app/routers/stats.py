@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import os
 import time
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import case, func, text
+from sqlalchemy import Float, case, cast, func, text
 from sqlalchemy.orm import Session
 
 from app import models
@@ -97,25 +96,26 @@ async def get_trends(
         )
 
     # Fill empty periods with zero values (from oldest to today/now)
-    empty_bucket = lambda key: TrendBucket(
-        date=key,
-        total_cost=0.0,
-        total_tokens=0,
-        trace_count=0,
-        error_count=0,
-        success_rate=1.0,
-    )
+    def _empty_bucket(key: str) -> TrendBucket:
+        return TrendBucket(
+            date=key,
+            total_cost=0.0,
+            total_tokens=0,
+            trace_count=0,
+            error_count=0,
+            success_rate=1.0,
+        )
     all_buckets: list[TrendBucket] = []
     if bucket == "hour":
         for i in range(days * 24):
             ts = now - ((days * 24) - 1 - i) * 3600
             key = datetime.fromtimestamp(ts, tz=timezone.utc).strftime(date_fmt)
-            all_buckets.append(db_buckets.get(key, empty_bucket(key)))
+            all_buckets.append(db_buckets.get(key, _empty_bucket(key)))
     else:
         for i in range(days):
             ts = now - (days - 1 - i) * 86400
             key = datetime.fromtimestamp(ts, tz=timezone.utc).strftime(date_fmt)
-            all_buckets.append(db_buckets.get(key, empty_bucket(key)))
+            all_buckets.append(db_buckets.get(key, _empty_bucket(key)))
 
     return TrendsResponse(buckets=all_buckets)
 
@@ -126,38 +126,59 @@ async def get_top_costs(
     limit: int = Query(default=10, ge=1, le=100),
 ) -> TopCostsResponse:
     """Return the most expensive LLM call spans by cost."""
-    spans = (
-        db.query(models.Span)
-        .filter(models.Span.span_type == "llm_call")
+    cost_expr = cast(
+        func.json_extract(models.Span.attributes, '$."llm.cost_usd"'),
+        Float,
+    )
+    rows = (
+        db.query(
+            models.Span.span_id,
+            models.Span.trace_id,
+            models.Span.name,
+            func.json_extract(
+                models.Span.attributes, '$."llm.model"'
+            ).label("model"),
+            cost_expr.label("cost"),
+            func.coalesce(
+                cast(
+                    func.json_extract(
+                        models.Span.attributes, '$."llm.tokens.input"'
+                    ),
+                    Float,
+                ),
+                0,
+            ).label("input_tokens"),
+            func.coalesce(
+                cast(
+                    func.json_extract(
+                        models.Span.attributes, '$."llm.tokens.output"'
+                    ),
+                    Float,
+                ),
+                0,
+            ).label("output_tokens"),
+        )
+        .filter(
+            models.Span.span_type == "llm_call",
+            cost_expr > 0,
+        )
+        .order_by(cost_expr.desc())
+        .limit(limit)
         .all()
     )
 
-    items: list[TopCostItem] = []
-    for span in spans:
-        attrs: dict[str, object] = {}
-        if span.attributes:
-            try:
-                attrs = json.loads(span.attributes)
-            except (ValueError, TypeError):
-                continue
-        cost = float(attrs.get("llm.cost_usd", 0) or 0)
-        if cost <= 0:
-            continue
-        input_tokens = int(attrs.get("llm.tokens.input", 0) or 0)
-        output_tokens = int(attrs.get("llm.tokens.output", 0) or 0)
-        items.append(
-            TopCostItem(
-                span_id=span.span_id,
-                trace_id=span.trace_id,
-                name=span.name,
-                model=str(attrs.get("llm.model", "")),
-                cost=round(cost, 6),
-                tokens=input_tokens + output_tokens,
-            )
+    items = [
+        TopCostItem(
+            span_id=row.span_id,
+            trace_id=row.trace_id,
+            name=row.name,
+            model=str(row.model or ""),
+            cost=round(float(row.cost), 6),
+            tokens=int(row.input_tokens) + int(row.output_tokens),
         )
-
-    items.sort(key=lambda x: x.cost, reverse=True)
-    return TopCostsResponse(prompts=items[:limit])
+        for row in rows
+    ]
+    return TopCostsResponse(prompts=items)
 
 
 @router.get("/top-duration", response_model=TopDurationResponse)
@@ -166,28 +187,31 @@ async def get_top_duration(
     limit: int = Query(default=10, ge=1, le=100),
 ) -> TopDurationResponse:
     """Return the longest-running tool call spans by duration."""
-    spans = (
-        db.query(models.Span)
+    duration_expr = (models.Span.end_time - models.Span.start_time) * 1000
+    rows = (
+        db.query(
+            models.Span.span_id,
+            models.Span.trace_id,
+            models.Span.name,
+            duration_expr.label("duration_ms"),
+        )
         .filter(
             models.Span.span_type == "tool_use",
             models.Span.end_time.isnot(None),
+            models.Span.start_time.isnot(None),
         )
+        .order_by(duration_expr.desc())
+        .limit(limit)
         .all()
     )
 
-    items: list[TopDurationItem] = []
-    for span in spans:
-        if span.end_time is None or span.start_time is None:
-            continue
-        duration_ms = round((span.end_time - span.start_time) * 1000, 2)
-        items.append(
-            TopDurationItem(
-                span_id=span.span_id,
-                trace_id=span.trace_id,
-                name=span.name,
-                duration_ms=duration_ms,
-            )
+    items = [
+        TopDurationItem(
+            span_id=row.span_id,
+            trace_id=row.trace_id,
+            name=row.name,
+            duration_ms=round(float(row.duration_ms), 2),
         )
-
-    items.sort(key=lambda x: x.duration_ms, reverse=True)
-    return TopDurationResponse(tools=items[:limit])
+        for row in rows
+    ]
+    return TopDurationResponse(tools=items)
