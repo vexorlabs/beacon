@@ -9,6 +9,7 @@ import {
   updateSpanAnnotations as apiUpdateSpanAnnotations,
 } from "@/lib/api";
 import type {
+  Anomaly,
   Annotation,
   GraphData,
   GraphEdge,
@@ -57,6 +58,9 @@ interface TraceStore {
   setTraceFilter: (filter: Partial<TraceFilter>) => void;
   updateTraceTags: (traceId: string, tags: Record<string, string>) => Promise<void>;
   updateSpanAnnotations: (spanId: string, annotations: Annotation[]) => Promise<void>;
+  anomalyCache: Record<string, Anomaly[]>;
+  getCachedAnomalies: (traceId: string) => Anomaly[] | null;
+  setCachedAnomalies: (traceId: string, anomalies: Anomaly[]) => void;
 }
 
 export const useTraceStore = create<TraceStore>((set, get) => ({
@@ -268,5 +272,13 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
     if (selectedSpan && selectedSpan.span_id === spanId) {
       set({ selectedSpan: { ...selectedSpan, annotations } });
     }
+  },
+
+  anomalyCache: {},
+  getCachedAnomalies: (traceId: string) => {
+    return get().anomalyCache[traceId] ?? null;
+  },
+  setCachedAnomalies: (traceId: string, anomalies: Anomaly[]) => {
+    set({ anomalyCache: { ...get().anomalyCache, [traceId]: anomalies } });
   },
 }));

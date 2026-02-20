@@ -132,6 +132,8 @@ function Overview({
   const [trends, setTrends] = useState<TrendsResponse | null>(null);
   const [topCosts, setTopCosts] = useState<TopCostsResponse | null>(null);
   const [topDuration, setTopDuration] = useState<TopDurationResponse | null>(null);
+  const getCachedAnomalies = useTraceStore((s) => s.getCachedAnomalies);
+  const setCachedAnomalies = useTraceStore((s) => s.setCachedAnomalies);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [anomalyLoading, setAnomalyLoading] = useState(false);
   const [anomalyError, setAnomalyError] = useState<string | null>(null);
@@ -152,15 +154,24 @@ function Overview({
       });
 
     if (traces.length > 0) {
-      setAnomalyLoading(true);
-      detectAnomalies(traces[0].trace_id)
-        .then((res) => setAnomalies(res.anomalies))
-        .catch((err: unknown) =>
-          setAnomalyError(
-            err instanceof Error ? err.message : "Anomaly detection unavailable",
-          ),
-        )
-        .finally(() => setAnomalyLoading(false));
+      const traceId = traces[0].trace_id;
+      const cached = getCachedAnomalies(traceId);
+      if (cached) {
+        setAnomalies(cached);
+      } else {
+        setAnomalyLoading(true);
+        detectAnomalies(traceId)
+          .then((res) => {
+            setAnomalies(res.anomalies);
+            setCachedAnomalies(traceId, res.anomalies);
+          })
+          .catch((err: unknown) =>
+            setAnomalyError(
+              err instanceof Error ? err.message : "Anomaly detection unavailable",
+            ),
+          )
+          .finally(() => setAnomalyLoading(false));
+      }
     }
     // Fetch once on mount. Intentionally excludes `traces` to avoid
     // re-calling the LLM anomaly endpoint on every WebSocket update.
