@@ -1,9 +1,20 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTraceStore } from "@/store/trace";
 import { Bug, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DemoAgents from "@/components/DemoAgents";
-import type { TraceSummary } from "@/lib/types";
+import TrendCharts from "@/components/Dashboard/TrendCharts";
+import CostForecast from "@/components/Dashboard/CostForecast";
+import TopTables from "@/components/Dashboard/TopTables";
+import AnomalyAlerts from "@/components/Dashboard/AnomalyAlerts";
+import {
+  getTrends,
+  getTopCosts,
+  getTopDuration,
+  detectAnomalies,
+} from "@/lib/api";
+import type { TraceSummary, Anomaly, TrendsResponse, TopCostsResponse, TopDurationResponse } from "@/lib/types";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -118,9 +129,44 @@ function Overview({
 
   const recentTraces = traces.slice(0, 5);
 
+  const [trends, setTrends] = useState<TrendsResponse | null>(null);
+  const [topCosts, setTopCosts] = useState<TopCostsResponse | null>(null);
+  const [topDuration, setTopDuration] = useState<TopDurationResponse | null>(null);
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [anomalyLoading, setAnomalyLoading] = useState(false);
+  const [anomalyError, setAnomalyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      getTrends({ days: 30, bucket: "day" }),
+      getTopCosts(10),
+      getTopDuration(10),
+    ])
+      .then(([trendsRes, costsRes, durationRes]) => {
+        setTrends(trendsRes);
+        setTopCosts(costsRes);
+        setTopDuration(durationRes);
+      })
+      .catch(() => {
+        // Trends/tables fail silently — stat cards still work
+      });
+
+    if (traces.length > 0) {
+      setAnomalyLoading(true);
+      detectAnomalies(traces[0].trace_id)
+        .then((res) => setAnomalies(res.anomalies))
+        .catch((err: unknown) =>
+          setAnomalyError(
+            err instanceof Error ? err.message : "Anomaly detection unavailable",
+          ),
+        )
+        .finally(() => setAnomalyLoading(false));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="flex-1 overflow-y-auto p-8">
-      <div className="max-w-3xl space-y-8">
+      <div className="max-w-5xl space-y-8">
         <div>
           <h1 className="text-xl font-semibold text-foreground tracking-tight">
             Dashboard
@@ -130,7 +176,7 @@ function Overview({
           </p>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           <StatCard label="Traces" value={String(traces.length)} />
           <StatCard
             label="Total Cost"
@@ -144,7 +190,25 @@ function Overview({
             label="Avg Duration"
             value={formatDuration(avgDuration)}
           />
+          {trends && <CostForecast buckets={trends.buckets} />}
         </div>
+
+        {trends && <TrendCharts buckets={trends.buckets} />}
+
+        {topCosts && topDuration && (
+          <TopTables
+            topCosts={topCosts.prompts}
+            topDuration={topDuration.tools}
+            onNavigate={onNavigate}
+          />
+        )}
+
+        <AnomalyAlerts
+          anomalies={anomalies}
+          isLoading={anomalyLoading}
+          error={anomalyError}
+          onNavigate={onNavigate}
+        />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -165,7 +229,7 @@ function Overview({
                 key={trace.trace_id}
                 type="button"
                 onClick={() => onNavigate(`/traces/${trace.trace_id}`)}
-                className="w-full text-left bg-card border-[0.5px] border-border rounded-lg p-3.5 hover:bg-secondary/50 transition-colors shadow-[0_1px_3px_oklch(0_0_0/0.1)]"
+                className="w-full text-left cursor-pointer bg-card border-[0.5px] border-border rounded-lg p-3.5 hover:bg-secondary/50 transition-colors shadow-[0_1px_3px_oklch(0_0_0/0.1)]"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-medium text-foreground truncate">

@@ -1,4 +1,5 @@
 import type {
+  AnomalyDetectionResponse,
   Annotation,
   ApiKeyStatus,
   DemoRunResponse,
@@ -13,10 +14,13 @@ import type {
   SearchResponse,
   Span,
   StatsResponse,
+  TopCostsResponse,
+  TopDurationResponse,
   TraceDetail,
   TraceExportData,
   TraceImportResponse,
   TracesResponse,
+  TrendsResponse,
 } from "./types";
 
 const BASE_URL = "/v1";
@@ -155,6 +159,39 @@ export function deleteAllTraces(): Promise<{ deleted_count: number }> {
 
 export function getStats(): Promise<StatsResponse> {
   return apiFetch<StatsResponse>("/stats");
+}
+
+// --- Dashboard analytics ---
+
+export function getTrends(params?: {
+  days?: number;
+  bucket?: "day" | "hour";
+}): Promise<TrendsResponse> {
+  const search = new URLSearchParams();
+  if (params?.days !== undefined) search.set("days", String(params.days));
+  if (params?.bucket !== undefined) search.set("bucket", params.bucket);
+  const qs = search.toString();
+  return apiFetch<TrendsResponse>(`/stats/trends${qs ? `?${qs}` : ""}`);
+}
+
+export function getTopCosts(limit?: number): Promise<TopCostsResponse> {
+  const qs = limit !== undefined ? `?limit=${limit}` : "";
+  return apiFetch<TopCostsResponse>(`/stats/top-costs${qs}`);
+}
+
+export function getTopDuration(limit?: number): Promise<TopDurationResponse> {
+  const qs = limit !== undefined ? `?limit=${limit}` : "";
+  return apiFetch<TopDurationResponse>(`/stats/top-duration${qs}`);
+}
+
+export function detectAnomalies(
+  traceId: string,
+): Promise<AnomalyDetectionResponse> {
+  return apiFetch<AnomalyDetectionResponse>("/analysis/anomalies", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_id: traceId }),
+  });
 }
 
 // --- Export / Import ---
