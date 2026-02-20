@@ -88,8 +88,13 @@ async def replay_llm_call(
     # Auto-save the modified prompt as a prompt version
     modified_prompt = modified_attributes.get("llm.prompt")
     if modified_prompt is not None:
-        prompt_text = modified_prompt if isinstance(modified_prompt, str) else json.dumps(modified_prompt)
-        prompt_version_service.create_version(db, span_id, prompt_text, label="Replay")
+        if isinstance(modified_prompt, str):
+            prompt_text = modified_prompt
+        else:
+            prompt_text = json.dumps(modified_prompt)
+        prompt_version_service.create_version(
+            db, span_id, prompt_text, label="Replay"
+        )
 
     return ReplayResponse(
         replay_id=replay_id,
