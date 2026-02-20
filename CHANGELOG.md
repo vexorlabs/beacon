@@ -10,6 +10,8 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(sdk): Google Gemini (`google-genai`) auto-instrumentation — patches `Models.generate_content`, `generate_content_stream`, and async equivalents with token usage, cost estimation, tool-call capture, and streaming support
+- feat(backend): Google Gemini backend replay support — `call_google()` REST API client, Gemini models in pricing/provider tables, `google` added to supported settings providers
 - feat(sdk-js): JS/TS SDK (`sdk-js/`) — full tracing SDK for Node.js 18+ with zero runtime dependencies, mirroring the Python SDK architecture (tracer, batch exporter, AsyncLocalStorage context, `observe()` wrapper, LLM cost estimation)
 - feat(sdk-js): OpenAI integration — auto-patches `chat.completions.create` with streaming and tool call support
 - feat(sdk-js): Anthropic integration — auto-patches `messages.create` with event-based streaming and tool use
