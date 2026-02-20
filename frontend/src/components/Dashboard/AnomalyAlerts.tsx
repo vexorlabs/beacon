@@ -57,9 +57,9 @@ export default function AnomalyAlerts({
 
       {!isLoading && !error && anomalies.length > 0 && (
         <div className="space-y-2">
-          {anomalies.map((a, i) => (
+          {anomalies.map((a) => (
             <button
-              key={`${a.type}-${i}`}
+              key={`${a.trace_id}-${a.span_id}-${a.type}`}
               type="button"
               onClick={() =>
                 onNavigate(

@@ -162,6 +162,8 @@ function Overview({
         )
         .finally(() => setAnomalyLoading(false));
     }
+    // Fetch once on mount. Intentionally excludes `traces` to avoid
+    // re-calling the LLM anomaly endpoint on every WebSocket update.
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
