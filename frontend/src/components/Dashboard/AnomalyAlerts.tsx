@@ -35,15 +35,14 @@ export default function AnomalyAlerts({
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Settings size={14} />
           <span>
-            Configure an API key in{" "}
+            {error}{" — "}
             <button
               type="button"
               onClick={() => onNavigate("/settings")}
               className="text-primary hover:underline"
             >
               Settings
-            </button>{" "}
-            to enable AI-powered anomaly detection.
+            </button>
           </span>
         </div>
       )}
