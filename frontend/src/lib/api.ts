@@ -6,6 +6,8 @@ import type {
   PlaygroundChatResponse,
   PlaygroundCompareResponse,
   PlaygroundMessage,
+  PromptVersion,
+  PromptVersionListResponse,
   ReplayResult,
   SearchResponse,
   Span,
@@ -194,4 +196,26 @@ export function searchTraces(
   if (params?.limit !== undefined) search.set("limit", String(params.limit));
   if (params?.offset !== undefined) search.set("offset", String(params.offset));
   return apiFetch<SearchResponse>(`/search?${search.toString()}`);
+}
+
+// --- Prompt versions ---
+
+export function getPromptVersions(
+  spanId: string,
+): Promise<PromptVersionListResponse> {
+  return apiFetch<PromptVersionListResponse>(
+    `/spans/${spanId}/prompt-versions`,
+  );
+}
+
+export function createPromptVersion(
+  spanId: string,
+  promptText: string,
+  label?: string,
+): Promise<PromptVersion> {
+  return apiFetch<PromptVersion>(`/spans/${spanId}/prompt-versions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt_text: promptText, label }),
+  });
 }

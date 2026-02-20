@@ -53,6 +53,22 @@ class Span(Base):
     )
 
 
+class PromptVersion(Base):
+    __tablename__ = "prompt_versions"
+
+    version_id = Column(Text, primary_key=True)
+    span_id = Column(
+        Text,
+        ForeignKey("spans.span_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    prompt_text = Column(Text, nullable=False)
+    label = Column(Text)
+    created_at = Column(Float, nullable=False)
+
+    __table_args__ = (Index("idx_prompt_versions_span_id", "span_id"),)
+
+
 class ReplayRun(Base):
     __tablename__ = "replay_runs"
 
