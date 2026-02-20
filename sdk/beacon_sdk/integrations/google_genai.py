@@ -93,8 +93,6 @@ def _apply_response_attributes(span: Any, response: Any, model: str) -> None:
             "llm.cost_usd", _estimate_cost(model, input_tokens, output_tokens)
         )
 
-    span.set_attribute("llm.model", model)
-
 
 def _extract_config_attrs(span: Any, kwargs: dict[str, Any]) -> None:
     """Extract temperature and max_tokens from the Gemini config object."""
