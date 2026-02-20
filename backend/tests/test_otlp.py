@@ -260,6 +260,46 @@ def test_otlp_empty_payload(client):
     assert data["rejected"] == 0
 
 
+def test_otlp_skips_spans_with_empty_ids(client):
+    """Spans with empty spanId or traceId should be skipped."""
+    # Build spans manually since _make_otel_span treats "" as falsy
+    span_no_id = {
+        "traceId": str(uuid.uuid4()),
+        "spanId": "",
+        "name": "no-span-id",
+        "kind": 1,
+        "startTimeUnixNano": "1700000000000000000",
+        "endTimeUnixNano": "1700000001000000000",
+        "attributes": [],
+        "status": {"code": 1},
+    }
+    span_no_trace = {
+        "traceId": "",
+        "spanId": str(uuid.uuid4()),
+        "name": "no-trace-id",
+        "kind": 1,
+        "startTimeUnixNano": "1700000000000000000",
+        "endTimeUnixNano": "1700000001000000000",
+        "attributes": [],
+        "status": {"code": 1},
+    }
+    payload = _make_otlp_payload(spans=[span_no_id, span_no_trace])
+
+    response = client.post("/v1/otlp/traces", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["accepted"] == 0
+
+
+def test_otlp_malformed_payload_missing_keys(client):
+    """Payload missing expected structure should return 200 with 0 accepted."""
+    response = client.post("/v1/otlp/traces", json={})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["accepted"] == 0
+    assert data["rejected"] == 0
+
+
 def test_otlp_roundtrip_with_export(client):
     """Export a trace as OTEL, then re-import via OTLP. Verify data survives."""
     # First ingest a span normally

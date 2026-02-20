@@ -29,6 +29,10 @@ def convert_otlp_to_spans(payload: dict[str, Any]) -> list[SpanCreate]:
     for resource_span in payload.get("resourceSpans", []):
         for scope_span in resource_span.get("scopeSpans", []):
             for otel_span in scope_span.get("spans", []):
+                span_id = otel_span.get("spanId", "")
+                trace_id = otel_span.get("traceId", "")
+                if not span_id or not trace_id:
+                    continue
                 spans.append(_convert_span(otel_span))
 
     return spans
