@@ -17,6 +17,7 @@ class Trace(Base):
     tags = Column(Text, default="{}")
     total_cost_usd = Column(Float, default=0)
     total_tokens = Column(Integer, default=0)
+    sdk_language = Column(Text)
     created_at = Column(Float, nullable=False)
 
     __table_args__ = (
@@ -43,6 +44,7 @@ class Span(Base):
     end_time = Column(Float)
     attributes = Column(Text, default="{}")
     annotations = Column(Text, default="[]")
+    sdk_language = Column(Text)
     created_at = Column(Float, nullable=False)
 
     __table_args__ = (

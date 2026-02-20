@@ -37,6 +37,7 @@ class SpanCreate(BaseModel):
     start_time: float
     end_time: float | None = None
     attributes: dict[str, Any] = {}
+    sdk_language: str | None = None
 
 
 class SpanIngestRequest(BaseModel):
@@ -67,6 +68,7 @@ class SpanResponse(BaseModel):
     duration_ms: float | None
     attributes: dict[str, Any]
     annotations: list[Annotation] = []
+    sdk_language: str | None = None
 
 
 # --- Trace schemas (Phase 2) ---
@@ -83,6 +85,7 @@ class TraceSummary(BaseModel):
     total_cost_usd: float
     total_tokens: int
     tags: dict[str, str]
+    sdk_language: str | None = None
 
 
 class TraceDetailResponse(TraceSummary):

@@ -232,4 +232,5 @@ def _trace_to_summary(trace: models.Trace) -> TraceSummary:
         total_cost_usd=trace.total_cost_usd or 0,
         total_tokens=trace.total_tokens or 0,
         tags=tags,
+        sdk_language=trace.sdk_language,
     )

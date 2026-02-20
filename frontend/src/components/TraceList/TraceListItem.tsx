@@ -123,6 +123,15 @@ export default function TraceListItem({
               <Trash2 size={12} />
             </button>
           ) : null}
+          {trace.sdk_language && (
+            <span className="inline-flex items-center rounded px-1 py-0 text-[10px] font-medium bg-muted text-muted-foreground border border-border shrink-0">
+              {trace.sdk_language === "python"
+                ? "PY"
+                : trace.sdk_language === "javascript"
+                  ? "JS"
+                  : trace.sdk_language.toUpperCase().slice(0, 4)}
+            </span>
+          )}
           <Badge
             variant={STATUS_VARIANT[trace.status] ?? "secondary"}
             className="shrink-0"

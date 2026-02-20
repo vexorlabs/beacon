@@ -8,11 +8,12 @@ PIP          := $(VENV)/bin/pip
 BACKEND_DIR  := backend
 FRONTEND_DIR := frontend
 SDK_DIR      := sdk
+SDK_JS_DIR   := sdk-js
 BACKEND_PORT := 7474
 FRONTEND_PORT := 5173
 DB_PATH      := $(HOME)/.beacon/traces.db
 
-.PHONY: help install dev dev-backend dev-frontend demo stop test lint format clean db-reset
+.PHONY: help install dev dev-backend dev-frontend demo stop test lint format clean db-reset sdk-js-install sdk-js-test sdk-js-typecheck sdk-js-clean
 
 help:
 	@echo ""
@@ -31,9 +32,14 @@ help:
 	@echo "    make stop           Kill processes on ports $(BACKEND_PORT) and $(FRONTEND_PORT)"
 	@echo ""
 	@echo "  Quality:"
-	@echo "    make test           Run backend + SDK tests"
+	@echo "    make test           Run backend + SDK + JS SDK + frontend tests"
 	@echo "    make lint           Run all linters"
 	@echo "    make format         Run all formatters"
+	@echo ""
+	@echo "  JS SDK:"
+	@echo "    make sdk-js-install Install JS SDK dependencies"
+	@echo "    make sdk-js-test    Run JS SDK tests"
+	@echo "    make sdk-js-typecheck  Type-check JS SDK"
 	@echo ""
 	@echo "  Utilities:"
 	@echo "    make clean          Remove venvs, node_modules, build artifacts"
@@ -53,6 +59,8 @@ install:
 	$(PIP) install -e "$(SDK_DIR)[dev]"
 	@echo "--- Installing frontend dependencies ---"
 	npm --prefix $(FRONTEND_DIR) install
+	@echo "--- Installing JS SDK dependencies ---"
+	npm --prefix $(SDK_JS_DIR) install
 	@echo ""
 	@echo "Done. Run 'make dev' to start."
 
@@ -98,6 +106,8 @@ test:
 	$(VENV)/bin/pytest $(BACKEND_DIR)/tests -v
 	@echo "--- SDK tests ---"
 	$(VENV)/bin/pytest $(SDK_DIR)/tests -v
+	@echo "--- JS SDK tests ---"
+	npm --prefix $(SDK_JS_DIR) run test
 	@echo "--- Frontend tests ---"
 	npm --prefix $(FRONTEND_DIR) run test
 
@@ -119,10 +129,25 @@ format:
 # Utilities
 # -----------------------------------------------------------------------------
 
+sdk-js-install:
+	npm --prefix $(SDK_JS_DIR) install
+
+sdk-js-test:
+	npm --prefix $(SDK_JS_DIR) run test
+
+sdk-js-typecheck:
+	npm --prefix $(SDK_JS_DIR) run typecheck
+
+sdk-js-clean:
+	rm -rf $(SDK_JS_DIR)/node_modules
+	rm -rf $(SDK_JS_DIR)/dist
+
 clean:
 	rm -rf $(VENV)
 	rm -rf $(FRONTEND_DIR)/node_modules
 	rm -rf $(FRONTEND_DIR)/dist
+	rm -rf $(SDK_JS_DIR)/node_modules
+	rm -rf $(SDK_JS_DIR)/dist
 	rm -rf $(BACKEND_DIR)/__pycache__ $(BACKEND_DIR)/app/__pycache__
 	find $(SDK_DIR) -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find $(SDK_DIR) -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
