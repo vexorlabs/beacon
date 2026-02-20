@@ -98,7 +98,7 @@ def _upsert_trace(db: Session, span: SpanCreate) -> None:
             start_time=span.start_time,
             end_time=span.end_time,
             span_count=1,
-            status="unset",
+            status=span.status.value,
             total_cost_usd=cost,
             total_tokens=tokens,
             sdk_language=span.sdk_language,
