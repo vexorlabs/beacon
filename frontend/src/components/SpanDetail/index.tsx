@@ -6,9 +6,11 @@ import ToolUseDetail from "./ToolUseDetail";
 import BrowserDetail from "./BrowserDetail";
 import GenericDetail from "./GenericDetail";
 import AnnotationPanel from "./AnnotationPanel";
+import TagEditor from "@/components/TagEditor";
 
 export default function SpanDetail() {
   const selectedSpan = useTraceStore((s) => s.selectedSpan);
+  const selectedTrace = useTraceStore((s) => s.selectedTrace);
 
   const duration =
     selectedSpan && selectedSpan.end_time !== null
@@ -87,6 +89,20 @@ export default function SpanDetail() {
             spanId={selectedSpan.span_id}
             annotations={selectedSpan.annotations ?? []}
           />
+          {selectedTrace && (
+            <>
+              <div className="border-b border-border my-4" />
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                  Trace Tags
+                </h4>
+                <TagEditor
+                  traceId={selectedTrace.trace_id}
+                  tags={selectedTrace.tags}
+                />
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

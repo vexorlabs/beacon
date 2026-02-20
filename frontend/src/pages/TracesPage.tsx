@@ -17,7 +17,7 @@ export default function TracesPage() {
   }>();
 
   const { leftWidth, rightWidth, leftHandleProps, rightHandleProps } =
-    useResizablePanels(250, 330);
+    useResizablePanels(350, 330);
 
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("graph");

@@ -62,7 +62,7 @@ body {
 /* Dark-first: dark theme is the default */
 :root {
   --radius: 0.25rem;
-  --background: oklch(0.145 0.004 272);
+  --background: oklch(0.145 0.005 272);
   --foreground: oklch(0.985 0.002 272);
   --card: oklch(0.185 0.008 272);
   --card-foreground: oklch(0.985 0.002 272);
@@ -85,11 +85,11 @@ body {
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.130 0.004 272);
+  --sidebar: oklch(0.070 0.002 272);
   --sidebar-foreground: oklch(0.985 0.002 272);
   --sidebar-primary: oklch(0.500 0.200 275);
   --sidebar-primary-foreground: oklch(0.985 0.002 272);
-  --sidebar-accent: oklch(0.200 0.012 272);
+  --sidebar-accent: oklch(0.140 0.008 272);
   --sidebar-accent-foreground: oklch(0.985 0.002 272);
   --sidebar-border: oklch(0.300 0.012 272);
   --sidebar-ring: oklch(0.500 0.200 275);
