@@ -41,10 +41,26 @@ export default function TraceList() {
     void loadTraces();
   }, [loadTraces]);
 
+  const [tagFilterInput, setTagFilterInput] = useState("");
+
   const filteredTraces = useMemo(() => {
     return traces.filter((t) => {
       if (traceFilter.status !== "all" && t.status !== traceFilter.status)
         return false;
+      if (traceFilter.tags.length > 0) {
+        const traceTagEntries = Object.entries(t.tags).map(
+          ([k, v]) => `${k}:${v}`,
+        );
+        if (
+          !traceFilter.tags.every((ft) =>
+            traceTagEntries.some((te) =>
+              te.toLowerCase().includes(ft.toLowerCase()),
+            ),
+          )
+        ) {
+          return false;
+        }
+      }
       return true;
     });
   }, [traces, traceFilter]);
@@ -81,7 +97,7 @@ export default function TraceList() {
     [loadTraces, navigate],
   );
 
-  const hasActiveFilter = traceFilter.status !== "all";
+  const hasActiveFilter = traceFilter.status !== "all" || traceFilter.tags.length > 0;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -226,6 +242,55 @@ export default function TraceList() {
                   </button>
                 )}
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-muted-foreground shrink-0">
+                  Tags
+                </span>
+                <input
+                  type="text"
+                  placeholder="Filter by tag (e.g. env:prod)"
+                  value={tagFilterInput}
+                  onChange={(e) => setTagFilterInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && tagFilterInput.trim()) {
+                      setTraceFilter({
+                        tags: [...traceFilter.tags, tagFilterInput.trim()],
+                      });
+                      setTagFilterInput("");
+                    }
+                  }}
+                  className="h-8 flex-1 bg-background border border-input rounded-md px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              {traceFilter.tags.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  {traceFilter.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 border border-primary/20 px-1.5 py-0 text-[11px] text-primary"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setTraceFilter({
+                            tags: traceFilter.tags.filter((t) => t !== tag),
+                          })
+                        }
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setTraceFilter({ tags: [] })}
+                    className="text-[11px] text-muted-foreground hover:text-foreground"
+                  >
+                    Clear tags
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

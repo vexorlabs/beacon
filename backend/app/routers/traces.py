@@ -18,6 +18,8 @@ from app.schemas import (
     ExportFormat,
     GraphData,
     SpanStatus,
+    TagsUpdateRequest,
+    TagsUpdateResponse,
     TraceDetailResponse,
     TraceExportData,
     TraceImportResponse,
@@ -120,6 +122,18 @@ async def import_trace(
 
 
 # --- Single-trace endpoints ---
+
+
+@router.put("/{trace_id}/tags", response_model=TagsUpdateResponse)
+async def update_trace_tags(
+    trace_id: str,
+    request: TagsUpdateRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> TagsUpdateResponse:
+    result = trace_service.update_trace_tags(db, trace_id, request.tags)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Trace not found")
+    return TagsUpdateResponse(trace_id=trace_id, tags=result.tags)
 
 
 @router.delete("/{trace_id}", response_model=DeleteTracesResponse)

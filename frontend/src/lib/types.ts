@@ -13,6 +13,12 @@ export type SpanType =
 
 export type SpanStatus = "ok" | "error" | "unset";
 
+export interface Annotation {
+  id: string;
+  text: string;
+  created_at: number;
+}
+
 export interface Span {
   span_id: string;
   trace_id: string;
@@ -24,6 +30,7 @@ export interface Span {
   start_time: number;
   end_time: number | null;
   attributes: Record<string, unknown>;
+  annotations: Annotation[];
 }
 
 export interface TraceSummary {

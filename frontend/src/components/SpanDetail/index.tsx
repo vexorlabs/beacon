@@ -5,6 +5,7 @@ import LlmCallDetail from "./LlmCallDetail";
 import ToolUseDetail from "./ToolUseDetail";
 import BrowserDetail from "./BrowserDetail";
 import GenericDetail from "./GenericDetail";
+import AnnotationPanel from "./AnnotationPanel";
 
 export default function SpanDetail() {
   const selectedSpan = useTraceStore((s) => s.selectedSpan);
@@ -82,6 +83,10 @@ export default function SpanDetail() {
               }
             })()}
           </div>
+          <AnnotationPanel
+            spanId={selectedSpan.span_id}
+            annotations={selectedSpan.annotations ?? []}
+          />
         </div>
       )}
     </div>

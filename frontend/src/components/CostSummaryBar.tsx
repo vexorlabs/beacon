@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
 import { exportTrace } from "@/lib/api";
+import TagEditor from "@/components/TagEditor";
 
 export type ViewMode = "graph" | "timeline";
 
@@ -85,6 +86,7 @@ export default function CostSummaryBar({
           <span className="hidden lg:inline-flex shrink-0 items-center rounded-md border border-border bg-background/50 px-1.5 py-0.5 text-[11px]">
             ${selectedTrace.total_cost_usd.toFixed(4)}
           </span>
+          <TagEditor traceId={selectedTrace.trace_id} tags={selectedTrace.tags} />
         </div>
       ) : (
         <span className="text-muted-foreground flex-1">No trace selected</span>

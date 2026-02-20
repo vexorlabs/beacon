@@ -33,6 +33,21 @@ def init_db() -> None:
     from app import models  # noqa: F401 — import triggers model registration
 
     Base.metadata.create_all(bind=engine)
+    _run_migrations()
+
+
+def _run_migrations() -> None:
+    """Run lightweight column-add migrations for existing tables."""
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        result = conn.execute(text("PRAGMA table_info(spans)"))
+        columns = {row[1] for row in result}
+        if "annotations" not in columns:
+            conn.execute(
+                text("ALTER TABLE spans ADD COLUMN annotations TEXT DEFAULT '[]'")
+            )
+            conn.commit()
 
 
 def get_db() -> Generator[Session, None, None]:
