@@ -242,9 +242,13 @@ def get_baseline_stats(db: Session, trace_id: str, limit: int = 50) -> str:
         if t.trace_id == trace_id:
             continue
         cost = t.total_cost_usd or 0.0
-        duration = t.duration_ms or 0.0
+        duration_ms = (
+            (t.end_time - t.start_time) * 1000
+            if t.end_time is not None and t.start_time is not None
+            else 0.0
+        )
         stats.append(
             f"trace={t.trace_id} cost={cost:.4f} "
-            f"duration={duration:.0f}ms spans={t.span_count}"
+            f"duration={duration_ms:.0f}ms spans={t.span_count}"
         )
     return "\n".join(stats[:20]) if stats else "No historical data available."

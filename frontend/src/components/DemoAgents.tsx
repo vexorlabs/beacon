@@ -75,7 +75,7 @@ export default function DemoAgents() {
             {s.api_key_configured ? (
               <Button
                 size="sm"
-                className="w-full"
+                className="w-full rounded-lg"
                 disabled={runningKey !== null}
                 onClick={() => handleRun(s.key)}
               >
@@ -95,7 +95,7 @@ export default function DemoAgents() {
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full"
+                className="w-full rounded-lg"
                 onClick={() => navigate("/settings")}
               >
                 <Settings size={14} />

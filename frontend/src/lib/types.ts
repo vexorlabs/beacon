@@ -169,6 +169,58 @@ export interface StatsResponse {
   oldest_trace_timestamp: number | null;
 }
 
+// --- Dashboard analytics types ---
+
+export interface TrendBucket {
+  date: string;
+  total_cost: number;
+  total_tokens: number;
+  trace_count: number;
+  error_count: number;
+  success_rate: number;
+}
+
+export interface TrendsResponse {
+  buckets: TrendBucket[];
+}
+
+export interface TopCostItem {
+  span_id: string;
+  trace_id: string;
+  name: string;
+  model: string;
+  cost: number;
+  tokens: number;
+}
+
+export interface TopCostsResponse {
+  prompts: TopCostItem[];
+}
+
+export interface TopDurationItem {
+  span_id: string;
+  trace_id: string;
+  name: string;
+  duration_ms: number;
+}
+
+export interface TopDurationResponse {
+  tools: TopDurationItem[];
+}
+
+export interface Anomaly {
+  type: string;
+  severity: string;
+  description: string;
+  trace_id: string;
+  span_id: string | null;
+}
+
+export interface AnomalyDetectionResponse {
+  trace_id: string;
+  anomalies: Anomaly[];
+}
+
 // --- Search types ---
 
 export interface SearchResultItem {

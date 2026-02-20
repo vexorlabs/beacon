@@ -196,6 +196,8 @@ async def anomaly_detection(
             raw, AnomalyDetectionResponse
         )
         result.trace_id = request.trace_id
+        for anomaly in result.anomalies:
+            anomaly.trace_id = request.trace_id
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
