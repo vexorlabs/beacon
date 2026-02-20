@@ -373,7 +373,7 @@ class CompareAnalysisRequest(BaseModel):
 
 
 class RootCauseAnalysisResponse(BaseModel):
-    trace_id: str
+    trace_id: str = ""
     root_cause: str
     affected_spans: list[str]
     confidence: float
@@ -388,7 +388,7 @@ class CostSuggestion(BaseModel):
 
 
 class CostOptimizationResponse(BaseModel):
-    trace_ids: list[str]
+    trace_ids: list[str] = []
     suggestions: list[CostSuggestion]
 
 
@@ -399,8 +399,8 @@ class PromptImprovement(BaseModel):
 
 
 class PromptSuggestionsResponse(BaseModel):
-    span_id: str
-    original_prompt: str
+    span_id: str = ""
+    original_prompt: str = ""
     suggestions: list[PromptImprovement]
 
 
@@ -408,12 +408,12 @@ class Anomaly(BaseModel):
     type: str
     severity: str
     description: str
-    trace_id: str
+    trace_id: str = ""
     span_id: str | None = None
 
 
 class AnomalyDetectionResponse(BaseModel):
-    trace_id: str
+    trace_id: str = ""
     anomalies: list[Anomaly]
 
 
@@ -443,8 +443,8 @@ class MetricDiff(BaseModel):
 
 
 class CompareAnalysisResponse(BaseModel):
-    trace_id_a: str
-    trace_id_b: str
+    trace_id_a: str = ""
+    trace_id_b: str = ""
     divergence_points: list[DivergencePoint]
     metric_diff: MetricDiff
     summary: str
@@ -456,6 +456,6 @@ class KeyEvent(BaseModel):
 
 
 class TraceSummaryAnalysisResponse(BaseModel):
-    trace_id: str
+    trace_id: str = ""
     summary: str
     key_events: list[KeyEvent]
