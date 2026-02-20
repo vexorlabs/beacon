@@ -39,7 +39,7 @@ export default function AnomalyAlerts({
             <button
               type="button"
               onClick={() => onNavigate("/settings")}
-              className="text-primary hover:underline"
+              className="text-primary hover:underline cursor-pointer"
             >
               Settings
             </button>
@@ -65,7 +65,7 @@ export default function AnomalyAlerts({
                   `/traces/${a.trace_id}${a.span_id ? `/${a.span_id}` : ""}`,
                 )
               }
-              className="w-full text-left flex items-start gap-2.5 p-2 rounded-md hover:bg-secondary/50 transition-colors"
+              className="w-full text-left cursor-pointer flex items-start gap-2.5 p-2 rounded-md hover:bg-secondary/50 transition-colors"
             >
               <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" />
               <div className="min-w-0">
