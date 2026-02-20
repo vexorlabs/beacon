@@ -10,6 +10,14 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(backend): `PUT /v1/traces/{id}/tags` — set/replace tags on a trace for categorization and filtering
+- feat(backend): `PUT /v1/spans/{id}/annotations` — set/replace developer notes on individual spans
+- feat(backend): SQLite migration adds `annotations` column to `spans` table (backward-compatible `ALTER TABLE ADD COLUMN`)
+- feat(frontend): Tag pills on trace list items — display up to 3 tags with "+N" overflow indicator
+- feat(frontend): Inline tag editor in trace detail bar — add/remove `key:value` tags with instant persistence
+- feat(frontend): Span annotation panel — add, view, and delete developer notes on any span (Cmd/Ctrl+Enter shortcut)
+- feat(frontend): Tag-based trace filtering in search modal — enter-to-add filter pills with substring matching
+- test(backend): 12 new tests for tags and annotations endpoints (happy path, 404, persistence, replace, clear)
 - feat(backend): `GET /v1/traces/{id}/export?format=json|otel|csv` — single trace export in Beacon JSON, OTEL JSON, or CSV formats
 - feat(backend): `GET /v1/traces/export?trace_ids=...` — bulk trace export (JSON)
 - feat(backend): `POST /v1/traces/import` — import traces from Beacon JSON export format with duplicate detection

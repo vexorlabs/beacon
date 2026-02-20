@@ -194,6 +194,21 @@ def get_stats(db: Session) -> dict[str, int | float | None]:
     }
 
 
+def update_trace_tags(
+    db: Session, trace_id: str, tags: dict[str, str]
+) -> TraceSummary | None:
+    """Set/replace tags on a trace. Returns updated summary or None if not found."""
+    trace = db.execute(
+        select(models.Trace).where(models.Trace.trace_id == trace_id)
+    ).scalar_one_or_none()
+    if trace is None:
+        return None
+    trace.tags = json.dumps(tags)
+    db.commit()
+    db.refresh(trace)
+    return _trace_to_summary(trace)
+
+
 def _trace_to_summary(trace: models.Trace) -> TraceSummary:
     duration_ms = (
         (trace.end_time - trace.start_time) * 1000

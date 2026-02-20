@@ -5,8 +5,11 @@ import {
   getTraceGraph,
   getTraces,
   postReplay,
+  updateTraceTags as apiUpdateTraceTags,
+  updateSpanAnnotations as apiUpdateSpanAnnotations,
 } from "@/lib/api";
 import type {
+  Annotation,
   GraphData,
   GraphEdge,
   GraphNode,
@@ -19,6 +22,7 @@ import type {
 
 export interface TraceFilter {
   status: "all" | SpanStatus;
+  tags: string[];
 }
 
 interface TraceStore {
@@ -51,6 +55,8 @@ interface TraceStore {
   deleteTrace: (traceId: string) => Promise<void>;
   clearBackendError: () => void;
   setTraceFilter: (filter: Partial<TraceFilter>) => void;
+  updateTraceTags: (traceId: string, tags: Record<string, string>) => Promise<void>;
+  updateSpanAnnotations: (spanId: string, annotations: Annotation[]) => Promise<void>;
 }
 
 export const useTraceStore = create<TraceStore>((set, get) => ({
@@ -67,7 +73,7 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
   isReplaying: false,
   replayError: null,
   backendError: null,
-  traceFilter: { status: "all" },
+  traceFilter: { status: "all", tags: [] },
 
   loadTraces: async () => {
     set({ isLoadingTraces: true });
@@ -231,5 +237,36 @@ export const useTraceStore = create<TraceStore>((set, get) => ({
 
   setTraceFilter: (filter: Partial<TraceFilter>) => {
     set({ traceFilter: { ...get().traceFilter, ...filter } });
+  },
+
+  updateTraceTags: async (traceId: string, tags: Record<string, string>) => {
+    const result = await apiUpdateTraceTags(traceId, tags);
+    set({
+      traces: get().traces.map((t) =>
+        t.trace_id === traceId ? { ...t, tags: result.tags } : t,
+      ),
+    });
+    const { selectedTrace } = get();
+    if (selectedTrace && selectedTrace.trace_id === traceId) {
+      set({ selectedTrace: { ...selectedTrace, tags: result.tags } });
+    }
+  },
+
+  updateSpanAnnotations: async (spanId: string, annotations: Annotation[]) => {
+    await apiUpdateSpanAnnotations(spanId, annotations);
+    const { selectedTrace, selectedSpan } = get();
+    if (selectedTrace) {
+      set({
+        selectedTrace: {
+          ...selectedTrace,
+          spans: selectedTrace.spans.map((s) =>
+            s.span_id === spanId ? { ...s, annotations } : s,
+          ),
+        },
+      });
+    }
+    if (selectedSpan && selectedSpan.span_id === spanId) {
+      set({ selectedSpan: { ...selectedSpan, annotations } });
+    }
   },
 }));

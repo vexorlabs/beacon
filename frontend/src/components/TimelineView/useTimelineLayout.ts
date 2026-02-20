@@ -85,9 +85,9 @@ function computeCriticalPath(
 
   while (current) {
     criticalSet.add(current.span_id);
-    const children = childrenMap.get(current.span_id) ?? [];
+    const children: Span[] = childrenMap.get(current.span_id) ?? [];
     if (children.length === 0) break;
-    current = children.reduce((a, b) =>
+    current = children.reduce((a: Span, b: Span) =>
       (subtreeEnd.get(a.span_id) ?? 0) >= (subtreeEnd.get(b.span_id) ?? 0)
         ? a
         : b,

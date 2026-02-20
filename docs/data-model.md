@@ -36,6 +36,16 @@ class Span:
     end_time: float | None
 
     attributes: dict[str, Any]
+    annotations: list[Annotation]  # developer notes (JSON array)
+```
+
+### `Annotation`
+
+```python
+class Annotation:
+    id: str           # UUID
+    text: str         # note text
+    created_at: float # Unix epoch seconds
 ```
 
 ### `SpanType`
@@ -161,6 +171,7 @@ CREATE TABLE spans (
   start_time REAL NOT NULL,
   end_time REAL,
   attributes TEXT DEFAULT '{}',
+  annotations TEXT DEFAULT '[]',
   created_at REAL NOT NULL
 );
 ```

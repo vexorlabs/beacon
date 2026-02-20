@@ -48,6 +48,7 @@ def span_to_response(span: models.Span) -> SpanResponse:
     duration_ms: float | None = None
     if end_time is not None:
         duration_ms = (end_time - start_time) * 1000
+    annotations_raw: list[dict[str, Any]] = json.loads(span.annotations or "[]")
     return SpanResponse(
         span_id=span.span_id,
         trace_id=span.trace_id,
@@ -60,7 +61,21 @@ def span_to_response(span: models.Span) -> SpanResponse:
         end_time=end_time,
         duration_ms=duration_ms,
         attributes=attributes,
+        annotations=annotations_raw,
     )
+
+
+def update_span_annotations(
+    db: Session, span_id: str, annotations: list[dict[str, Any]]
+) -> models.Span | None:
+    """Set/replace annotations on a span. Returns updated span or None if not found."""
+    span = get_span_by_id(db, span_id)
+    if span is None:
+        return None
+    span.annotations = json.dumps(annotations)
+    db.commit()
+    db.refresh(span)
+    return span
 
 
 def _upsert_trace(db: Session, span: SpanCreate) -> None:

@@ -134,6 +134,27 @@ export default function TraceListItem({
       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
         <span>{formatDuration(trace.duration_ms)}</span>
         <span>{trace.span_count} spans</span>
+        {Object.keys(trace.tags).length > 0 && (
+          <div className="flex items-center gap-1 overflow-hidden">
+            {Object.entries(trace.tags)
+              .slice(0, 3)
+              .map(([key, value]) => (
+                <span
+                  key={key}
+                  className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-1.5 py-0 text-[10px] text-primary truncate max-w-[80px]"
+                  title={`${key}: ${value}`}
+                >
+                  {key}
+                  {value ? `: ${value}` : ""}
+                </span>
+              ))}
+            {Object.keys(trace.tags).length > 3 && (
+              <span className="text-[10px] text-muted-foreground">
+                +{Object.keys(trace.tags).length - 3}
+              </span>
+            )}
+          </div>
+        )}
         <span className="ml-auto">{formatRelativeTime(trace.start_time)}</span>
       </div>
     </button>
