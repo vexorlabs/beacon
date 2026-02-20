@@ -355,16 +355,6 @@ class AnnotationsUpdateResponse(BaseModel):
 # --- Analysis schemas (Phase 9) ---
 
 
-class AnalysisType(str, enum.Enum):
-    ROOT_CAUSE = "root_cause"
-    COST_OPTIMIZATION = "cost_optimization"
-    PROMPT_SUGGESTIONS = "prompt_suggestions"
-    ANOMALY_DETECTION = "anomaly_detection"
-    ERROR_PATTERNS = "error_patterns"
-    COMPARE = "compare"
-    SUMMARIZE = "summarize"
-
-
 class AnalysisRequest(BaseModel):
     trace_id: str
 

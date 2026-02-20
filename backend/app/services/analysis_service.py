@@ -18,8 +18,8 @@ from app import models
 from app.services import settings_service
 from app.services.llm_client import (
     call_anthropic,
+    call_google,
     call_openai,
-    estimate_cost,
     provider_for_model,
 )
 
@@ -153,6 +153,8 @@ async def call_analysis_llm(system_prompt: str, user_prompt: str) -> str:
         completion, _, _ = await call_anthropic(
             api_key, model, messages, temperature=0.2
         )
+    elif provider == "google":
+        completion, _, _ = await call_google(api_key, model, messages, temperature=0.2)
     else:
         raise ValueError(f"Analysis does not support provider: {provider}")
 
@@ -225,3 +227,24 @@ def get_span(db: Session, span_id: str) -> models.Span:
     if span is None:
         raise ValueError(f"Span not found: {span_id}")
     return span
+
+
+def get_baseline_stats(db: Session, trace_id: str, limit: int = 50) -> str:
+    """Build a baseline summary from recent traces, excluding *trace_id*."""
+    recent_traces: list[models.Trace] = (
+        db.query(models.Trace)
+        .order_by(models.Trace.start_time.desc())
+        .limit(limit)
+        .all()
+    )
+    stats: list[str] = []
+    for t in recent_traces:
+        if t.trace_id == trace_id:
+            continue
+        cost = t.total_cost_usd or 0.0
+        duration = t.duration_ms or 0.0
+        stats.append(
+            f"trace={t.trace_id} cost={cost:.4f} "
+            f"duration={duration:.0f}ms spans={t.span_count}"
+        )
+    return "\n".join(stats[:20]) if stats else "No historical data available."

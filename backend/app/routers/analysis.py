@@ -1,16 +1,18 @@
 """Analysis router — AI-powered trace debugging endpoints.
 
-All endpoints live under ``/v1/analysis/``.  Each specific analysis type
-(root-cause, cost-optimization, etc.) will be added in subsequent issues.
-This module provides the router shell and shared error handling.
+All endpoints live under ``/v1/analysis/``.  Provides root-cause analysis,
+cost optimization, prompt suggestions, anomaly detection, error patterns,
+trace comparison, and trace summarization.
 """
 
 from __future__ import annotations
 
+import json
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import models
 from app.database import get_db
 from app.schemas import (
     AnalysisRequest,
@@ -118,13 +120,11 @@ async def prompt_suggestions(
 ) -> PromptSuggestionsResponse:
     """Analyze an LLM call's prompt and suggest improvements."""
     try:
-        import json as _json
-
         span = analysis_service.get_span(db, request.span_id)
-        attrs: dict = {}
+        attrs: dict[str, Any] = {}
         if span.attributes:
             try:
-                attrs = _json.loads(span.attributes)
+                attrs = json.loads(span.attributes)
             except (ValueError, TypeError):
                 pass
 
@@ -166,25 +166,7 @@ async def anomaly_detection(
     try:
         spans = analysis_service.get_trace_spans(db, request.trace_id)
         context = analysis_service.build_trace_context(spans)
-
-        # Gather baseline stats from recent traces
-        recent_traces = (
-            db.query(models.Trace)
-            .order_by(models.Trace.start_time.desc())
-            .limit(50)
-            .all()
-        )
-        baseline_stats = []
-        for t in recent_traces:
-            if t.trace_id == request.trace_id:
-                continue
-            cost = t.total_cost_usd or 0.0
-            duration = t.duration_ms or 0.0
-            baseline_stats.append(
-                f"trace={t.trace_id} cost={cost:.4f} "
-                f"duration={duration:.0f}ms spans={t.span_count}"
-            )
-        baseline_text = "\n".join(baseline_stats[:20]) if baseline_stats else "No historical data available."
+        baseline_text = analysis_service.get_baseline_stats(db, request.trace_id)
 
         system_prompt = (
             "You are an anomaly detection assistant for AI agent traces. "
