@@ -851,6 +851,202 @@ Response `200 OK`:
 
 ---
 
+### Analysis (AI-Powered)
+
+All analysis endpoints call a configured LLM (default `gpt-4o-mini`, override with `BEACON_ANALYSIS_MODEL` env var). They return structured JSON validated against Pydantic schemas.
+
+#### `POST /v1/analysis/root-cause`
+
+Identify the root cause of failures in a trace.
+
+Request:
+
+```json
+{ "trace_id": "7c9e6679-..." }
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id": "7c9e6679-...",
+  "root_cause": "Rate limit exceeded on OpenAI API",
+  "affected_spans": ["span-1", "span-2"],
+  "confidence": 0.85,
+  "suggested_fix": "Add retry logic with exponential backoff"
+}
+```
+
+Response `400 Bad Request`: trace not found or invalid input.
+
+Response `502 Bad Gateway`: LLM call failed.
+
+#### `POST /v1/analysis/cost-optimization`
+
+Analyze LLM call patterns across multiple traces for cost-saving opportunities.
+
+Request:
+
+```json
+{ "trace_ids": ["trace-1", "trace-2"] }
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_ids": ["trace-1", "trace-2"],
+  "suggestions": [
+    {
+      "type": "model_downgrade",
+      "description": "Use gpt-4o-mini for simple classification",
+      "estimated_savings_usd": 0.015,
+      "affected_spans": ["span-1"]
+    }
+  ]
+}
+```
+
+#### `POST /v1/analysis/prompt-suggestions`
+
+Analyze an LLM call's prompt and suggest improvements.
+
+Request:
+
+```json
+{ "span_id": "550e8400-..." }
+```
+
+Response `200 OK`:
+
+```json
+{
+  "span_id": "550e8400-...",
+  "original_prompt": "What is 2+2?",
+  "suggestions": [
+    {
+      "category": "clarity",
+      "description": "Be more specific about expected output format",
+      "improved_prompt_snippet": "Calculate 2+2 and return only the number."
+    }
+  ]
+}
+```
+
+#### `POST /v1/analysis/anomalies`
+
+Compare a trace against historical baselines and flag anomalies.
+
+Request:
+
+```json
+{ "trace_id": "7c9e6679-..." }
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id": "7c9e6679-...",
+  "anomalies": [
+    {
+      "type": "cost_spike",
+      "severity": "high",
+      "description": "Cost is 3x the historical mean",
+      "trace_id": "7c9e6679-...",
+      "span_id": "span-1"
+    }
+  ]
+}
+```
+
+#### `POST /v1/analysis/error-patterns`
+
+Cluster similar failures across multiple traces.
+
+Request:
+
+```json
+{ "trace_ids": ["trace-1", "trace-2", "trace-3"] }
+```
+
+Response `200 OK`:
+
+```json
+{
+  "patterns": [
+    {
+      "pattern_name": "Repeated rate limiting",
+      "count": 5,
+      "example_trace_ids": ["trace-1", "trace-2"],
+      "common_root_cause": "No retry logic on API calls",
+      "category": "rate_limit"
+    }
+  ]
+}
+```
+
+#### `POST /v1/analysis/compare`
+
+Compare two traces and identify structural divergence.
+
+Request:
+
+```json
+{
+  "trace_id_a": "trace-1",
+  "trace_id_b": "trace-2"
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id_a": "trace-1",
+  "trace_id_b": "trace-2",
+  "divergence_points": [
+    {
+      "span_a": "span-1",
+      "span_b": null,
+      "description": "Trace A has an extra tool call"
+    }
+  ],
+  "metric_diff": {
+    "cost_diff_usd": 0.01,
+    "duration_diff_ms": 500.0,
+    "token_diff": 200,
+    "span_count_diff": 1
+  },
+  "summary": "Trace A used an additional tool call, increasing cost and duration."
+}
+```
+
+#### `POST /v1/analysis/summarize`
+
+Generate a natural language summary of what the agent did.
+
+Request:
+
+```json
+{ "trace_id": "7c9e6679-..." }
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id": "7c9e6679-...",
+  "summary": "The agent called GPT-4o twice and returned results in 1.5s.",
+  "key_events": [
+    { "span_id": "span-1", "description": "LLM call to GPT-4o" },
+    { "span_id": "span-2", "description": "Tool invocation: web_search" }
+  ]
+}
+```
+
+---
+
 ## WebSocket API
 
 ### `WS /ws/live`

@@ -17,6 +17,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 - feat(frontend): Increase default trace list panel width to 350px
 
 ### Added
+- feat(backend): AI-powered trace analysis endpoints (`POST /v1/analysis/{root-cause,cost-optimization,prompt-suggestions,anomalies,error-patterns,compare,summarize}`) with shared analysis service infrastructure, structured JSON response parsing, and Google/OpenAI/Anthropic LLM support
 - feat(sdk): Google Gemini (`google-genai`) auto-instrumentation — patches `Models.generate_content`, `generate_content_stream`, and async equivalents with token usage, cost estimation, tool-call capture, and streaming support
 - feat(backend): Google Gemini backend replay support — `call_google()` REST API client, Gemini models in pricing/provider tables, `google` added to supported settings providers
 - feat(sdk-js): JS/TS SDK (`sdk-js/`) — full tracing SDK for Node.js 18+ with zero runtime dependencies, mirroring the Python SDK architecture (tracer, batch exporter, AsyncLocalStorage context, `observe()` wrapper, LLM cost estimation)
