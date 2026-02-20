@@ -62,6 +62,7 @@ def span_to_response(span: models.Span) -> SpanResponse:
         duration_ms=duration_ms,
         attributes=attributes,
         annotations=annotations_raw,
+        sdk_language=span.sdk_language,
     )
 
 
@@ -100,6 +101,7 @@ def _upsert_trace(db: Session, span: SpanCreate) -> None:
             status="unset",
             total_cost_usd=cost,
             total_tokens=tokens,
+            sdk_language=span.sdk_language,
             created_at=time.time(),
         )
         db.add(trace)
@@ -131,6 +133,7 @@ def _upsert_span(db: Session, span: SpanCreate) -> None:
             start_time=span.start_time,
             end_time=span.end_time,
             attributes=json.dumps(span.attributes),
+            sdk_language=span.sdk_language,
             created_at=now,
         )
         db.add(db_span)

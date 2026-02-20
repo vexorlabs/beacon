@@ -10,6 +10,14 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(sdk-js): JS/TS SDK (`sdk-js/`) — full tracing SDK for Node.js 18+ with zero runtime dependencies, mirroring the Python SDK architecture (tracer, batch exporter, AsyncLocalStorage context, `observe()` wrapper, LLM cost estimation)
+- feat(sdk-js): OpenAI integration — auto-patches `chat.completions.create` with streaming and tool call support
+- feat(sdk-js): Anthropic integration — auto-patches `messages.create` with event-based streaming and tool use
+- feat(sdk-js): Vercel AI SDK integration — patches `generateText()` and `streamText()` with span finalization
+- feat(backend): `POST /v1/otlp/traces` — OTLP-compatible JSON ingestion endpoint for OpenTelemetry interoperability
+- feat(backend): `sdk_language` field on spans and traces schema with SQLite migration — tracks which SDK produced each trace
+- feat(frontend): SDK language badges (`PY`/`JS`) on trace list items
+- feat(sdk): Python SDK now emits `sdk_language: "python"` in span output
 - feat(frontend): Vitest + React Testing Library test infrastructure — 37 tests across 5 files covering trace store, API utilities, TraceList, LlmCallDetail, and tokenizer
 - feat(frontend): Live token count preview in prompt editor using `js-tiktoken` with debounced updates
 - feat(backend): `GET/POST /v1/spans/{span_id}/prompt-versions` — prompt versioning with auto-save on replay and manual save with optional labels

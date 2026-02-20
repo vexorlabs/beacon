@@ -31,6 +31,7 @@ export interface Span {
   end_time: number | null;
   attributes: Record<string, unknown>;
   annotations: Annotation[];
+  sdk_language?: string | null;
 }
 
 export interface TraceSummary {
@@ -44,6 +45,7 @@ export interface TraceSummary {
   total_cost_usd: number;
   total_tokens: number;
   tags: Record<string, string>;
+  sdk_language?: string | null;
 }
 
 export interface TraceDetail extends TraceSummary {
@@ -203,6 +205,7 @@ export interface SpanResponse {
   end_time: number | null;
   duration_ms: number | null;
   attributes: Record<string, unknown>;
+  sdk_language?: string | null;
 }
 
 export interface TraceImportResponse {

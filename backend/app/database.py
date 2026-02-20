@@ -42,11 +42,20 @@ def _run_migrations() -> None:
 
     with engine.connect() as conn:
         result = conn.execute(text("PRAGMA table_info(spans)"))
-        columns = {row[1] for row in result}
-        if "annotations" not in columns:
+        span_columns = {row[1] for row in result}
+        if "annotations" not in span_columns:
             conn.execute(
                 text("ALTER TABLE spans ADD COLUMN annotations TEXT DEFAULT '[]'")
             )
+            conn.commit()
+        if "sdk_language" not in span_columns:
+            conn.execute(text("ALTER TABLE spans ADD COLUMN sdk_language TEXT"))
+            conn.commit()
+
+        result = conn.execute(text("PRAGMA table_info(traces)"))
+        trace_columns = {row[1] for row in result}
+        if "sdk_language" not in trace_columns:
+            conn.execute(text("ALTER TABLE traces ADD COLUMN sdk_language TEXT"))
             conn.commit()
 
 

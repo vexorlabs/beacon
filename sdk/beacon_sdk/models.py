@@ -88,4 +88,5 @@ class Span:
             "start_time": self.start_time,
             "end_time": self.end_time,
             "attributes": self.attributes,
+            "sdk_language": "python",
         }

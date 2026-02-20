@@ -374,29 +374,29 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [ ] Add `sdk/tests/test_integrations_ollama.py`
 
 **JavaScript/TypeScript SDK (New Package)**
-- [ ] Create `sdk-js/` directory with `package.json`, `tsconfig.json`, project structure mirroring the Python SDK
-- [ ] Implement `sdk-js/src/tracer.ts` — `BeaconTracer` class using `AsyncLocalStorage` for context propagation
-- [ ] Implement `sdk-js/src/exporter.ts` — HTTP exporter posting to `POST /v1/spans` (same backend)
-- [ ] Implement `sdk-js/src/integrations/openai.ts` — monkey-patch the `openai` npm package's `chat.completions.create()`
-- [ ] Implement `sdk-js/src/integrations/anthropic.ts` — monkey-patch the `@anthropic-ai/sdk` npm package
-- [ ] Implement `sdk-js/src/integrations/vercel-ai.ts` — instrument Vercel AI SDK's `generateText()` and `streamText()`
-- [ ] Implement `sdk-js/src/index.ts` — public API: `init()`, `observe()` decorator, auto-patching
-- [ ] Write `sdk-js/README.md` with quickstart guide
-- [ ] Add `sdk-js/tests/` with tests for tracer, exporter, and integrations
+- [x] Create `sdk-js/` directory with `package.json`, `tsconfig.json`, project structure mirroring the Python SDK
+- [x] Implement `sdk-js/src/tracer.ts` — `BeaconTracer` class using `AsyncLocalStorage` for context propagation
+- [x] Implement `sdk-js/src/exporter.ts` — HTTP exporter posting to `POST /v1/spans` (same backend)
+- [x] Implement `sdk-js/src/integrations/openai.ts` — monkey-patch the `openai` npm package's `chat.completions.create()`
+- [x] Implement `sdk-js/src/integrations/anthropic.ts` — monkey-patch the `@anthropic-ai/sdk` npm package
+- [x] Implement `sdk-js/src/integrations/vercel-ai.ts` — instrument Vercel AI SDK's `generateText()` and `streamText()`
+- [x] Implement `sdk-js/src/index.ts` — public API: `init()`, `observe()` decorator, auto-patching
+- [x] Write `sdk-js/README.md` with quickstart guide
+- [x] Add `sdk-js/tests/` with tests for tracer, exporter, and integrations
 - [ ] Add `sdk-js/examples/` with a basic Node.js agent example
 
 **Backend: OTLP-Compatible Ingestion**
-- [ ] Add `POST /v1/otlp/traces` endpoint accepting standard OpenTelemetry Protocol (OTLP) JSON format, mapping OTEL resource/scope/span fields to Beacon's span model — this allows existing OTEL-instrumented applications to send traces to Beacon without the Beacon SDK
+- [x] Add `POST /v1/otlp/traces` endpoint accepting standard OpenTelemetry Protocol (OTLP) JSON format, mapping OTEL resource/scope/span fields to Beacon's span model — this allows existing OTEL-instrumented applications to send traces to Beacon without the Beacon SDK
 - [ ] Document the OTLP ingestion endpoint in `sdk/README.md`
-- [ ] Add tests in `backend/tests/test_otlp.py` with sample OTLP payloads
+- [x] Add tests in `backend/tests/test_otlp.py` with sample OTLP payloads
 
 **Backend: Multi-SDK Support**
-- [ ] In `backend/app/schemas.py`, add optional `sdk_language` field to `SpanCreate` (`"python"` | `"javascript"` | `"unknown"`) for analytics
+- [x] In `backend/app/schemas.py`, add optional `sdk_language` field to `SpanCreate` (`"python"` | `"javascript"` | `"unknown"`) for analytics
 - [ ] In `backend/app/services/llm_client.py`, add Gemini models to the replay service
 
 **Frontend: Framework Badges**
 - [ ] In `frontend/src/components/TraceGraph/SpanNode.tsx`, add framework icon/badge (LangChain, CrewAI, AutoGen, LlamaIndex) based on `agent.framework` attribute
-- [ ] In `frontend/src/components/TraceList/TraceListItem.tsx`, show SDK language badge (Python/JS) if `sdk_language` is present
+- [x] In `frontend/src/components/TraceList/TraceListItem.tsx`, show SDK language badge (Python/JS) if `sdk_language` is present
 
 ### Done Condition
 A developer using CrewAI, AutoGen, LlamaIndex, Google Gemini, Ollama, or the JS/TS SDK can `init()` Beacon and see complete, correctly structured traces. Framework badges appear in the graph view. An existing OTEL-instrumented application can send traces to Beacon via the OTLP endpoint without using the Beacon SDK.

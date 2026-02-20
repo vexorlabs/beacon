@@ -425,6 +425,67 @@ Response `422 Unprocessable Entity` for request validation errors.
 
 ---
 
+### OTLP Ingestion
+
+#### `POST /v1/otlp/traces`
+
+Accept traces in [OTLP JSON format](https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding) and ingest them as Beacon spans. Enables interoperability with any OpenTelemetry-instrumented application.
+
+Request body (standard OTLP JSON):
+
+```json
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "my-service" } }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": { "name": "my-tracer", "version": "1.0.0" },
+          "spans": [
+            {
+              "traceId": "abc123",
+              "spanId": "def456",
+              "parentSpanId": "",
+              "name": "my-operation",
+              "kind": 1,
+              "startTimeUnixNano": "1700000000000000000",
+              "endTimeUnixNano": "1700000001000000000",
+              "attributes": [
+                { "key": "span_type", "value": { "stringValue": "llm_call" } },
+                { "key": "llm.model", "value": { "stringValue": "gpt-4o" } }
+              ],
+              "status": { "code": 1 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Conversion notes:
+- Timestamps: nanoseconds (string) converted to epoch seconds (float)
+- Status codes: `0` = unset, `1` = ok, `2` = error
+- `span_type` extracted from attributes (defaults to `custom` if missing or unknown)
+- `error.message` extracted from attributes into `error_message` field
+- OTEL attribute format (`{key, value: {stringValue|intValue|doubleValue|boolValue}}`) flattened to plain dict
+
+Response `200 OK`:
+
+```json
+{
+  "accepted": 1,
+  "rejected": 0
+}
+```
+
+---
+
 ### Prompt Versions
 
 #### `GET /v1/spans/{span_id}/prompt-versions`

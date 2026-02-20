@@ -190,3 +190,45 @@ def test_ingest_error_span_sets_trace_status_to_error(client, db_session):
 
     trace = db_session.get(Trace, trace_id)
     assert trace.status == "error"
+
+
+def test_ingest_span_with_sdk_language_persists_on_span_and_trace(
+    client, db_session
+):
+    trace_id = str(uuid.uuid4())
+    span_id = str(uuid.uuid4())
+    span = _make_span(
+        span_id=span_id, trace_id=trace_id, sdk_language="python"
+    )
+    response = client.post("/v1/spans", json={"spans": [span]})
+    assert response.status_code == 200
+
+    from app.models import Span, Trace
+
+    db_span = db_session.get(Span, span_id)
+    assert db_span.sdk_language == "python"
+
+    trace = db_session.get(Trace, trace_id)
+    assert trace.sdk_language == "python"
+
+
+def test_get_span_returns_sdk_language(client):
+    span_id = str(uuid.uuid4())
+    span = _make_span(span_id=span_id, sdk_language="javascript")
+    client.post("/v1/spans", json={"spans": [span]})
+
+    response = client.get(f"/v1/spans/{span_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["sdk_language"] == "javascript"
+
+
+def test_sdk_language_defaults_to_none(client):
+    span_id = str(uuid.uuid4())
+    span = _make_span(span_id=span_id)
+    client.post("/v1/spans", json={"spans": [span]})
+
+    response = client.get(f"/v1/spans/{span_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["sdk_language"] is None

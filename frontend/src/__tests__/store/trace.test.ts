@@ -34,7 +34,7 @@ beforeEach(() => {
     isReplaying: false,
     replayError: null,
     backendError: null,
-    traceFilter: { status: "all" },
+    traceFilter: { status: "all", tags: [] },
   });
 });
 
