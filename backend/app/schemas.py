@@ -138,6 +138,28 @@ class ReplayResponse(BaseModel):
     diff: ReplayDiff
 
 
+# --- Prompt version schemas ---
+
+
+class PromptVersionCreate(BaseModel):
+    prompt_text: str
+    label: str | None = None
+
+
+class PromptVersionResponse(BaseModel):
+    version_id: str
+    span_id: str
+    prompt_text: str
+    label: str | None
+    created_at: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PromptVersionListResponse(BaseModel):
+    versions: list[PromptVersionResponse]
+
+
 class TracesResponse(BaseModel):
     traces: list[TraceSummary]
     total: int

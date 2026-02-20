@@ -282,54 +282,54 @@ Run a Python agent that uses OpenAI streaming with tool calls, Anthropic streami
 - [x] Show diff table: metrics comparison (total cost, tokens, duration, span count, error rate)
 
 **Backend: Trace Export**
-- [ ] Add `GET /v1/traces/{trace_id}/export?format=json` — full trace with all spans in Beacon's JSON format
-- [ ] Add `format=otel` option converting spans to OTEL-compatible export format
-- [ ] Add `format=csv` option — flat CSV with one row per span (columns: trace_id, span_id, parent_span_id, name, span_type, start_time, end_time, duration_ms, status, cost, tokens)
-- [ ] Add `GET /v1/traces/export` for bulk export with optional `trace_ids` query param
+- [x] Add `GET /v1/traces/{trace_id}/export?format=json` — full trace with all spans in Beacon's JSON format
+- [x] Add `format=otel` option converting spans to OTEL-compatible export format
+- [x] Add `format=csv` option — flat CSV with one row per span (columns: trace_id, span_id, parent_span_id, name, span_type, start_time, end_time, duration_ms, status, cost, tokens)
+- [x] Add `GET /v1/traces/export` for bulk export with optional `trace_ids` query param
 
 **Backend: Trace Import**
-- [ ] Add `POST /v1/traces/import` endpoint accepting Beacon JSON format (symmetric with export) — creates trace and spans from the imported file
-- [ ] Ship `docs/example-traces/` directory with 2–3 curated example trace JSON files (e.g., a LangChain RAG agent, a tool-calling agent with errors) so new users can import and explore a populated UI immediately
+- [x] Add `POST /v1/traces/import` endpoint accepting Beacon JSON format (symmetric with export) — creates trace and spans from the imported file
+- [x] Ship `docs/example-traces/` directory with 2–3 curated example trace JSON files (e.g., a LangChain RAG agent, a tool-calling agent with errors) so new users can import and explore a populated UI immediately
 
 **Frontend: Trace Export**
-- [ ] Add "Export" button to trace detail view (top bar of TraceGraph) with dropdown: "JSON", "OTEL JSON", "CSV"
-- [ ] Trigger browser download of the exported file
+- [x] Add "Export" button to trace detail view (top bar of TraceGraph) with dropdown: "JSON", "OTEL JSON", "CSV"
+- [x] Trigger browser download of the exported file
 
 **Frontend: Trace Import**
-- [ ] Add "Import Trace" button in Traces page header that opens a file picker for JSON files
-- [ ] Call `POST /v1/traces/import` with the selected file and navigate to the imported trace
+- [x] Add "Import Trace" button in Traces page header that opens a file picker for JSON files
+- [x] Call `POST /v1/traces/import` with the selected file and navigate to the imported trace
 
 **Backend: Tags and Annotations**
-- [ ] Add `PUT /v1/traces/{trace_id}/tags` endpoint to set/update trace tags (the `tags` column already exists in the schema)
-- [ ] Add `PUT /v1/spans/{span_id}/annotations` endpoint (new `annotations TEXT DEFAULT '[]'` column in spans table)
-- [ ] Add migration logic in `database.py` `init_db()` to add the `annotations` column if it doesn't exist
+- [x] Add `PUT /v1/traces/{trace_id}/tags` endpoint to set/update trace tags (the `tags` column already exists in the schema)
+- [x] Add `PUT /v1/spans/{span_id}/annotations` endpoint (new `annotations TEXT DEFAULT '[]'` column in spans table)
+- [x] Add migration logic in `database.py` `init_db()` to add the `annotations` column if it doesn't exist
 
 **Frontend: Tags and Annotations**
-- [ ] Add tag pills to `TraceListItem` showing existing tags
-- [ ] Add inline tag editor (click to add/edit tags) in the trace detail header
-- [ ] Add annotation input in `SpanDetail` — text area to add notes to any span
-- [ ] Add tag-based filtering in `TraceFilter`
+- [x] Add tag pills to `TraceListItem` showing existing tags
+- [x] Add inline tag editor (click to add/edit tags) in the trace detail header
+- [x] Add annotation input in `SpanDetail` — text area to add notes to any span
+- [x] Add tag-based filtering in `TraceFilter`
 
 **Frontend: Token Count Preview**
-- [ ] In the Monaco prompt editor (`ReplayPanel.tsx`), show a live estimated token count as the user edits using `js-tiktoken` or a similar tokenizer
-- [ ] Display token count badge next to the Replay button
+- [x] In the Monaco prompt editor (`ReplayPanel.tsx`), show a live estimated token count as the user edits using `js-tiktoken` or a similar tokenizer
+- [x] Display token count badge next to the Replay button
 
 **Backend: Prompt Versioning**
-- [ ] Add `prompt_versions` table: `version_id`, `span_id`, `prompt_text`, `created_at`, `label` (optional)
-- [ ] Add `GET /v1/spans/{span_id}/prompt-versions` and `POST /v1/spans/{span_id}/prompt-versions` endpoints
-- [ ] Each replay automatically saves a prompt version; users can also manually save with an optional label
+- [x] Add `prompt_versions` table: `version_id`, `span_id`, `prompt_text`, `created_at`, `label` (optional)
+- [x] Add `GET /v1/spans/{span_id}/prompt-versions` and `POST /v1/spans/{span_id}/prompt-versions` endpoints
+- [x] Each replay automatically saves a prompt version; users can also manually save with an optional label
 
 **Frontend: Prompt Versioning**
-- [ ] Add version history dropdown in the prompt editor to browse and restore previous prompt versions
+- [x] Add version history dropdown in the prompt editor to browse and restore previous prompt versions
 
 **Frontend: Test Infrastructure**
-- [ ] Add Vitest + React Testing Library to `frontend/package.json` dev dependencies
-- [ ] Add `vitest.config.ts` in the frontend root
-- [ ] Write tests for `TraceList` component (renders traces, handles empty state, filter interaction)
-- [ ] Write tests for `SpanDetail/LlmCallDetail.tsx` (renders attributes correctly, handles missing data)
-- [ ] Write tests for the Zustand `trace` store (loadTraces, selectTrace, appendSpan)
-- [ ] Write tests for `api.ts` utility functions (mock fetch, verify URL construction)
-- [ ] Add `npm run test` script and integrate into `make test`
+- [x] Add Vitest + React Testing Library to `frontend/package.json` dev dependencies
+- [x] Add `vitest.config.ts` in the frontend root
+- [x] Write tests for `TraceList` component (renders traces, handles empty state, filter interaction)
+- [x] Write tests for `SpanDetail/LlmCallDetail.tsx` (renders attributes correctly, handles missing data)
+- [x] Write tests for the Zustand `trace` store (loadTraces, selectTrace, appendSpan)
+- [x] Write tests for `api.ts` utility functions (mock fetch, verify URL construction)
+- [x] Add `npm run test` script and integrate into `make test`
 
 ### Done Condition
 A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and land on the correct trace and span, (2) search for "error" and find all spans with errors, (3) compare two traces side by side, (4) view a timeline/waterfall of span execution with critical path highlighted, (5) export a trace as JSON, OTEL, or CSV, (6) tag traces and annotate spans, (7) delete old traces, (8) import an example trace JSON file and explore it in the UI, (9) see token count update live while editing a prompt, (10) browse and restore previous prompt versions. Frontend has test coverage for critical components.

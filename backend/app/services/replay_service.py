@@ -12,6 +12,7 @@ from app import models
 from app.schemas import ReplayDiff, ReplayResponse
 from app.services import settings_service
 from app.services.llm_client import call_anthropic, call_openai, estimate_cost
+from app.services import prompt_version_service
 
 
 async def replay_llm_call(
@@ -83,6 +84,17 @@ async def replay_llm_call(
     )
     db.add(replay_run)
     db.commit()
+
+    # Auto-save the modified prompt as a prompt version
+    modified_prompt = modified_attributes.get("llm.prompt")
+    if modified_prompt is not None:
+        if isinstance(modified_prompt, str):
+            prompt_text = modified_prompt
+        else:
+            prompt_text = json.dumps(modified_prompt)
+        prompt_version_service.create_version(
+            db, span_id, prompt_text, label="Replay"
+        )
 
     return ReplayResponse(
         replay_id=replay_id,

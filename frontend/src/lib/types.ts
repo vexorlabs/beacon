@@ -210,6 +210,20 @@ export interface TraceImportResponse {
   span_count: number;
 }
 
+// --- Prompt version types ---
+
+export interface PromptVersion {
+  version_id: string;
+  span_id: string;
+  prompt_text: string;
+  label: string | null;
+  created_at: number;
+}
+
+export interface PromptVersionListResponse {
+  versions: PromptVersion[];
+}
+
 // --- WebSocket types ---
 
 export type WsEvent =

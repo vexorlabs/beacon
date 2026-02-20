@@ -10,6 +10,10 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): Vitest + React Testing Library test infrastructure — 37 tests across 5 files covering trace store, API utilities, TraceList, LlmCallDetail, and tokenizer
+- feat(frontend): Live token count preview in prompt editor using `js-tiktoken` with debounced updates
+- feat(backend): `GET/POST /v1/spans/{span_id}/prompt-versions` — prompt versioning with auto-save on replay and manual save with optional labels
+- feat(frontend): Prompt version history dropdown — browse and restore previous prompt versions in the replay editor
 - feat(backend): `PUT /v1/traces/{id}/tags` — set/replace tags on a trace for categorization and filtering
 - feat(backend): `PUT /v1/spans/{id}/annotations` — set/replace developer notes on individual spans
 - feat(backend): SQLite migration adds `annotations` column to `spans` table (backward-compatible `ALTER TABLE ADD COLUMN`)

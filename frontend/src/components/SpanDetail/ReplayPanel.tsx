@@ -1,8 +1,10 @@
 import { useState } from "react";
 import type { Span } from "@/lib/types";
 import { useTraceStore } from "@/store/trace";
+import { useTokenCount } from "@/hooks/useTokenCount";
 import { Button } from "@/components/ui/button";
 import PromptEditor from "./PromptEditor";
+import PromptVersionSelector from "./PromptVersionSelector";
 
 interface ReplayPanelProps {
   span: Span;
@@ -26,9 +28,16 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
 
   const rawPrompt = span.attributes["llm.prompt"];
   const [editedPrompt, setEditedPrompt] = useState(formatPrompt(rawPrompt));
+  const [editorKey, setEditorKey] = useState(0);
+  const tokenCount = useTokenCount(editedPrompt);
 
   const handleReplay = () => {
     runReplay(span.span_id, { "llm.prompt": editedPrompt });
+  };
+
+  const handleRestore = (promptText: string) => {
+    setEditedPrompt(promptText);
+    setEditorKey((k) => k + 1);
   };
 
   return (
@@ -39,7 +48,11 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
 
       {/* Prompt Editor */}
       <div className="rounded overflow-hidden border border-border">
-        <PromptEditor initialValue={editedPrompt} onChange={setEditedPrompt} />
+        <PromptEditor
+          key={editorKey}
+          initialValue={editedPrompt}
+          onChange={setEditedPrompt}
+        />
       </div>
 
       {/* Actions */}
@@ -47,12 +60,22 @@ export default function ReplayPanel({ span }: ReplayPanelProps) {
         <Button size="sm" onClick={handleReplay} disabled={isReplaying}>
           {isReplaying ? "Replaying..." : "Replay"}
         </Button>
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          ~{tokenCount.toLocaleString()} tokens
+        </span>
         {replayResult && (
           <Button size="sm" variant="ghost" onClick={clearReplay}>
             Clear
           </Button>
         )}
       </div>
+
+      {/* Prompt Versions */}
+      <PromptVersionSelector
+        spanId={span.span_id}
+        currentPrompt={editedPrompt}
+        onRestore={handleRestore}
+      />
 
       {/* Error feedback */}
       {replayError && (

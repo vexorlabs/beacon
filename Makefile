@@ -98,6 +98,8 @@ test:
 	$(VENV)/bin/pytest $(BACKEND_DIR)/tests -v
 	@echo "--- SDK tests ---"
 	$(VENV)/bin/pytest $(SDK_DIR)/tests -v
+	@echo "--- Frontend tests ---"
+	npm --prefix $(FRONTEND_DIR) run test
 
 lint:
 	@echo "--- Python: black (check) ---"
