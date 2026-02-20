@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app import models
 from app.schemas import ReplayDiff, ReplayResponse
 from app.services import settings_service
-from app.services.llm_client import call_anthropic, call_openai, estimate_cost
+from app.services.llm_client import call_anthropic, call_google, call_openai, estimate_cost
 from app.services import prompt_version_service
 
 
@@ -52,6 +52,16 @@ async def replay_llm_call(
     elif provider == "anthropic":
         api_key = os.environ.get("ANTHROPIC_API_KEY", "") or settings_service.get_api_key("anthropic") or ""
         new_completion, input_tokens, output_tokens = await call_anthropic(
+            api_key, model, messages, temperature, max_tokens
+        )
+    elif provider == "google":
+        api_key = (
+            os.environ.get("GOOGLE_API_KEY", "")
+            or os.environ.get("GEMINI_API_KEY", "")
+            or settings_service.get_api_key("google")
+            or ""
+        )
+        new_completion, input_tokens, output_tokens = await call_google(
             api_key, model, messages, temperature, max_tokens
         )
     else:
