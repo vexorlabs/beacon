@@ -28,6 +28,7 @@ export function makeSpan(overrides: Partial<Span> = {}): Span {
     start_time: 1700000000,
     end_time: 1700000001,
     attributes: {},
+    annotations: [],
     ...overrides,
   };
 }
