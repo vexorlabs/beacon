@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings as app_settings
 from app.database import init_db
-from app.routers import demo, otlp, playground, prompt_versions, replay, search, settings, spans, stats, traces
+from app.routers import analysis, demo, otlp, playground, prompt_versions, replay, search, settings, spans, stats, traces
 from app.ws.manager import ws_router
 
 
@@ -41,6 +41,7 @@ app.include_router(stats.router, prefix="/v1")
 app.include_router(search.router, prefix="/v1")
 app.include_router(prompt_versions.router, prefix="/v1")
 app.include_router(otlp.router, prefix="/v1")
+app.include_router(analysis.router, prefix="/v1")
 app.include_router(ws_router)
 
 
