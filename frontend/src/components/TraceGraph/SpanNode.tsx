@@ -11,15 +11,29 @@ function formatDuration(ms: number | null): string {
 
 type SpanNodeType = Node<SpanNodeData, "spanNode">;
 
+const STATUS_LABEL: Record<string, string> = {
+  ok: "OK",
+  error: "Error",
+  unset: "Running",
+};
+
 export default function SpanNode({ data }: NodeProps<SpanNodeType>) {
   const baseStyle = SPAN_TYPE_STYLES[data.span_type] ?? SPAN_TYPE_STYLES.custom;
   const errorRing = data.status === "error" ? "ring-2 ring-red-500/60" : "";
+
+  const tooltipLines = [
+    data.name,
+    `${data.span_type.replace("_", " ")} · ${STATUS_LABEL[data.status] ?? data.status}`,
+    `Duration: ${formatDuration(data.duration_ms)}`,
+    ...(data.cost_usd !== null ? [`Cost: $${data.cost_usd.toFixed(4)}`] : []),
+  ].join("\n");
 
   return (
     <>
       <Handle type="target" position={Position.Top} className="!bg-zinc-500" />
       <div
-        className={`px-3 py-2 rounded-md border-2 min-w-[160px] max-w-[220px] ${baseStyle} ${errorRing}`}
+        title={tooltipLines}
+        className={`group/node relative px-3 py-2 rounded-md border-2 min-w-[160px] max-w-[220px] cursor-pointer transition-shadow hover:shadow-lg hover:shadow-black/30 ${baseStyle} ${errorRing}`}
       >
         <div className="text-[10px] font-medium uppercase tracking-wide opacity-60">
           <span className="opacity-100 tabular-nums">#{data.sequence}</span>

@@ -334,12 +334,10 @@ export default function TraceList() {
               <div key={i} className="px-3 py-2 border-b border-border">
                 <div className="flex items-center justify-between gap-2">
                   <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-5 w-10" />
-                </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <Skeleton className="h-3 w-12" />
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-10 ml-auto" />
+                  <div className="flex items-center gap-1.5">
+                    <Skeleton className="h-3 w-10" />
+                    <Skeleton className="h-3.5 w-3.5 rounded-full" />
+                  </div>
                 </div>
               </div>
             ))}

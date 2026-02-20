@@ -9,6 +9,13 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- feat(frontend): Darken sidebar to near-black (`oklch(0.070)`) for Linear-style contrast with content area
+- feat(frontend): Simplify trace list items to single row — name, duration, and status icon (removed tags, span count, relative time, SDK badge)
+- feat(frontend): Move TagEditor from canvas header bar to SpanDetail panel under "Trace Tags" section
+- feat(frontend): Canvas UX — Figma-style keyboard shortcuts (Cmd+0 fit, Cmd+/- zoom, Space pan), zoom percentage indicator, node hover tooltips, pointer cursor on clickable nodes
+- feat(frontend): Increase default trace list panel width to 350px
+
 ### Added
 - feat(sdk): Google Gemini (`google-genai`) auto-instrumentation — patches `Models.generate_content`, `generate_content_stream`, and async equivalents with token usage, cost estimation, tool-call capture, and streaming support
 - feat(backend): Google Gemini backend replay support — `call_google()` REST API client, Gemini models in pricing/provider tables, `google` added to supported settings providers

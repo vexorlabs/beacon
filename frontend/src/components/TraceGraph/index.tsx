@@ -5,12 +5,14 @@ import {
   Background,
   MiniMap,
   Controls,
+  Panel,
   type NodeTypes,
   type NodeMouseHandler,
   type OnNodesChange,
   type Node,
   applyNodeChanges,
   useReactFlow,
+  useViewport,
   ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -21,6 +23,37 @@ import { useGraphLayout } from "./useGraphLayout";
 import type { SpanNodeData } from "@/lib/types";
 import { SPAN_TYPE_COLORS } from "@/lib/span-colors";
 
+function ZoomIndicator() {
+  const { zoom } = useViewport();
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
+
+  return (
+    <div className="flex items-center gap-0.5 bg-card/80 border border-border rounded-md px-1 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={() => zoomOut({ duration: 200 })}
+        className="px-1 hover:text-foreground transition-colors"
+      >
+        −
+      </button>
+      <button
+        type="button"
+        onClick={() => fitView({ duration: 300, padding: 0.2 })}
+        className="px-1.5 tabular-nums hover:text-foreground transition-colors min-w-[36px] text-center"
+      >
+        {Math.round(zoom * 100)}%
+      </button>
+      <button
+        type="button"
+        onClick={() => zoomIn({ duration: 200 })}
+        className="px-1 hover:text-foreground transition-colors"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 function TraceGraphInner() {
   const navigate = useNavigate();
   const graphData = useTraceStore((s) => s.graphData);
@@ -30,7 +63,56 @@ function TraceGraphInner() {
   const selectSpan = useTraceStore((s) => s.selectSpan);
   const timeTravelIndex = useTraceStore((s) => s.timeTravelIndex);
 
-  const { fitView } = useReactFlow();
+  const { fitView, zoomIn, zoomOut } = useReactFlow();
+
+  // Keyboard shortcuts: Cmd+0 fit, Cmd+/- zoom
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+
+      if (e.key === "0") {
+        e.preventDefault();
+        fitView({ duration: 300, padding: 0.2 });
+      } else if (e.key === "=" || e.key === "+") {
+        e.preventDefault();
+        zoomIn({ duration: 200 });
+      } else if (e.key === "-") {
+        e.preventDefault();
+        zoomOut({ duration: 200 });
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [fitView, zoomIn, zoomOut]);
+
+  // Space-to-pan: hold space to switch cursor to grab mode
+  const [spaceHeld, setSpaceHeld] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (
+        e.code === "Space" &&
+        !e.repeat &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        setSpaceHeld(true);
+      }
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code === "Space") setSpaceHeld(false);
+    };
+
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, []);
 
   const nodeTypes: NodeTypes = useMemo(() => ({ spanNode: SpanNode }), []);
 
@@ -148,7 +230,9 @@ function TraceGraphInner() {
       minZoom={0.1}
       maxZoom={2}
       colorMode="dark"
+      panOnDrag={spaceHeld ? [0, 1, 2] : [0]}
       proOptions={{ hideAttribution: true }}
+      className={spaceHeld ? "!cursor-grab" : ""}
     >
       <Background />
       <Controls
@@ -157,6 +241,9 @@ function TraceGraphInner() {
         position="top-left"
         className="!bg-zinc-900/85 !border-zinc-700 !rounded-md !shadow-md !opacity-70 hover:!opacity-100 transition-opacity [&>button]:!bg-zinc-800/90 [&>button]:!border-zinc-700 [&>button]:!fill-zinc-300 [&>button:hover]:!bg-zinc-700"
       />
+      <Panel position="bottom-left">
+        <ZoomIndicator />
+      </Panel>
       <MiniMap
         nodeStrokeWidth={3}
         nodeColor={miniMapNodeColor}

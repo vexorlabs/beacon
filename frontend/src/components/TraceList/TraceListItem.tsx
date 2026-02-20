@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Check, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Check, CheckCircle2, CircleDot, Trash2, XCircle } from "lucide-react";
 import type { TraceSummary } from "@/lib/types";
 
 interface TraceListItemProps {
@@ -13,22 +12,15 @@ interface TraceListItemProps {
   onCompareToggle?: (traceId: string) => void;
 }
 
-const STATUS_VARIANT: Record<string, "default" | "destructive" | "secondary"> =
-  {
-    ok: "default",
-    error: "destructive",
-    unset: "secondary",
-  };
-
-function formatRelativeTime(timestamp: number): string {
-  const seconds = Math.floor(Date.now() / 1000 - timestamp);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+function StatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case "ok":
+      return <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />;
+    case "error":
+      return <XCircle size={14} className="text-red-400 shrink-0" />;
+    default:
+      return <CircleDot size={14} className="text-muted-foreground shrink-0" />;
+  }
 }
 
 function formatDuration(ms: number | null): string {
@@ -123,48 +115,11 @@ export default function TraceListItem({
               <Trash2 size={12} />
             </button>
           ) : null}
-          {trace.sdk_language && (
-            <span className="inline-flex items-center rounded px-1 py-0 text-[10px] font-medium bg-muted text-muted-foreground border border-border shrink-0">
-              {trace.sdk_language === "python"
-                ? "PY"
-                : trace.sdk_language === "javascript"
-                  ? "JS"
-                  : trace.sdk_language.toUpperCase().slice(0, 4)}
-            </span>
-          )}
-          <Badge
-            variant={STATUS_VARIANT[trace.status] ?? "secondary"}
-            className="shrink-0"
-          >
-            {trace.status}
-          </Badge>
+          <span className="text-xs text-muted-foreground shrink-0">
+            {formatDuration(trace.duration_ms)}
+          </span>
+          <StatusIcon status={trace.status} />
         </div>
-      </div>
-      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-        <span>{formatDuration(trace.duration_ms)}</span>
-        <span>{trace.span_count} spans</span>
-        {Object.keys(trace.tags).length > 0 && (
-          <div className="flex items-center gap-1 overflow-hidden">
-            {Object.entries(trace.tags)
-              .slice(0, 3)
-              .map(([key, value]) => (
-                <span
-                  key={key}
-                  className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-1.5 py-0 text-[10px] text-primary truncate max-w-[80px]"
-                  title={`${key}: ${value}`}
-                >
-                  {key}
-                  {value ? `: ${value}` : ""}
-                </span>
-              ))}
-            {Object.keys(trace.tags).length > 3 && (
-              <span className="text-[10px] text-muted-foreground">
-                +{Object.keys(trace.tags).length - 3}
-              </span>
-            )}
-          </div>
-        )}
-        <span className="ml-auto">{formatRelativeTime(trace.start_time)}</span>
       </div>
     </button>
   );
