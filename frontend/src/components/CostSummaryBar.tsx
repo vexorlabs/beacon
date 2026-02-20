@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
 import { exportTrace } from "@/lib/api";
+
 export type ViewMode = "graph" | "timeline";
 
 interface CostSummaryBarProps {
