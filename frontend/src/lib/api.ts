@@ -1,4 +1,5 @@
 import type {
+  Annotation,
   ApiKeyStatus,
   DemoRunResponse,
   DemoScenario,
@@ -183,6 +184,30 @@ export function importTrace(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
+  });
+}
+
+// --- Tags & Annotations ---
+
+export function updateTraceTags(
+  traceId: string,
+  tags: Record<string, string>,
+): Promise<{ trace_id: string; tags: Record<string, string> }> {
+  return apiFetch(`/traces/${traceId}/tags`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tags }),
+  });
+}
+
+export function updateSpanAnnotations(
+  spanId: string,
+  annotations: Annotation[],
+): Promise<{ span_id: string; annotations: Annotation[] }> {
+  return apiFetch(`/spans/${spanId}/annotations`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ annotations }),
   });
 }
 

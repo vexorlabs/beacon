@@ -42,6 +42,7 @@ class Span(Base):
     start_time = Column(Float, nullable=False)
     end_time = Column(Float)
     attributes = Column(Text, default="{}")
+    annotations = Column(Text, default="[]")
     created_at = Column(Float, nullable=False)
 
     __table_args__ = (

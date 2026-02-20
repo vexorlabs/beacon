@@ -48,6 +48,12 @@ class SpanIngestResponse(BaseModel):
     rejected: int
 
 
+class Annotation(BaseModel):
+    id: str
+    text: str
+    created_at: float
+
+
 class SpanResponse(BaseModel):
     span_id: str
     trace_id: str
@@ -60,6 +66,7 @@ class SpanResponse(BaseModel):
     end_time: float | None
     duration_ms: float | None
     attributes: dict[str, Any]
+    annotations: list[Annotation] = []
 
 
 # --- Trace schemas (Phase 2) ---
@@ -319,3 +326,24 @@ class BulkTraceExportData(BaseModel):
 class TraceImportResponse(BaseModel):
     trace_id: str
     span_count: int
+
+
+# --- Tags & Annotations schemas ---
+
+
+class TagsUpdateRequest(BaseModel):
+    tags: dict[str, str]
+
+
+class TagsUpdateResponse(BaseModel):
+    trace_id: str
+    tags: dict[str, str]
+
+
+class AnnotationsUpdateRequest(BaseModel):
+    annotations: list[Annotation]
+
+
+class AnnotationsUpdateResponse(BaseModel):
+    span_id: str
+    annotations: list[Annotation]

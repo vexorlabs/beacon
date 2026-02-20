@@ -86,6 +86,45 @@ Response `404 Not Found`:
 { "detail": "Span not found" }
 ```
 
+#### `PUT /v1/spans/{span_id}/annotations`
+
+Set/replace annotations on a span.
+
+Request:
+
+```json
+{
+  "annotations": [
+    {
+      "id": "a1b2c3d4-...",
+      "text": "This span seems slow — investigate caching",
+      "created_at": 1739800000.0
+    }
+  ]
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "span_id": "550e8400-e29b-41d4-a716-446655440000",
+  "annotations": [
+    {
+      "id": "a1b2c3d4-...",
+      "text": "This span seems slow — investigate caching",
+      "created_at": 1739800000.0
+    }
+  ]
+}
+```
+
+Response `404 Not Found`:
+
+```json
+{ "detail": "Span not found" }
+```
+
 ---
 
 ### Traces
@@ -166,6 +205,39 @@ Response `200 OK`:
       "target": "550e8400-e29b-41d4-a716-446655440000"
     }
   ]
+}
+```
+
+Response `404 Not Found`:
+
+```json
+{ "detail": "Trace not found" }
+```
+
+#### `PUT /v1/traces/{trace_id}/tags`
+
+Set/replace tags on a trace.
+
+Request:
+
+```json
+{
+  "tags": {
+    "env": "prod",
+    "team": "ml"
+  }
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "tags": {
+    "env": "prod",
+    "team": "ml"
+  }
 }
 ```
 

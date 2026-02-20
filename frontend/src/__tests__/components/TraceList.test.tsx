@@ -59,7 +59,7 @@ beforeEach(() => {
     isReplaying: false,
     replayError: null,
     backendError: null,
-    traceFilter: { status: "all" },
+    traceFilter: { status: "all", tags: [] },
   });
   // Default: loadTraces returns empty
   api.getTraces.mockResolvedValue({
@@ -131,7 +131,7 @@ describe("TraceList", () => {
       limit: 50,
       offset: 0,
     });
-    useTraceStore.setState({ traceFilter: { status: "error" } });
+    useTraceStore.setState({ traceFilter: { status: "error", tags: [] } });
 
     renderTraceList();
 
