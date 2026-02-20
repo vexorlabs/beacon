@@ -43,6 +43,14 @@ PRICE_TABLE: dict[str, tuple[float, float]] = {
     "claude-3-opus": (15.00, 75.00),
     "claude-3-sonnet": (3.00, 15.00),
     "claude-3-haiku": (0.25, 1.25),
+    # Google Gemini — latest
+    "gemini-2.5-pro": (1.25, 10.00),
+    "gemini-2.5-flash": (0.15, 0.60),
+    "gemini-2.0-flash-lite": (0.075, 0.30),
+    "gemini-2.0-flash": (0.10, 0.40),
+    # Google Gemini — legacy
+    "gemini-1.5-pro": (1.25, 5.00),
+    "gemini-1.5-flash": (0.075, 0.30),
 }
 
 

@@ -619,6 +619,11 @@ Response `200 OK`:
     "provider": "anthropic",
     "configured": false,
     "masked_key": null
+  },
+  {
+    "provider": "google",
+    "configured": false,
+    "masked_key": null
   }
 ]
 ```

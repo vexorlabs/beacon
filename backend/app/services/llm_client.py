@@ -1,4 +1,4 @@
-"""Shared LLM API client for OpenAI and Anthropic.
+"""Shared LLM API client for OpenAI, Anthropic, and Google.
 
 Extracted from replay_service so both replay and playground can reuse
 the same calling logic and price table.
@@ -41,6 +41,14 @@ PRICE_TABLE: dict[str, tuple[float, float]] = {
     "claude-3-5-haiku-20241022": (1.00, 5.00),
     "claude-3-opus-20240229": (15.00, 75.00),
     "claude-3-haiku-20240307": (0.25, 1.25),
+    # Google Gemini — latest
+    "gemini-2.5-pro": (1.25, 10.00),
+    "gemini-2.5-flash": (0.15, 0.60),
+    "gemini-2.0-flash-lite": (0.075, 0.30),
+    "gemini-2.0-flash": (0.10, 0.40),
+    # Google Gemini — legacy
+    "gemini-1.5-pro": (1.25, 5.00),
+    "gemini-1.5-flash": (0.075, 0.30),
 }
 
 # Model → provider mapping
@@ -69,6 +77,13 @@ MODEL_PROVIDER: dict[str, str] = {
     "claude-3-5-haiku-20241022": "anthropic",
     "claude-3-opus-20240229": "anthropic",
     "claude-3-haiku-20240307": "anthropic",
+    # Google Gemini
+    "gemini-2.5-pro": "google",
+    "gemini-2.5-flash": "google",
+    "gemini-2.0-flash-lite": "google",
+    "gemini-2.0-flash": "google",
+    "gemini-1.5-pro": "google",
+    "gemini-1.5-flash": "google",
 }
 
 
@@ -82,13 +97,15 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
 
 
 def provider_for_model(model: str) -> str:
-    """Return 'openai' or 'anthropic' based on the model name."""
+    """Return 'openai', 'anthropic', or 'google' based on the model name."""
     if model in MODEL_PROVIDER:
         return MODEL_PROVIDER[model]
     if model.startswith(("gpt", "o1", "o3", "o4")):
         return "openai"
     if model.startswith("claude"):
         return "anthropic"
+    if model.startswith("gemini"):
+        return "google"
     raise ValueError(f"Unknown model: {model}")
 
 
@@ -198,6 +215,77 @@ async def call_anthropic(
     usage = data.get("usage", {})
     input_tokens: int = usage.get("input_tokens", 0)
     output_tokens: int = usage.get("output_tokens", 0)
+    return completion_text, input_tokens, output_tokens
+
+
+async def call_google(
+    api_key: str,
+    model: str,
+    messages: list[dict[str, str]],
+    temperature: float = 1.0,
+    max_tokens: int | None = None,
+) -> tuple[str, int, int]:
+    """Call Google Gemini generateContent API.
+
+    Returns (completion, input_tokens, output_tokens).
+    """
+    if not api_key:
+        raise ValueError("Google API key is not configured")
+
+    # Convert OpenAI-style messages to Gemini contents format
+    system_instruction: str | None = None
+    contents: list[dict[str, Any]] = []
+    for msg in messages:
+        if msg.get("role") == "system":
+            system_instruction = msg.get("content", "")
+        else:
+            role = "user" if msg.get("role") == "user" else "model"
+            contents.append({
+                "role": role,
+                "parts": [{"text": msg.get("content", "")}],
+            })
+
+    generation_config: dict[str, Any] = {"temperature": temperature}
+    if max_tokens is not None:
+        generation_config["maxOutputTokens"] = max_tokens
+
+    payload: dict[str, Any] = {
+        "contents": contents,
+        "generationConfig": generation_config,
+    }
+    if system_instruction is not None:
+        payload["systemInstruction"] = {
+            "parts": [{"text": system_instruction}]
+        }
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            url,
+            headers={
+                "x-goog-api-key": api_key,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+        if not response.is_success:
+            error_body = response.text[:200]
+            raise ValueError(
+                f"Google API error {response.status_code}: {error_body}"
+            )
+        data = response.json()
+
+    candidates = data.get("candidates", [])
+    if not candidates:
+        raise ValueError("Google API returned an empty response (no candidates)")
+
+    parts = candidates[0].get("content", {}).get("parts", [])
+    completion_text = "".join(p.get("text", "") for p in parts if "text" in p)
+
+    usage = data.get("usageMetadata", {})
+    input_tokens: int = usage.get("promptTokenCount", 0)
+    output_tokens: int = usage.get("candidatesTokenCount", 0)
     return completion_text, input_tokens, output_tokens
 
 

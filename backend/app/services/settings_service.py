@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 _CONFIG_PATH = Path.home() / ".beacon" / "config.json"
 
-_SUPPORTED_PROVIDERS = ("openai", "anthropic")
+_SUPPORTED_PROVIDERS = ("openai", "anthropic", "google")
 
 
 def _read_config() -> dict[str, Any]:

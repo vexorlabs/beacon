@@ -30,7 +30,7 @@ class TestSettingsService:
 
     def test_set_unsupported_provider_raises(self) -> None:
         with pytest.raises(ValueError, match="Unsupported provider"):
-            settings_service.set_api_key("google", "key-123")
+            settings_service.set_api_key("cohere", "key-123")
 
     def test_delete_api_key(self) -> None:
         settings_service.set_api_key("openai", "sk-test-123")
@@ -43,10 +43,11 @@ class TestSettingsService:
 
     def test_list_providers(self) -> None:
         providers = settings_service.list_providers()
-        assert len(providers) == 2
+        assert len(providers) == 3
         names = [p["provider"] for p in providers]
         assert "openai" in names
         assert "anthropic" in names
+        assert "google" in names
         # Nothing configured yet
         assert all(not p["configured"] for p in providers)
 
@@ -83,7 +84,7 @@ class TestSettingsRouter:
         response = client.get("/v1/settings/api-keys")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data) == 3
 
     def test_set_api_key(self, client) -> None:  # type: ignore[no-untyped-def]
         response = client.put(
@@ -96,7 +97,7 @@ class TestSettingsRouter:
     def test_set_unsupported_provider(self, client) -> None:  # type: ignore[no-untyped-def]
         response = client.put(
             "/v1/settings/api-keys",
-            json={"provider": "google", "api_key": "key-123"},
+            json={"provider": "cohere", "api_key": "key-123"},
         )
         assert response.status_code == 400
 
@@ -111,5 +112,5 @@ class TestSettingsRouter:
         assert response.json()["configured"] is False
 
     def test_delete_unsupported_provider(self, client) -> None:  # type: ignore[no-untyped-def]
-        response = client.delete("/v1/settings/api-keys/google")
+        response = client.delete("/v1/settings/api-keys/cohere")
         assert response.status_code == 400
