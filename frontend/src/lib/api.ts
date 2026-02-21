@@ -2,15 +2,19 @@ import type {
   AnomalyDetectionResponse,
   Annotation,
   ApiKeyStatus,
+  CostOptimizationResponse,
   DemoRunResponse,
   DemoScenario,
+  ErrorPatternsResponse,
   GraphData,
   PlaygroundChatResponse,
   PlaygroundCompareResponse,
   PlaygroundMessage,
+  PromptSuggestionsResponse,
   PromptVersion,
   PromptVersionListResponse,
   ReplayResult,
+  RootCauseAnalysisResponse,
   SearchResponse,
   Span,
   StatsResponse,
@@ -19,6 +23,7 @@ import type {
   TraceDetail,
   TraceExportData,
   TraceImportResponse,
+  TraceSummaryAnalysisResponse,
   TracesResponse,
   TrendsResponse,
 } from "./types";
@@ -188,6 +193,58 @@ export function detectAnomalies(
   traceId: string,
 ): Promise<AnomalyDetectionResponse> {
   return apiFetch<AnomalyDetectionResponse>("/analysis/anomalies", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_id: traceId }),
+  });
+}
+
+// --- Analysis ---
+
+export function analyzeRootCause(
+  traceId: string,
+): Promise<RootCauseAnalysisResponse> {
+  return apiFetch<RootCauseAnalysisResponse>("/analysis/root-cause", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_id: traceId }),
+  });
+}
+
+export function analyzeCostOptimization(
+  traceIds: string[],
+): Promise<CostOptimizationResponse> {
+  return apiFetch<CostOptimizationResponse>("/analysis/cost-optimization", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_ids: traceIds }),
+  });
+}
+
+export function analyzePromptSuggestions(
+  spanId: string,
+): Promise<PromptSuggestionsResponse> {
+  return apiFetch<PromptSuggestionsResponse>("/analysis/prompt-suggestions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ span_id: spanId }),
+  });
+}
+
+export function analyzeErrorPatterns(
+  traceIds: string[],
+): Promise<ErrorPatternsResponse> {
+  return apiFetch<ErrorPatternsResponse>("/analysis/error-patterns", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_ids: traceIds }),
+  });
+}
+
+export function summarizeTrace(
+  traceId: string,
+): Promise<TraceSummaryAnalysisResponse> {
+  return apiFetch<TraceSummaryAnalysisResponse>("/analysis/summarize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ trace_id: traceId }),

@@ -221,6 +221,63 @@ export interface AnomalyDetectionResponse {
   anomalies: Anomaly[];
 }
 
+// --- Analysis types ---
+
+export interface RootCauseAnalysisResponse {
+  trace_id: string;
+  root_cause: string;
+  affected_spans: string[];
+  confidence: number;
+  suggested_fix: string;
+}
+
+export interface CostSuggestion {
+  type: string;
+  description: string;
+  estimated_savings_usd: number;
+  affected_spans: string[];
+}
+
+export interface CostOptimizationResponse {
+  trace_ids: string[];
+  suggestions: CostSuggestion[];
+}
+
+export interface PromptImprovement {
+  category: string;
+  description: string;
+  improved_prompt_snippet: string;
+}
+
+export interface PromptSuggestionsResponse {
+  span_id: string;
+  original_prompt: string;
+  suggestions: PromptImprovement[];
+}
+
+export interface ErrorPattern {
+  pattern_name: string;
+  count: number;
+  example_trace_ids: string[];
+  common_root_cause: string;
+  category: string;
+}
+
+export interface ErrorPatternsResponse {
+  patterns: ErrorPattern[];
+}
+
+export interface KeyEvent {
+  span_id: string;
+  description: string;
+}
+
+export interface TraceSummaryAnalysisResponse {
+  trace_id: string;
+  summary: string;
+  key_events: KeyEvent[];
+}
+
 // --- Search types ---
 
 export interface SearchResultItem {
