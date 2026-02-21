@@ -1,12 +1,91 @@
 import { useTraceStore } from "@/store/trace";
+import { useAnalysisStore } from "@/store/analysis";
 import { Badge } from "@/components/ui/badge";
-import { MousePointerClick } from "lucide-react";
+import { MousePointerClick, X } from "lucide-react";
 import LlmCallDetail from "./LlmCallDetail";
 import ToolUseDetail from "./ToolUseDetail";
 import BrowserDetail from "./BrowserDetail";
 import GenericDetail from "./GenericDetail";
 import AnnotationPanel from "./AnnotationPanel";
 import TagEditor from "@/components/TagEditor";
+import RootCausePanel from "@/components/Analysis/RootCausePanel";
+import CostOptimizationPanel from "@/components/Analysis/CostOptimizationPanel";
+import PromptSuggestionsPanel from "@/components/Analysis/PromptSuggestionsPanel";
+import TraceSummaryCard from "@/components/Analysis/TraceSummaryCard";
+import ErrorPatternsPanel from "@/components/Analysis/ErrorPatternsPanel";
+
+function AnalysisSection() {
+  const analysisResult = useAnalysisStore((s) => s.analysisResult);
+  const isAnalyzing = useAnalysisStore((s) => s.isAnalyzing);
+  const analysisType = useAnalysisStore((s) => s.analysisType);
+  const analysisError = useAnalysisStore((s) => s.analysisError);
+  const clearAnalysis = useAnalysisStore((s) => s.clearAnalysis);
+  const selectSpan = useTraceStore((s) => s.selectSpan);
+
+  if (!isAnalyzing && !analysisResult && !analysisError) return null;
+
+  const handleSpanClick = (spanId: string) => {
+    selectSpan(spanId);
+  };
+
+  return (
+    <>
+      <div className="border-b border-border my-4" />
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-medium text-muted-foreground">
+            AI Analysis
+          </h4>
+          <button
+            type="button"
+            onClick={clearAnalysis}
+            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <X size={12} />
+          </button>
+        </div>
+        {(analysisResult?.type ?? analysisType) === "root-cause" && (
+          <RootCausePanel
+            data={analysisResult?.type === "root-cause" ? analysisResult.data : null}
+            isLoading={isAnalyzing && analysisType === "root-cause"}
+            error={analysisType === "root-cause" ? analysisError : null}
+            onSpanClick={handleSpanClick}
+          />
+        )}
+        {(analysisResult?.type ?? analysisType) === "cost-optimization" && (
+          <CostOptimizationPanel
+            data={analysisResult?.type === "cost-optimization" ? analysisResult.data : null}
+            isLoading={isAnalyzing && analysisType === "cost-optimization"}
+            error={analysisType === "cost-optimization" ? analysisError : null}
+            onSpanClick={handleSpanClick}
+          />
+        )}
+        {(analysisResult?.type ?? analysisType) === "prompt-suggestions" && (
+          <PromptSuggestionsPanel
+            data={analysisResult?.type === "prompt-suggestions" ? analysisResult.data : null}
+            isLoading={isAnalyzing && analysisType === "prompt-suggestions"}
+            error={analysisType === "prompt-suggestions" ? analysisError : null}
+          />
+        )}
+        {(analysisResult?.type ?? analysisType) === "summarize" && (
+          <TraceSummaryCard
+            data={analysisResult?.type === "summarize" ? analysisResult.data : null}
+            isLoading={isAnalyzing && analysisType === "summarize"}
+            error={analysisType === "summarize" ? analysisError : null}
+            onSpanClick={handleSpanClick}
+          />
+        )}
+        {(analysisResult?.type ?? analysisType) === "error-patterns" && (
+          <ErrorPatternsPanel
+            data={analysisResult?.type === "error-patterns" ? analysisResult.data : null}
+            isLoading={isAnalyzing && analysisType === "error-patterns"}
+            error={analysisType === "error-patterns" ? analysisError : null}
+          />
+        )}
+      </div>
+    </>
+  );
+}
 
 export default function SpanDetail() {
   const selectedSpan = useTraceStore((s) => s.selectedSpan);
@@ -89,6 +168,7 @@ export default function SpanDetail() {
             spanId={selectedSpan.span_id}
             annotations={selectedSpan.annotations ?? []}
           />
+          <AnalysisSection />
           {selectedTrace && (
             <>
               <div className="border-b border-border my-4" />
