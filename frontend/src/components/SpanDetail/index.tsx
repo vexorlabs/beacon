@@ -44,81 +44,43 @@ function AnalysisSection() {
             <X size={12} />
           </button>
         </div>
-        {analysisResult?.type === "root-cause" && (
+        {(analysisResult?.type ?? analysisType) === "root-cause" && (
           <RootCausePanel
-            data={analysisResult.data}
+            data={analysisResult?.type === "root-cause" ? analysisResult.data : null}
             isLoading={isAnalyzing && analysisType === "root-cause"}
             error={analysisType === "root-cause" ? analysisError : null}
             onSpanClick={handleSpanClick}
           />
         )}
-        {analysisResult?.type === "cost-optimization" && (
+        {(analysisResult?.type ?? analysisType) === "cost-optimization" && (
           <CostOptimizationPanel
-            data={analysisResult.data}
+            data={analysisResult?.type === "cost-optimization" ? analysisResult.data : null}
             isLoading={isAnalyzing && analysisType === "cost-optimization"}
             error={analysisType === "cost-optimization" ? analysisError : null}
             onSpanClick={handleSpanClick}
           />
         )}
-        {analysisResult?.type === "prompt-suggestions" && (
+        {(analysisResult?.type ?? analysisType) === "prompt-suggestions" && (
           <PromptSuggestionsPanel
-            data={analysisResult.data}
+            data={analysisResult?.type === "prompt-suggestions" ? analysisResult.data : null}
             isLoading={isAnalyzing && analysisType === "prompt-suggestions"}
             error={analysisType === "prompt-suggestions" ? analysisError : null}
           />
         )}
-        {analysisResult?.type === "summarize" && (
+        {(analysisResult?.type ?? analysisType) === "summarize" && (
           <TraceSummaryCard
-            data={analysisResult.data}
+            data={analysisResult?.type === "summarize" ? analysisResult.data : null}
             isLoading={isAnalyzing && analysisType === "summarize"}
             error={analysisType === "summarize" ? analysisError : null}
             onSpanClick={handleSpanClick}
           />
         )}
-        {analysisResult?.type === "error-patterns" && (
+        {(analysisResult?.type ?? analysisType) === "error-patterns" && (
           <ErrorPatternsPanel
-            data={analysisResult.data}
+            data={analysisResult?.type === "error-patterns" ? analysisResult.data : null}
             isLoading={isAnalyzing && analysisType === "error-patterns"}
             error={analysisType === "error-patterns" ? analysisError : null}
           />
-        )}
-        {!analysisResult && isAnalyzing && (
-          <>
-            {analysisType === "root-cause" && (
-              <RootCausePanel data={null} isLoading error={null} />
-            )}
-            {analysisType === "cost-optimization" && (
-              <CostOptimizationPanel data={null} isLoading error={null} />
-            )}
-            {analysisType === "prompt-suggestions" && (
-              <PromptSuggestionsPanel data={null} isLoading error={null} />
-            )}
-            {analysisType === "summarize" && (
-              <TraceSummaryCard data={null} isLoading error={null} />
-            )}
-            {analysisType === "error-patterns" && (
-              <ErrorPatternsPanel data={null} isLoading error={null} />
-            )}
-          </>
-        )}
-        {!analysisResult && !isAnalyzing && analysisError && (
-          <>
-            {analysisType === "root-cause" && (
-              <RootCausePanel data={null} isLoading={false} error={analysisError} />
-            )}
-            {analysisType === "cost-optimization" && (
-              <CostOptimizationPanel data={null} isLoading={false} error={analysisError} />
-            )}
-            {analysisType === "prompt-suggestions" && (
-              <PromptSuggestionsPanel data={null} isLoading={false} error={analysisError} />
-            )}
-            {analysisType === "summarize" && (
-              <TraceSummaryCard data={null} isLoading={false} error={analysisError} />
-            )}
-            {analysisType === "error-patterns" && (
-              <ErrorPatternsPanel data={null} isLoading={false} error={analysisError} />
-            )}
-          </>
         )}
       </div>
     </>

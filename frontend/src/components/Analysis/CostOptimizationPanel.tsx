@@ -1,4 +1,4 @@
-import { AlertCircle, DollarSign, Loader2 } from "lucide-react";
+import { AlertCircle, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CostOptimizationResponse } from "@/lib/types";

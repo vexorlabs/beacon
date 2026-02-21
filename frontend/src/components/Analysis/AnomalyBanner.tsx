@@ -53,6 +53,7 @@ export default function AnomalyBanner({
       </div>
       <button
         type="button"
+        aria-label="Dismiss anomalies"
         onClick={() => setDismissed(true)}
         className="text-current opacity-50 hover:opacity-100 transition-opacity cursor-pointer shrink-0"
       >

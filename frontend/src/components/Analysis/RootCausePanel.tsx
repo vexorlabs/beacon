@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2, Target, Wrench } from "lucide-react";
+import { AlertCircle, Target, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RootCauseAnalysisResponse } from "@/lib/types";

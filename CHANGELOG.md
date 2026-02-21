@@ -10,6 +10,8 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(frontend): AI analysis panel components — RootCausePanel, CostOptimizationPanel, PromptSuggestionsPanel, ErrorPatternsPanel, TraceSummaryCard, AnomalyBanner (VL-60)
+- feat(frontend): Analysis integration — Zustand analysis store, Analyze dropdown in CostSummaryBar, analysis panel rendering in SpanDetail, span highlighting with amber pulse on graph nodes (VL-61)
 - feat(backend): `GET /v1/stats/trends` — time-bucketed trend aggregates (cost, tokens, trace count, error rate) with day/hour granularity and gap-filling
 - feat(backend): `GET /v1/stats/top-costs` — top N most expensive LLM call spans by cost via SQL-level JSON extraction
 - feat(backend): `GET /v1/stats/top-duration` — top N longest-running tool call spans by duration via SQL-level sorting
