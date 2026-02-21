@@ -2,6 +2,7 @@ import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
 import type { SpanNodeData } from "@/lib/types";
 import { SPAN_TYPE_STYLES } from "@/lib/span-colors";
+import { useAnalysisStore } from "@/store/analysis";
 
 function formatDuration(ms: number | null): string {
   if (ms === null) return "...";
@@ -18,8 +19,13 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function SpanNode({ data }: NodeProps<SpanNodeType>) {
+  const highlightedSpanIds = useAnalysisStore((s) => s.highlightedSpanIds);
+  const isHighlighted = highlightedSpanIds.includes(data.span_id);
   const baseStyle = SPAN_TYPE_STYLES[data.span_type] ?? SPAN_TYPE_STYLES.custom;
   const errorRing = data.status === "error" ? "ring-2 ring-red-500/60" : "";
+  const analysisHighlight = isHighlighted
+    ? "ring-2 ring-amber-400/80 animate-pulse"
+    : "";
 
   const tooltipLines = [
     data.name,
@@ -33,7 +39,7 @@ export default function SpanNode({ data }: NodeProps<SpanNodeType>) {
       <Handle type="target" position={Position.Top} className="!bg-zinc-500" />
       <div
         title={tooltipLines}
-        className={`group/node relative px-3 py-2 rounded-md border-2 min-w-[160px] max-w-[220px] cursor-pointer transition-shadow hover:shadow-lg hover:shadow-black/30 ${baseStyle} ${errorRing}`}
+        className={`group/node relative px-3 py-2 rounded-md border-2 min-w-[160px] max-w-[220px] cursor-pointer transition-shadow hover:shadow-lg hover:shadow-black/30 ${baseStyle} ${errorRing} ${analysisHighlight}`}
       >
         <div className="text-[10px] font-medium uppercase tracking-wide opacity-60">
           <span className="opacity-100 tabular-nums">#{data.sequence}</span>

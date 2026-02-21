@@ -1,12 +1,129 @@
 import { useTraceStore } from "@/store/trace";
+import { useAnalysisStore } from "@/store/analysis";
 import { Badge } from "@/components/ui/badge";
-import { MousePointerClick } from "lucide-react";
+import { MousePointerClick, X } from "lucide-react";
 import LlmCallDetail from "./LlmCallDetail";
 import ToolUseDetail from "./ToolUseDetail";
 import BrowserDetail from "./BrowserDetail";
 import GenericDetail from "./GenericDetail";
 import AnnotationPanel from "./AnnotationPanel";
 import TagEditor from "@/components/TagEditor";
+import RootCausePanel from "@/components/Analysis/RootCausePanel";
+import CostOptimizationPanel from "@/components/Analysis/CostOptimizationPanel";
+import PromptSuggestionsPanel from "@/components/Analysis/PromptSuggestionsPanel";
+import TraceSummaryCard from "@/components/Analysis/TraceSummaryCard";
+import ErrorPatternsPanel from "@/components/Analysis/ErrorPatternsPanel";
+
+function AnalysisSection() {
+  const analysisResult = useAnalysisStore((s) => s.analysisResult);
+  const isAnalyzing = useAnalysisStore((s) => s.isAnalyzing);
+  const analysisType = useAnalysisStore((s) => s.analysisType);
+  const analysisError = useAnalysisStore((s) => s.analysisError);
+  const clearAnalysis = useAnalysisStore((s) => s.clearAnalysis);
+  const selectSpan = useTraceStore((s) => s.selectSpan);
+
+  if (!isAnalyzing && !analysisResult && !analysisError) return null;
+
+  const handleSpanClick = (spanId: string) => {
+    selectSpan(spanId);
+  };
+
+  return (
+    <>
+      <div className="border-b border-border my-4" />
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-medium text-muted-foreground">
+            AI Analysis
+          </h4>
+          <button
+            type="button"
+            onClick={clearAnalysis}
+            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <X size={12} />
+          </button>
+        </div>
+        {analysisResult?.type === "root-cause" && (
+          <RootCausePanel
+            data={analysisResult.data}
+            isLoading={isAnalyzing && analysisType === "root-cause"}
+            error={analysisType === "root-cause" ? analysisError : null}
+            onSpanClick={handleSpanClick}
+          />
+        )}
+        {analysisResult?.type === "cost-optimization" && (
+          <CostOptimizationPanel
+            data={analysisResult.data}
+            isLoading={isAnalyzing && analysisType === "cost-optimization"}
+            error={analysisType === "cost-optimization" ? analysisError : null}
+            onSpanClick={handleSpanClick}
+          />
+        )}
+        {analysisResult?.type === "prompt-suggestions" && (
+          <PromptSuggestionsPanel
+            data={analysisResult.data}
+            isLoading={isAnalyzing && analysisType === "prompt-suggestions"}
+            error={analysisType === "prompt-suggestions" ? analysisError : null}
+          />
+        )}
+        {analysisResult?.type === "summarize" && (
+          <TraceSummaryCard
+            data={analysisResult.data}
+            isLoading={isAnalyzing && analysisType === "summarize"}
+            error={analysisType === "summarize" ? analysisError : null}
+            onSpanClick={handleSpanClick}
+          />
+        )}
+        {analysisResult?.type === "error-patterns" && (
+          <ErrorPatternsPanel
+            data={analysisResult.data}
+            isLoading={isAnalyzing && analysisType === "error-patterns"}
+            error={analysisType === "error-patterns" ? analysisError : null}
+          />
+        )}
+        {!analysisResult && isAnalyzing && (
+          <>
+            {analysisType === "root-cause" && (
+              <RootCausePanel data={null} isLoading error={null} />
+            )}
+            {analysisType === "cost-optimization" && (
+              <CostOptimizationPanel data={null} isLoading error={null} />
+            )}
+            {analysisType === "prompt-suggestions" && (
+              <PromptSuggestionsPanel data={null} isLoading error={null} />
+            )}
+            {analysisType === "summarize" && (
+              <TraceSummaryCard data={null} isLoading error={null} />
+            )}
+            {analysisType === "error-patterns" && (
+              <ErrorPatternsPanel data={null} isLoading error={null} />
+            )}
+          </>
+        )}
+        {!analysisResult && !isAnalyzing && analysisError && (
+          <>
+            {analysisType === "root-cause" && (
+              <RootCausePanel data={null} isLoading={false} error={analysisError} />
+            )}
+            {analysisType === "cost-optimization" && (
+              <CostOptimizationPanel data={null} isLoading={false} error={analysisError} />
+            )}
+            {analysisType === "prompt-suggestions" && (
+              <PromptSuggestionsPanel data={null} isLoading={false} error={analysisError} />
+            )}
+            {analysisType === "summarize" && (
+              <TraceSummaryCard data={null} isLoading={false} error={analysisError} />
+            )}
+            {analysisType === "error-patterns" && (
+              <ErrorPatternsPanel data={null} isLoading={false} error={analysisError} />
+            )}
+          </>
+        )}
+      </div>
+    </>
+  );
+}
 
 export default function SpanDetail() {
   const selectedSpan = useTraceStore((s) => s.selectedSpan);
@@ -89,6 +206,7 @@ export default function SpanDetail() {
             spanId={selectedSpan.span_id}
             annotations={selectedSpan.annotations ?? []}
           />
+          <AnalysisSection />
           {selectedTrace && (
             <>
               <div className="border-b border-border my-4" />
