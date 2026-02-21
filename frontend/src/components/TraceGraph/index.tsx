@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   ReactFlow,
   Background,
-  MiniMap,
   Controls,
   Panel,
   type NodeTypes,
@@ -20,8 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTraceStore } from "@/store/trace";
 import SpanNode from "./SpanNode";
 import { useGraphLayout } from "./useGraphLayout";
-import type { SpanNodeData } from "@/lib/types";
-import { SPAN_TYPE_COLORS } from "@/lib/span-colors";
+
+
 
 function ZoomIndicator() {
   const { zoom } = useViewport();
@@ -186,10 +185,6 @@ function TraceGraphInner() {
     [fitView],
   );
 
-  const miniMapNodeColor = useCallback((node: Node<SpanNodeData>) => {
-    return SPAN_TYPE_COLORS[node.data.span_type] ?? "#71717a";
-  }, []);
-
   if (!selectedTraceId) {
     return (
       <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
@@ -244,14 +239,6 @@ function TraceGraphInner() {
       <Panel position="bottom-left">
         <ZoomIndicator />
       </Panel>
-      <MiniMap
-        nodeStrokeWidth={3}
-        nodeColor={miniMapNodeColor}
-        maskColor="oklch(0.13 0.004 272 / 0.7)"
-        position="bottom-right"
-        className="hidden md:block !border !border-zinc-700/70 !rounded-md !shadow-md"
-        style={{ width: 110, height: 72, background: "#1a1a1e" }}
-      />
     </ReactFlow>
   );
 }

@@ -7,6 +7,7 @@ import SpanDetail from "@/components/SpanDetail";
 import TimeTravel from "@/components/TimeTravel";
 import CostSummaryBar from "@/components/CostSummaryBar";
 import type { ViewMode } from "@/components/CostSummaryBar";
+import CanvasToolbar from "@/components/TraceGraph/CanvasToolbar";
 import { useResizablePanels } from "@/lib/useResizablePanels";
 import { useTraceStore } from "@/store/trace";
 
@@ -80,8 +81,11 @@ export default function TracesPage() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />
-        <div className="flex-1 min-h-0">
+        <div className="relative flex-1 min-h-0">
           {viewMode === "graph" ? <TraceGraph /> : <TimelineView />}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+            <CanvasToolbar viewMode={viewMode} onViewModeChange={setViewMode} />
+          </div>
         </div>
         <TimeTravel />
       </div>

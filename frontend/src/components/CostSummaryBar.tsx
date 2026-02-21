@@ -1,18 +1,12 @@
 import { useCallback } from "react";
 import {
   Check,
-  DollarSign,
   Download,
-  FileText,
   GanttChart,
   GitGraph,
-  Layers,
-  Loader2,
   Maximize2,
   Minimize2,
   SlidersHorizontal,
-  Sparkles,
-  Target,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
-import { useAnalysisStore, type AnalysisType } from "@/store/analysis";
 import { exportTrace } from "@/lib/api";
 
 export type ViewMode = "graph" | "timeline";
@@ -52,16 +45,6 @@ export default function CostSummaryBar({
   onViewModeChange,
 }: CostSummaryBarProps) {
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
-  const isAnalyzing = useAnalysisStore((s) => s.isAnalyzing);
-  const runAnalysis = useAnalysisStore((s) => s.runAnalysis);
-
-  const handleAnalysis = useCallback(
-    (type: AnalysisType) => {
-      if (!selectedTrace) return;
-      void runAnalysis(type, { traceId: selectedTrace.trace_id });
-    },
-    [selectedTrace, runAnalysis],
-  );
 
   const handleExport = useCallback(
     async (format: "json" | "otel" | "csv") => {
@@ -108,42 +91,6 @@ export default function CostSummaryBar({
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        {selectedTrace && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                title="Analyze trace"
-                disabled={isAnalyzing}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
-              >
-                {isAnalyzing ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Sparkles size={14} />
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={() => handleAnalysis("root-cause")}>
-                <Target size={13} className="mr-2" />
-                Root Cause Analysis
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAnalysis("cost-optimization")}>
-                <DollarSign size={13} className="mr-2" />
-                Cost Optimization
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAnalysis("summarize")}>
-                <FileText size={13} className="mr-2" />
-                Summarize
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAnalysis("error-patterns")}>
-                <Layers size={13} className="mr-2" />
-                Error Patterns
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
