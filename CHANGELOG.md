@@ -10,6 +10,8 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(sdk-js): Add JS SDK examples — `basic-agent.ts` (OpenAI + observe) and `vercel-ai-agent.ts` (generateText + streamText) (VL-50)
+- docs(sdk): Document OTLP ingestion endpoint (`POST /v1/otlp/traces`) in SDK README with payload format, curl example, and attribute reference (VL-49)
 - feat(frontend): AI analysis panel components — RootCausePanel, CostOptimizationPanel, PromptSuggestionsPanel, ErrorPatternsPanel, TraceSummaryCard, AnomalyBanner (VL-60)
 - feat(frontend): Analysis integration — Zustand analysis store, Analyze dropdown in CostSummaryBar, analysis panel rendering in SpanDetail, span highlighting with amber pulse on graph nodes (VL-61)
 - feat(backend): `GET /v1/stats/trends` — time-bucketed trend aggregates (cost, tokens, trace count, error rate) with day/hour granularity and gap-filling
