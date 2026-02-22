@@ -1,28 +1,16 @@
 import { useCallback } from "react";
 import {
-  Check,
-  DollarSign,
   Download,
-  FileText,
-  GanttChart,
-  GitGraph,
-  Layers,
-  Loader2,
   Maximize2,
   Minimize2,
-  SlidersHorizontal,
-  Sparkles,
-  Target,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
-import { useAnalysisStore, type AnalysisType } from "@/store/analysis";
 import { exportTrace } from "@/lib/api";
 
 export type ViewMode = "graph" | "timeline";
@@ -30,8 +18,6 @@ export type ViewMode = "graph" | "timeline";
 interface CostSummaryBarProps {
   expanded: boolean;
   onToggleExpand: () => void;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -48,20 +34,8 @@ function triggerDownload(blob: Blob, filename: string) {
 export default function CostSummaryBar({
   expanded,
   onToggleExpand,
-  viewMode,
-  onViewModeChange,
 }: CostSummaryBarProps) {
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
-  const isAnalyzing = useAnalysisStore((s) => s.isAnalyzing);
-  const runAnalysis = useAnalysisStore((s) => s.runAnalysis);
-
-  const handleAnalysis = useCallback(
-    (type: AnalysisType) => {
-      if (!selectedTrace) return;
-      void runAnalysis(type, { traceId: selectedTrace.trace_id });
-    },
-    [selectedTrace, runAnalysis],
-  );
 
   const handleExport = useCallback(
     async (format: "json" | "otel" | "csv") => {
@@ -113,89 +87,28 @@ export default function CostSummaryBar({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                title="Analyze trace"
-                disabled={isAnalyzing}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
+                title="Export trace"
+                className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
               >
-                {isAnalyzing ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Sparkles size={14} />
-                )}
+                <Download size={14} />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={() => handleAnalysis("root-cause")}>
-                <Target size={13} className="mr-2" />
-                Root Cause Analysis
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => void handleExport("json")}>
+                <Download size={13} className="mr-2" />
+                Export JSON
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAnalysis("cost-optimization")}>
-                <DollarSign size={13} className="mr-2" />
-                Cost Optimization
+              <DropdownMenuItem onClick={() => void handleExport("otel")}>
+                <Download size={13} className="mr-2" />
+                Export OTEL JSON
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAnalysis("summarize")}>
-                <FileText size={13} className="mr-2" />
-                Summarize
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAnalysis("error-patterns")}>
-                <Layers size={13} className="mr-2" />
-                Error Patterns
+              <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                <Download size={13} className="mr-2" />
+                Export CSV
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              title="Canvas options"
-              className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-            >
-              <SlidersHorizontal size={14} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              onClick={() => onViewModeChange("graph")}
-              className="justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <GitGraph size={13} />
-                Graph view
-              </span>
-              {viewMode === "graph" && <Check size={12} className="text-primary" />}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onViewModeChange("timeline")}
-              className="justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <GanttChart size={13} />
-                Timeline view
-              </span>
-              {viewMode === "timeline" && (
-                <Check size={12} className="text-primary" />
-              )}
-            </DropdownMenuItem>
-            {selectedTrace && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => void handleExport("json")}>
-                  <Download size={13} className="mr-2" />
-                  Export JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleExport("otel")}>
-                  <Download size={13} className="mr-2" />
-                  Export OTEL JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleExport("csv")}>
-                  <Download size={13} className="mr-2" />
-                  Export CSV
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
         <button
           type="button"
           onClick={onToggleExpand}

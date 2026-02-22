@@ -34,12 +34,14 @@ interface AnalysisStore {
   analysisType: AnalysisType | null;
   analysisError: string | null;
   highlightedSpanIds: string[];
+  showAnalysisPanel: boolean;
 
   runAnalysis: (
     type: AnalysisType,
     params: { traceId?: string; traceIds?: string[]; spanId?: string },
   ) => Promise<void>;
   clearAnalysis: () => void;
+  closeAnalysisPanel: () => void;
 }
 
 export const useAnalysisStore = create<AnalysisStore>((set) => ({
@@ -48,6 +50,7 @@ export const useAnalysisStore = create<AnalysisStore>((set) => ({
   analysisType: null,
   analysisError: null,
   highlightedSpanIds: [],
+  showAnalysisPanel: false,
 
   runAnalysis: async (type, params) => {
     set({
@@ -56,6 +59,7 @@ export const useAnalysisStore = create<AnalysisStore>((set) => ({
       analysisError: null,
       analysisResult: null,
       highlightedSpanIds: [],
+      showAnalysisPanel: true,
     });
     try {
       let result: AnalysisResult;
@@ -108,6 +112,11 @@ export const useAnalysisStore = create<AnalysisStore>((set) => ({
       analysisType: null,
       analysisError: null,
       highlightedSpanIds: [],
+      showAnalysisPanel: false,
     });
+  },
+
+  closeAnalysisPanel: () => {
+    set({ showAnalysisPanel: false });
   },
 }));
