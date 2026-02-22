@@ -78,8 +78,6 @@ export default function TracesPage() {
         <CostSummaryBar
           expanded={expanded}
           onToggleExpand={() => setExpanded((e) => !e)}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
         />
         <div className="relative flex-1 min-h-0">
           {viewMode === "graph" ? <TraceGraph /> : <TimelineView />}

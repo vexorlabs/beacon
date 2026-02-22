@@ -42,7 +42,6 @@ interface AnalysisStore {
   ) => Promise<void>;
   clearAnalysis: () => void;
   closeAnalysisPanel: () => void;
-  openAnalysisPanel: () => void;
 }
 
 export const useAnalysisStore = create<AnalysisStore>((set) => ({
@@ -119,9 +118,5 @@ export const useAnalysisStore = create<AnalysisStore>((set) => ({
 
   closeAnalysisPanel: () => {
     set({ showAnalysisPanel: false });
-  },
-
-  openAnalysisPanel: () => {
-    set({ showAnalysisPanel: true });
   },
 }));

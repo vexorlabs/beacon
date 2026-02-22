@@ -1,18 +1,13 @@
 import { useCallback } from "react";
 import {
-  Check,
   Download,
-  GanttChart,
-  GitGraph,
   Maximize2,
   Minimize2,
-  SlidersHorizontal,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
@@ -23,8 +18,6 @@ export type ViewMode = "graph" | "timeline";
 interface CostSummaryBarProps {
   expanded: boolean;
   onToggleExpand: () => void;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -41,8 +34,6 @@ function triggerDownload(blob: Blob, filename: string) {
 export default function CostSummaryBar({
   expanded,
   onToggleExpand,
-  viewMode,
-  onViewModeChange,
 }: CostSummaryBarProps) {
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
 
@@ -91,58 +82,33 @@ export default function CostSummaryBar({
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              title="Canvas options"
-              className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-            >
-              <SlidersHorizontal size={14} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              onClick={() => onViewModeChange("graph")}
-              className="justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <GitGraph size={13} />
-                Graph view
-              </span>
-              {viewMode === "graph" && <Check size={12} className="text-primary" />}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onViewModeChange("timeline")}
-              className="justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <GanttChart size={13} />
-                Timeline view
-              </span>
-              {viewMode === "timeline" && (
-                <Check size={12} className="text-primary" />
-              )}
-            </DropdownMenuItem>
-            {selectedTrace && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => void handleExport("json")}>
-                  <Download size={13} className="mr-2" />
-                  Export JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleExport("otel")}>
-                  <Download size={13} className="mr-2" />
-                  Export OTEL JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleExport("csv")}>
-                  <Download size={13} className="mr-2" />
-                  Export CSV
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {selectedTrace && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                title="Export trace"
+                className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              >
+                <Download size={14} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => void handleExport("json")}>
+                <Download size={13} className="mr-2" />
+                Export JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("otel")}>
+                <Download size={13} className="mr-2" />
+                Export OTEL JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                <Download size={13} className="mr-2" />
+                Export CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <button
           type="button"
           onClick={onToggleExpand}

@@ -20,8 +20,6 @@ import { useTraceStore } from "@/store/trace";
 import SpanNode from "./SpanNode";
 import { useGraphLayout } from "./useGraphLayout";
 
-
-
 function ZoomIndicator() {
   const { zoom } = useViewport();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
