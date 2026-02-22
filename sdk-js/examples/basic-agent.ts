@@ -24,8 +24,8 @@ import { init, observe, getCurrentSpan, shutdown } from "beacon-sdk";
 import { SpanType } from "beacon-sdk";
 import OpenAI from "openai";
 
-// Initialize Beacon — auto-patches OpenAI automatically
-init();
+// Initialize Beacon — await ensures auto-patches are applied before any calls
+await init();
 
 const client = new OpenAI();
 

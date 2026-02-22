@@ -14,6 +14,7 @@ import type { BeaconTracer } from "../tracer.js";
 
 let _patched = false;
 let _originalCreate: ((...args: unknown[]) => unknown) | null = null;
+let _messagesProto: { create: (...args: unknown[]) => unknown } | null = null;
 
 // ---------------------------------------------------------------------------
 // Types for Anthropic SDK structures
@@ -249,15 +250,20 @@ function buildPromptJson(params: CreateParams): string {
  * Monkey-patch the Anthropic SDK's `Messages.prototype.create` to
  * automatically instrument message creation calls.
  *
+ * Uses dynamic `import()` instead of `require()` so that the patch targets
+ * the same module instance regardless of whether the consumer uses CJS or ESM.
+ *
  * If the `@anthropic-ai/sdk` package is not installed, this silently returns.
  */
-export function patch(): void {
+export async function patch(): Promise<void> {
   if (_patched) return;
 
   let MessagesProto: { create: (...args: unknown[]) => unknown };
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require("@anthropic-ai/sdk/resources/messages") as {
+    // Use a variable so TypeScript doesn't try to resolve the module at
+    // compile time (@anthropic-ai/sdk is an optional peer dependency).
+    const modulePath = "@anthropic-ai/sdk/resources/messages";
+    const mod = (await import(modulePath)) as {
       Messages: { prototype: { create: (...args: unknown[]) => unknown } };
     };
     MessagesProto = mod.Messages.prototype;
@@ -266,6 +272,7 @@ export function patch(): void {
     return;
   }
 
+  _messagesProto = MessagesProto;
   _originalCreate = MessagesProto.create;
   const originalCreate = _originalCreate;
 
@@ -360,18 +367,11 @@ export function patch(): void {
 export function unpatch(): void {
   if (!_patched) return;
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require("@anthropic-ai/sdk/resources/messages") as {
-      Messages: { prototype: { create: (...args: unknown[]) => unknown } };
-    };
-    if (_originalCreate) {
-      mod.Messages.prototype.create = _originalCreate;
-    }
-  } catch {
-    // not installed
+  if (_messagesProto && _originalCreate) {
+    _messagesProto.create = _originalCreate;
   }
 
+  _messagesProto = null;
   _originalCreate = null;
   _patched = false;
 }

@@ -261,13 +261,19 @@ function patchStreamText(original: StreamTextFn): StreamTextFn {
 
 /**
  * Patch `generateText` and `streamText` from the Vercel AI SDK (`ai` package).
+ *
+ * Uses dynamic `import()` instead of `require()` so that the patch targets
+ * the same module instance regardless of whether the consumer uses CJS or ESM.
+ *
  * If the package is not installed, this silently returns.
  */
-export function patch(): void {
+export async function patch(): Promise<void> {
   let aiModule: AiModule;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    aiModule = require("ai") as AiModule;
+    // Use a variable so TypeScript doesn't try to resolve the module at
+    // compile time (ai is an optional peer dependency).
+    const modulePath = "ai";
+    aiModule = (await import(modulePath)) as AiModule;
   } catch {
     // "ai" package is not installed — nothing to patch.
     return;
