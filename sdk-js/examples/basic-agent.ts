@@ -20,7 +20,7 @@
  *     └── openai.chat.completions (llm_call, auto-patched)
  */
 
-import { init, observe, flush, getCurrentSpan, shutdown } from "beacon-sdk";
+import { init, observe, getCurrentSpan, shutdown } from "beacon-sdk";
 import { SpanType } from "beacon-sdk";
 import OpenAI from "openai";
 
