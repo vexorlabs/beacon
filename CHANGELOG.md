@@ -22,6 +22,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 - feat(frontend): Anomaly detection results cached in Zustand store to avoid redundant LLM calls on page navigation
 
 ### Fixed
+- fix(sdk-js): ESM auto-patching — use dynamic `import()` instead of `require()` for CJS/ESM compatibility, make `init()` async to await patches (VL-66)
 - fix(backend): trace status now set from first ingested span instead of hardcoded `"unset"`
 - fix(backend): `get_baseline_stats` computed duration from `start_time`/`end_time` instead of non-existent `duration_ms` attribute
 - fix(backend): anomaly detection endpoint now overrides `trace_id` on each anomaly object so navigation links resolve correctly
