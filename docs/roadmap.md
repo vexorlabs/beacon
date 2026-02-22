@@ -383,11 +383,11 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [x] Implement `sdk-js/src/index.ts` — public API: `init()`, `observe()` decorator, auto-patching
 - [x] Write `sdk-js/README.md` with quickstart guide
 - [x] Add `sdk-js/tests/` with tests for tracer, exporter, and integrations
-- [ ] Add `sdk-js/examples/` with a basic Node.js agent example
+- [x] Add `sdk-js/examples/` with a basic Node.js agent example
 
 **Backend: OTLP-Compatible Ingestion**
 - [x] Add `POST /v1/otlp/traces` endpoint accepting standard OpenTelemetry Protocol (OTLP) JSON format, mapping OTEL resource/scope/span fields to Beacon's span model — this allows existing OTEL-instrumented applications to send traces to Beacon without the Beacon SDK
-- [ ] Document the OTLP ingestion endpoint in `sdk/README.md`
+- [x] Document the OTLP ingestion endpoint in `sdk/README.md`
 - [x] Add tests in `backend/tests/test_otlp.py` with sample OTLP payloads
 
 **Backend: Multi-SDK Support**
