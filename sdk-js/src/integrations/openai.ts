@@ -14,6 +14,7 @@ import type { BeaconTracer } from "../tracer.js";
 
 let _patched = false;
 let _originalCreate: ((...args: unknown[]) => unknown) | null = null;
+let _completionsProto: { create: (...args: unknown[]) => unknown } | null = null;
 
 // ---------------------------------------------------------------------------
 // Types for OpenAI SDK structures (avoids importing the real package)
@@ -216,15 +217,20 @@ interface CreateParams {
  * Monkey-patch the OpenAI SDK's `Completions.prototype.create` to
  * automatically instrument chat completion calls.
  *
+ * Uses dynamic `import()` instead of `require()` so that the patch targets
+ * the same module instance regardless of whether the consumer uses CJS or ESM.
+ *
  * If the `openai` package is not installed, this silently returns.
  */
-export function patch(): void {
+export async function patch(): Promise<void> {
   if (_patched) return;
 
   let CompletionsProto: { create: (...args: unknown[]) => unknown };
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require("openai/resources/chat/completions") as {
+    // Use a variable so TypeScript doesn't try to resolve the module at
+    // compile time (openai is an optional peer dependency).
+    const modulePath = "openai/resources/chat/completions";
+    const mod = (await import(modulePath)) as {
       Completions: { prototype: { create: (...args: unknown[]) => unknown } };
     };
     CompletionsProto = mod.Completions.prototype;
@@ -233,6 +239,7 @@ export function patch(): void {
     return;
   }
 
+  _completionsProto = CompletionsProto;
   _originalCreate = CompletionsProto.create;
   const originalCreate = _originalCreate;
 
@@ -333,18 +340,11 @@ export function patch(): void {
 export function unpatch(): void {
   if (!_patched) return;
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require("openai/resources/chat/completions") as {
-      Completions: { prototype: { create: (...args: unknown[]) => unknown } };
-    };
-    if (_originalCreate) {
-      mod.Completions.prototype.create = _originalCreate;
-    }
-  } catch {
-    // openai not installed
+  if (_completionsProto && _originalCreate) {
+    _completionsProto.create = _originalCreate;
   }
 
+  _completionsProto = null;
   _originalCreate = null;
   _patched = false;
 }

@@ -25,8 +25,8 @@ import { SpanType } from "beacon-sdk";
 import { generateText, streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 
-// Initialize Beacon — auto-patches Vercel AI SDK automatically
-init();
+// Initialize Beacon — await ensures auto-patches are applied before any calls
+await init();
 
 // --- Tool functions ---
 

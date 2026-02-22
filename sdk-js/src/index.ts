@@ -5,7 +5,7 @@
  *
  * Usage:
  *   import { init, observe } from "beacon-sdk";
- *   init();
+ *   await init();
  *   const myFn = observe(async () => { ... });
  */
 
@@ -31,7 +31,7 @@ export interface InitOptions {
   exporter?: "sync" | "batch";
 }
 
-export function init(options?: InitOptions): void {
+export async function init(options?: InitOptions): Promise<void> {
   const enabled =
     options?.enabled ?? process.env["BEACON_ENABLED"] !== "false";
 
@@ -63,7 +63,7 @@ export function init(options?: InitOptions): void {
     options?.autoPatch ?? process.env["BEACON_AUTO_PATCH"] !== "false";
 
   if (autoPatch) {
-    applyAutoPatches();
+    await applyAutoPatches();
   }
 }
 
@@ -91,27 +91,21 @@ export async function shutdown(): Promise<void> {
   }
 }
 
-function applyAutoPatches(): void {
-  // Try each integration, silently skip if peer dep isn't installed.
-  // Dynamic imports ensure no hard dependency on any provider SDK.
-  const patches: Array<() => Promise<void>> = [
-    () =>
-      import("./integrations/openai.js").then(
-        (m) => m.patch(),
-        () => {}
-      ),
-    () =>
-      import("./integrations/anthropic.js").then(
-        (m) => m.patch(),
-        () => {}
-      ),
-    () =>
-      import("./integrations/vercel-ai.js").then(
-        (m) => m.patch(),
-        () => {}
-      ),
-  ];
-  for (const tryPatch of patches) {
-    tryPatch().catch(() => {});
-  }
+async function applyAutoPatches(): Promise<void> {
+  // Try each integration in parallel, silently skip if peer dep isn't
+  // installed.  Dynamic imports ensure no hard dependency on any provider SDK.
+  await Promise.all([
+    import("./integrations/openai.js").then(
+      (m) => m.patch(),
+      () => {},
+    ),
+    import("./integrations/anthropic.js").then(
+      (m) => m.patch(),
+      () => {},
+    ),
+    import("./integrations/vercel-ai.js").then(
+      (m) => m.patch(),
+      () => {},
+    ),
+  ]);
 }
