@@ -158,12 +158,20 @@ def _shutdown_exporter() -> None:
 def _apply_auto_patches() -> None:
     """Try to monkey-patch all supported libraries. Silently skip if not installed."""
     from beacon_sdk.integrations import anthropic as _anthropic_patch
+    from beacon_sdk.integrations import crewai as _crewai_patch
     from beacon_sdk.integrations import google_genai as _google_genai_patch
     from beacon_sdk.integrations import openai as _openai_patch
     from beacon_sdk.integrations import playwright as _playwright_patch
     from beacon_sdk.integrations import subprocess_patch as _subprocess_patch
 
-    for mod in [_openai_patch, _anthropic_patch, _google_genai_patch, _playwright_patch, _subprocess_patch]:
+    for mod in [
+        _openai_patch,
+        _anthropic_patch,
+        _google_genai_patch,
+        _crewai_patch,
+        _playwright_patch,
+        _subprocess_patch,
+    ]:
         try:
             mod.patch()
         except Exception:
