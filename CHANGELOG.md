@@ -10,6 +10,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(sdk): CrewAI auto-instrumentation — zero-config tracing via `Crew.kickoff()` patching with callback injection for task and agent step spans (VL-44)
 - feat(sdk-js): Add JS SDK examples — `basic-agent.ts` (OpenAI + observe) and `vercel-ai-agent.ts` (generateText + streamText) (VL-50)
 - docs(sdk): Document OTLP ingestion endpoint (`POST /v1/otlp/traces`) in SDK README with payload format, curl example, and attribute reference (VL-49)
 - feat(frontend): AI analysis panel components — RootCausePanel, CostOptimizationPanel, PromptSuggestionsPanel, ErrorPatternsPanel, TraceSummaryCard, AnomalyBanner (VL-60)
