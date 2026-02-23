@@ -351,10 +351,10 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [ ] Create `sdk/examples/google_agent.py`
 
 **SDK: CrewAI Integration**
-- [ ] Create `sdk/beacon_sdk/integrations/crewai.py` — patch `Crew.kickoff()` to create a root `agent_step` span, hook into CrewAI's callback system for individual agent steps and tool uses
-- [ ] Set `agent.framework: "crewai"` in span attributes
-- [ ] Create `sdk/examples/crewai_agent.py`
-- [ ] Add `sdk/tests/test_integrations_crewai.py`
+- [x] Create `sdk/beacon_sdk/integrations/crewai.py` — patch `Crew.kickoff()` to create a root `agent_step` span, hook into CrewAI's callback system for individual agent steps and tool uses
+- [x] Set `agent.framework: "crewai"` in span attributes
+- [x] Create `sdk/examples/crewai_agent.py`
+- [x] Add `sdk/tests/test_integrations_crewai.py`
 
 **SDK: AutoGen Integration**
 - [ ] Create `sdk/beacon_sdk/integrations/autogen.py` — patch `ConversableAgent.generate_reply()` and `GroupChat.run()` to create spans capturing multi-agent conversation turns
