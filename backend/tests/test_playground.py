@@ -150,3 +150,46 @@ class TestPlaygroundRouter:
         assert data["results"][0]["model"] == "gpt-4.1"
         assert data["results"][1]["model"] == "claude-sonnet-4-6"
         assert data["trace_id"] is not None
+
+    # --- Compare prompts (A/B test) ---
+
+    def test_compare_prompts_requires_two_prompts(self, client) -> None:  # type: ignore[no-untyped-def]
+        response = client.post(
+            "/v1/playground/compare-prompts",
+            json={
+                "model": "gpt-4.1",
+                "prompts": ["Only one prompt"],
+            },
+        )
+        assert response.status_code == 422  # Pydantic min_length validation
+
+    def test_compare_prompts_rejects_too_many(self, client) -> None:  # type: ignore[no-untyped-def]
+        response = client.post(
+            "/v1/playground/compare-prompts",
+            json={
+                "model": "gpt-4.1",
+                "prompts": [f"Prompt {i}" for i in range(11)],
+            },
+        )
+        assert response.status_code == 422  # Pydantic max_length validation
+
+    @patch("app.services.playground_service.call_openai", new_callable=AsyncMock)
+    def test_compare_prompts_success(self, mock_call, client) -> None:  # type: ignore[no-untyped-def]
+        settings_service.set_api_key("openai", "sk-test")
+        mock_call.return_value = ("LLM response", 10, 20)
+
+        response = client.post(
+            "/v1/playground/compare-prompts",
+            json={
+                "model": "gpt-4.1",
+                "prompts": ["Prompt A", "Prompt B"],
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["results"]) == 2
+        assert data["results"][0]["prompt"] == "Prompt A"
+        assert data["results"][1]["prompt"] == "Prompt B"
+        assert data["trace_id"] is not None
+        assert data["test_id"] is not None
+        assert data["results"][0]["metrics"]["input_tokens"] == 10

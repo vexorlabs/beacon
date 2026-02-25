@@ -315,3 +315,53 @@ def test_delete_traces_batch_by_older_than(client):
 def test_delete_traces_batch_requires_criteria(client):
     response = client.request("DELETE", "/v1/traces", json={})
     assert response.status_code == 422
+
+
+# --- GET /v1/traces/baseline ---
+
+
+def test_find_baseline_returns_none_when_no_baseline(client):
+    _ingest_span(client, trace_id=str(uuid.uuid4()), name="no-baseline")
+    response = client.get("/v1/traces/baseline")
+    assert response.status_code == 200
+    assert response.json() is None
+
+
+def test_find_baseline_returns_tagged_trace(client):
+    trace_id = str(uuid.uuid4())
+    _ingest_span(client, trace_id=trace_id, name="baseline-trace")
+
+    # Tag it as baseline
+    client.put(
+        f"/v1/traces/{trace_id}/tags",
+        json={"tags": {"baseline": "true"}},
+    )
+
+    response = client.get("/v1/traces/baseline")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["trace_id"] == trace_id
+    assert data["name"] == "baseline-trace"
+
+
+def test_find_baseline_excludes_specified_trace(client):
+    trace_a = str(uuid.uuid4())
+    trace_b = str(uuid.uuid4())
+    _ingest_span(client, trace_id=trace_a, name="baseline-a")
+    _ingest_span(client, trace_id=trace_b, name="baseline-b")
+
+    # Tag both as baseline (a is older, b is newer)
+    client.put(
+        f"/v1/traces/{trace_a}/tags",
+        json={"tags": {"baseline": "true"}},
+    )
+    client.put(
+        f"/v1/traces/{trace_b}/tags",
+        json={"tags": {"baseline": "true"}},
+    )
+
+    # Excluding b should return a
+    response = client.get(f"/v1/traces/baseline?exclude={trace_b}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["trace_id"] == trace_a
