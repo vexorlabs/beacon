@@ -357,21 +357,21 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [x] Add `sdk/tests/test_integrations_crewai.py`
 
 **SDK: AutoGen Integration**
-- [ ] Create `sdk/beacon_sdk/integrations/autogen.py` — patch `ConversableAgent.generate_reply()` and `GroupChat.run()` to create spans capturing multi-agent conversation turns
-- [ ] Map each AutoGen agent message exchange to an `agent_step` span with `agent.framework: "autogen"`
-- [ ] Create `sdk/examples/autogen_agent.py`
-- [ ] Add `sdk/tests/test_integrations_autogen.py`
+- [x] Create `sdk/beacon_sdk/integrations/autogen.py` — patch `ConversableAgent.generate_reply()` and `GroupChat.run()` to create spans capturing multi-agent conversation turns
+- [x] Map each AutoGen agent message exchange to an `agent_step` span with `agent.framework: "autogen"`
+- [x] Create `sdk/examples/autogen_agent.py`
+- [x] Add `sdk/tests/test_integrations_autogen.py`
 
 **SDK: LlamaIndex Integration**
-- [ ] Create `sdk/beacon_sdk/integrations/llamaindex.py` — implement `BeaconCallbackHandler` for LlamaIndex that traces query engine calls, retrieval steps, and LLM calls
-- [ ] Map LlamaIndex events to appropriate span types: `llm_call` for LLM, `tool_use` for retrieval
-- [ ] Create `sdk/examples/llamaindex_agent.py`
-- [ ] Add `sdk/tests/test_integrations_llamaindex.py`
+- [x] Create `sdk/beacon_sdk/integrations/llamaindex.py` — implement `BeaconCallbackHandler` for LlamaIndex that traces query engine calls, retrieval steps, and LLM calls
+- [x] Map LlamaIndex events to appropriate span types: `llm_call` for LLM, `tool_use` for retrieval
+- [x] Create `sdk/examples/llamaindex_agent.py`
+- [x] Add `sdk/tests/test_integrations_llamaindex.py`
 
 **SDK: Local Model Support**
-- [ ] Verify that Ollama and vLLM (OpenAI-compatible APIs) are automatically traced via the existing OpenAI patch; document this in SDK README
-- [ ] For Ollama's native Python client, create `sdk/beacon_sdk/integrations/ollama.py` patching `ollama.chat()` and `ollama.generate()`
-- [ ] Add `sdk/tests/test_integrations_ollama.py`
+- [x] Verify that Ollama and vLLM (OpenAI-compatible APIs) are automatically traced via the existing OpenAI patch; document this in SDK README
+- [x] For Ollama's native Python client, create `sdk/beacon_sdk/integrations/ollama.py` patching `ollama.chat()` and `ollama.generate()`
+- [x] Add `sdk/tests/test_integrations_ollama.py`
 
 **JavaScript/TypeScript SDK (New Package)**
 - [x] Create `sdk-js/` directory with `package.json`, `tsconfig.json`, project structure mirroring the Python SDK
@@ -395,7 +395,7 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 - [ ] In `backend/app/services/llm_client.py`, add Gemini models to the replay service
 
 **Frontend: Framework Badges**
-- [ ] In `frontend/src/components/TraceGraph/SpanNode.tsx`, add framework icon/badge (LangChain, CrewAI, AutoGen, LlamaIndex) based on `agent.framework` attribute
+- [x] In `frontend/src/components/TraceGraph/SpanNode.tsx`, add framework icon/badge (LangChain, CrewAI, AutoGen, LlamaIndex) based on `agent.framework` attribute
 - [x] In `frontend/src/components/TraceList/TraceListItem.tsx`, show SDK language badge (Python/JS) if `sdk_language` is present
 
 ### Done Condition

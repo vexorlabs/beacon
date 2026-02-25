@@ -10,6 +10,10 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(sdk): AutoGen auto-instrumentation — patches `ConversableAgent.generate_reply()` and `GroupChat.run()` for agent step tracing with `agent.framework: "autogen"` (VL-45)
+- feat(sdk): LlamaIndex auto-instrumentation — patches `BaseQueryEngine.query()` and `BaseRetriever.retrieve()` for query/retrieval tracing with `agent.framework: "llamaindex"` (VL-46)
+- feat(sdk): Ollama native client auto-instrumentation — patches `ollama.chat()`, `ollama.generate()`, and `AsyncClient` methods for LLM call tracing with `llm.provider: "ollama"` (VL-47)
+- feat(frontend): Framework badges in trace graph — color-coded pills (LC, Crew, AG, LI, Oll) on SpanNode based on `agent.framework` attribute (VL-48)
 - feat(sdk): CrewAI auto-instrumentation — zero-config tracing via `Crew.kickoff()` patching with callback injection for task and agent step spans (VL-44)
 - feat(sdk-js): Add JS SDK examples — `basic-agent.ts` (OpenAI + observe) and `vercel-ai-agent.ts` (generateText + streamText) (VL-50)
 - docs(sdk): Document OTLP ingestion endpoint (`POST /v1/otlp/traces`) in SDK README with payload format, curl example, and attribute reference (VL-49)

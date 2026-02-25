@@ -72,6 +72,7 @@ export function makeGraphData(nodeCount = 2): GraphData {
       duration_ms: 100,
       cost_usd: 0.001,
       sequence: i + 1,
+      framework: null,
     },
     position: { x: 0, y: i * 100 },
   }));
