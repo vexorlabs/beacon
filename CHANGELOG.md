@@ -10,6 +10,8 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(backend+frontend): A/B prompt testing — `POST /v1/playground/compare-prompts` runs multiple prompts against one model in parallel, with ComparePromptsView sub-mode in the Playground (VL-63)
+- feat(backend+frontend): Trace comparison AI enhancements — "AI Compare" button with divergence highlighting (orange pulsing rings), "Mark as Baseline" toggle, and "Compare vs Baseline" one-click navigation via `GET /v1/traces/baseline` (VL-62)
 - feat(sdk): AutoGen auto-instrumentation — patches `ConversableAgent.generate_reply()` and `GroupChat.run()` for agent step tracing with `agent.framework: "autogen"` (VL-45)
 - feat(sdk): LlamaIndex auto-instrumentation — patches `BaseQueryEngine.query()` and `BaseRetriever.retrieve()` for query/retrieval tracing with `agent.framework: "llamaindex"` (VL-46)
 - feat(sdk): Ollama native client auto-instrumentation — patches `ollama.chat()`, `ollama.generate()`, and `AsyncClient` methods for LLM call tracing with `llm.provider: "ollama"` (VL-47)
