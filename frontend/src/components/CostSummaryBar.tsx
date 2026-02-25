@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Download,
@@ -43,20 +43,14 @@ export default function CostSummaryBar({
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
   const updateTraceTags = useTraceStore((s) => s.updateTraceTags);
   const [baselineTrace, setBaselineTrace] = useState<TraceSummary | null>(null);
-  const prevKeyRef = useRef<string | null>(null);
 
   const isBaseline = selectedTrace?.tags?.baseline === "true";
   const traceId = selectedTrace?.trace_id ?? null;
   const lookupKey = traceId && !isBaseline ? traceId : null;
 
   // Look up the baseline trace when the selected trace changes.
-  // Clear stale results by tracking the lookup key in a ref.
   useEffect(() => {
-    if (prevKeyRef.current !== lookupKey) {
-      prevKeyRef.current = lookupKey;
-    }
     if (!lookupKey) {
-      // Clearing is handled by the derived `effectiveBaseline` below.
       return;
     }
     let cancelled = false;

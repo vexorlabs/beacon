@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SpanType(str, enum.Enum):
@@ -249,7 +249,7 @@ class PlaygroundCompareResponse(BaseModel):
 class PlaygroundComparePromptsRequest(BaseModel):
     model: str
     system_prompt: str | None = None
-    prompts: list[str]
+    prompts: list[str] = Field(min_length=2, max_length=10)
 
 
 class PromptCompareResultItem(BaseModel):
