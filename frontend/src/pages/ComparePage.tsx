@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Link, Unlink } from "lucide-react";
+import { ArrowLeft, Link, Unlink, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import type { Viewport } from "@xyflow/react";
 import CompareGraph from "@/components/CompareGraph";
 import CompareMetrics from "@/components/CompareMetrics";
@@ -23,6 +23,13 @@ export default function ComparePage() {
   const loadComparison = useCompareStore((s) => s.loadComparison);
   const reset = useCompareStore((s) => s.reset);
   const clearSelection = useCompareStore((s) => s.clearSelection);
+
+  // AI comparison state
+  const divergencePoints = useCompareStore((s) => s.divergencePoints);
+  const compareSummary = useCompareStore((s) => s.compareSummary);
+  const isAnalyzingComparison = useCompareStore((s) => s.isAnalyzingComparison);
+  const analysisError = useCompareStore((s) => s.analysisError);
+  const runCompareAnalysis = useCompareStore((s) => s.runCompareAnalysis);
 
   // Viewport sync — off by default
   const [syncEnabled, setSyncEnabled] = useState(false);
@@ -54,6 +61,22 @@ export default function ComparePage() {
     }
     return () => reset();
   }, [traceIdA, traceIdB, loadComparison, reset, clearSelection]);
+
+  // Compute divergence span IDs per side
+  const divergenceSpanIdsA = useMemo(
+    () =>
+      divergencePoints
+        .map((dp) => dp.span_a)
+        .filter((id): id is string => id !== null),
+    [divergencePoints],
+  );
+  const divergenceSpanIdsB = useMemo(
+    () =>
+      divergencePoints
+        .map((dp) => dp.span_b)
+        .filter((id): id is string => id !== null),
+    [divergencePoints],
+  );
 
   if (error) {
     return (
@@ -99,8 +122,60 @@ export default function ComparePage() {
               </span>
             </>
           )}
+
+          {/* AI Compare button */}
+          {traceIdA && traceIdB && !isLoading && (
+            <button
+              type="button"
+              onClick={() => void runCompareAnalysis(traceIdA, traceIdB)}
+              disabled={isAnalyzingComparison}
+              title="AI-powered comparison analysis"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors disabled:opacity-50"
+            >
+              {isAnalyzingComparison ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Sparkles size={12} />
+              )}
+              AI Compare
+            </button>
+          )}
         </div>
       </div>
+
+      {/* AI analysis summary */}
+      {compareSummary && (
+        <div className="px-4 py-3 border-b border-border bg-orange-950/20">
+          <div className="flex items-start gap-2">
+            <Sparkles size={14} className="text-orange-400 mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[13px] text-foreground leading-relaxed">
+                {compareSummary}
+              </p>
+              {divergencePoints.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-[11px] font-medium text-orange-300 uppercase tracking-wide">
+                    Divergence Points
+                  </p>
+                  {divergencePoints.map((dp, i) => (
+                    <p key={i} className="text-xs text-muted-foreground">
+                      {dp.description}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analysis error */}
+      {analysisError && (
+        <div className="px-4 py-2 border-b border-border bg-red-950/20 flex items-center gap-2 text-xs text-red-400">
+          <AlertCircle size={12} />
+          {analysisError}
+        </div>
+      )}
 
       {/* Metrics diff */}
       {traceA && traceB && <CompareMetrics traceA={traceA} traceB={traceB} />}
@@ -124,6 +199,7 @@ export default function ComparePage() {
               externalViewport={
                 syncEnabled && lastSource === "B" ? syncViewport : null
               }
+              divergenceSpanIds={divergenceSpanIdsA}
             />
           </div>
         </div>
@@ -159,6 +235,7 @@ export default function ComparePage() {
               externalViewport={
                 syncEnabled && lastSource === "A" ? syncViewport : null
               }
+              divergenceSpanIds={divergenceSpanIdsB}
             />
           </div>
         </div>

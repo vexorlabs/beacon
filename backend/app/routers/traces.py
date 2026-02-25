@@ -23,6 +23,7 @@ from app.schemas import (
     TraceDetailResponse,
     TraceExportData,
     TraceImportResponse,
+    TraceSummary,
     TracesResponse,
 )
 from app.services import export_service, import_service, trace_service
@@ -119,6 +120,15 @@ async def import_trace(
             status_code=400, detail=f"Import failed: {exc}"
         ) from exc
     return TraceImportResponse(trace_id=trace_id, span_count=span_count)
+
+
+@router.get("/baseline", response_model=TraceSummary | None)
+async def find_baseline(
+    db: Annotated[Session, Depends(get_db)],
+    exclude: str | None = Query(default=None),
+) -> TraceSummary | None:
+    """Find the most recent trace tagged as baseline."""
+    return trace_service.find_baseline_trace(db, exclude_trace_id=exclude)
 
 
 # --- Single-trace endpoints ---

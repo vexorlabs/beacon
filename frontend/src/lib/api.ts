@@ -2,12 +2,14 @@ import type {
   AnomalyDetectionResponse,
   Annotation,
   ApiKeyStatus,
+  CompareAnalysisResponse,
   CostOptimizationResponse,
   DemoRunResponse,
   DemoScenario,
   ErrorPatternsResponse,
   GraphData,
   PlaygroundChatResponse,
+  PlaygroundComparePromptsResponse,
   PlaygroundCompareResponse,
   PlaygroundMessage,
   PromptSuggestionsResponse,
@@ -23,6 +25,7 @@ import type {
   TraceDetail,
   TraceExportData,
   TraceImportResponse,
+  TraceSummary,
   TraceSummaryAnalysisResponse,
   TracesResponse,
   TrendsResponse,
@@ -124,6 +127,18 @@ export function playgroundCompare(request: {
   models: string[];
 }): Promise<PlaygroundCompareResponse> {
   return apiFetch<PlaygroundCompareResponse>("/playground/compare", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export function playgroundComparePrompts(request: {
+  model: string;
+  system_prompt?: string;
+  prompts: string[];
+}): Promise<PlaygroundComparePromptsResponse> {
+  return apiFetch<PlaygroundComparePromptsResponse>("/playground/compare-prompts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -249,6 +264,26 @@ export function summarizeTrace(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ trace_id: traceId }),
   });
+}
+
+export function compareAnalysis(
+  traceIdA: string,
+  traceIdB: string,
+): Promise<CompareAnalysisResponse> {
+  return apiFetch<CompareAnalysisResponse>("/analysis/compare", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_id_a: traceIdA, trace_id_b: traceIdB }),
+  });
+}
+
+// --- Baseline ---
+
+export function findBaselineTrace(
+  excludeTraceId?: string,
+): Promise<TraceSummary | null> {
+  const qs = excludeTraceId ? `?exclude=${excludeTraceId}` : "";
+  return apiFetch<TraceSummary | null>(`/traces/baseline${qs}`);
 }
 
 // --- Export / Import ---

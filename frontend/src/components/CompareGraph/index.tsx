@@ -25,6 +25,7 @@ interface CompareGraphProps {
   label: string;
   onViewportChange?: (viewport: Viewport) => void;
   externalViewport?: Viewport | null;
+  divergenceSpanIds?: string[];
 }
 
 function CompareGraphInner({
@@ -33,6 +34,7 @@ function CompareGraphInner({
   label,
   onViewportChange,
   externalViewport,
+  divergenceSpanIds,
 }: CompareGraphProps) {
   const { setViewport } = useReactFlow();
   const isSyncingRef = useRef(false);
@@ -46,6 +48,18 @@ function CompareGraphInner({
     rawEdges,
   );
 
+  const enrichedNodes = useMemo(() => {
+    if (!divergenceSpanIds || divergenceSpanIds.length === 0) return laidOutNodes;
+    const idSet = new Set(divergenceSpanIds);
+    return laidOutNodes.map((node) => {
+      const data = node.data as SpanNodeData;
+      if (idSet.has(data.span_id)) {
+        return { ...node, data: { ...data, isDivergent: true } };
+      }
+      return node;
+    });
+  }, [laidOutNodes, divergenceSpanIds]);
+
   const styledEdges = useMemo(() => {
     return layoutEdges.map((edge) => ({
       ...edge,
@@ -57,8 +71,8 @@ function CompareGraphInner({
   const [localNodes, setLocalNodes] = useState<Node[]>([]);
 
   useEffect(() => {
-    setLocalNodes(laidOutNodes);
-  }, [laidOutNodes]);
+    setLocalNodes(enrichedNodes);
+  }, [enrichedNodes]);
 
   const onNodesChange: OnNodesChange = useCallback((changes) => {
     setLocalNodes((nds) => applyNodeChanges(changes, nds));

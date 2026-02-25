@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { getTrace, getTraceGraph } from "@/lib/api";
-import type { GraphData, TraceDetail } from "@/lib/types";
+import { getTrace, getTraceGraph, compareAnalysis } from "@/lib/api";
+import type { DivergencePoint, GraphData, TraceDetail } from "@/lib/types";
 
 interface CompareStore {
   compareMode: boolean;
@@ -13,14 +13,21 @@ interface CompareStore {
   isLoading: boolean;
   error: string | null;
 
+  // AI comparison
+  divergencePoints: DivergencePoint[];
+  compareSummary: string | null;
+  isAnalyzingComparison: boolean;
+  analysisError: string | null;
+
   toggleCompareMode: () => void;
   toggleTraceSelection: (traceId: string) => void;
   clearSelection: () => void;
   loadComparison: (traceIdA: string, traceIdB: string) => Promise<void>;
+  runCompareAnalysis: (traceIdA: string, traceIdB: string) => Promise<void>;
   reset: () => void;
 }
 
-export const useCompareStore = create<CompareStore>((set, get) => ({
+export const useCompareStore = create<CompareStore>((set) => ({
   compareMode: false,
   selectedTraceIds: [],
 
@@ -31,21 +38,27 @@ export const useCompareStore = create<CompareStore>((set, get) => ({
   isLoading: false,
   error: null,
 
+  divergencePoints: [],
+  compareSummary: null,
+  isAnalyzingComparison: false,
+  analysisError: null,
+
   toggleCompareMode: () => {
-    const { compareMode } = get();
-    set({
-      compareMode: !compareMode,
+    set((state) => ({
+      compareMode: !state.compareMode,
       selectedTraceIds: [],
-    });
+    }));
   },
 
   toggleTraceSelection: (traceId: string) => {
-    const { selectedTraceIds } = get();
-    if (selectedTraceIds.includes(traceId)) {
-      set({ selectedTraceIds: selectedTraceIds.filter((id) => id !== traceId) });
-    } else if (selectedTraceIds.length < 2) {
-      set({ selectedTraceIds: [...selectedTraceIds, traceId] });
-    }
+    set((state) => {
+      if (state.selectedTraceIds.includes(traceId)) {
+        return { selectedTraceIds: state.selectedTraceIds.filter((id) => id !== traceId) };
+      } else if (state.selectedTraceIds.length < 2) {
+        return { selectedTraceIds: [...state.selectedTraceIds, traceId] };
+      }
+      return state;
+    });
   },
 
   clearSelection: () => {
@@ -64,6 +77,9 @@ export const useCompareStore = create<CompareStore>((set, get) => ({
       traceB: null,
       graphDataA: null,
       graphDataB: null,
+      divergencePoints: [],
+      compareSummary: null,
+      analysisError: null,
     });
     try {
       const [traceA, traceB, graphDataA, graphDataB] = await Promise.all([
@@ -82,6 +98,28 @@ export const useCompareStore = create<CompareStore>((set, get) => ({
     }
   },
 
+  runCompareAnalysis: async (traceIdA: string, traceIdB: string) => {
+    set({
+      isAnalyzingComparison: true,
+      analysisError: null,
+      divergencePoints: [],
+      compareSummary: null,
+    });
+    try {
+      const result = await compareAnalysis(traceIdA, traceIdB);
+      set({
+        divergencePoints: result.divergence_points,
+        compareSummary: result.summary,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Analysis failed";
+      set({ analysisError: message });
+    } finally {
+      set({ isAnalyzingComparison: false });
+    }
+  },
+
   reset: () => {
     set({
       traceA: null,
@@ -90,6 +128,10 @@ export const useCompareStore = create<CompareStore>((set, get) => ({
       graphDataB: null,
       isLoading: false,
       error: null,
+      divergencePoints: [],
+      compareSummary: null,
+      isAnalyzingComparison: false,
+      analysisError: null,
     });
   },
 }));

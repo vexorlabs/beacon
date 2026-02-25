@@ -756,6 +756,79 @@ Response `422 Unprocessable Entity` for request validation errors.
 
 Response `502 Bad Gateway` for upstream LLM failure.
 
+#### `POST /v1/playground/compare-prompts`
+
+Run multiple prompts against one model (A/B test).
+
+Request:
+
+```json
+{
+  "model": "gpt-4.1",
+  "system_prompt": "You are concise.",
+  "prompts": ["Explain retries.", "Describe retry patterns."]
+}
+```
+
+`system_prompt` is optional. `prompts` must contain 2–10 items.
+
+Response `200 OK`:
+
+```json
+{
+  "trace_id": "4c72c0f1-...",
+  "test_id": "a1b2c3d4-...",
+  "results": [
+    {
+      "prompt": "Explain retries.",
+      "completion": "...",
+      "metrics": {
+        "input_tokens": 120,
+        "output_tokens": 40,
+        "cost_usd": 0.0007,
+        "latency_ms": 820.5
+      }
+    }
+  ]
+}
+```
+
+Response `400 Bad Request` if provider config is missing.
+
+Response `422 Unprocessable Entity` for request validation errors (e.g., fewer than 2 or more than 10 prompts).
+
+Response `502 Bad Gateway` for upstream LLM failure.
+
+---
+
+### Traces — Baseline
+
+#### `GET /v1/traces/baseline`
+
+Find the most recent trace tagged as baseline.
+
+Query params:
+- `exclude` (string, optional) — trace ID to exclude from results
+
+Response `200 OK` (baseline found):
+
+```json
+{
+  "trace_id": "7c9e6679-...",
+  "name": "My Agent Run",
+  "start_time": 1739800000.0,
+  "end_time": 1739800045.3,
+  "duration_ms": 45300.0,
+  "span_count": 23,
+  "status": "ok",
+  "total_cost_usd": 0.042,
+  "total_tokens": 12450,
+  "tags": { "baseline": "true" }
+}
+```
+
+Response `200 OK` (no baseline found): `null`
+
 ---
 
 ### Demo Agents
