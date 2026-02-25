@@ -232,8 +232,9 @@ def patch() -> None:
             _original_a_generate_reply
         )
 
-    _original_run_chat = GroupChat.run
-    GroupChat.run = _make_run_chat_wrapper(_original_run_chat)
+    if hasattr(GroupChat, "run"):
+        _original_run_chat = GroupChat.run
+        GroupChat.run = _make_run_chat_wrapper(_original_run_chat)
 
     if hasattr(GroupChat, "a_run"):
         _original_a_run_chat = GroupChat.a_run
@@ -260,7 +261,7 @@ def unpatch() -> None:
         ConversableAgent.generate_reply = _original_generate_reply
     if _original_a_generate_reply is not None and hasattr(ConversableAgent, "a_generate_reply"):
         ConversableAgent.a_generate_reply = _original_a_generate_reply
-    if _original_run_chat is not None:
+    if _original_run_chat is not None and hasattr(GroupChat, "run"):
         GroupChat.run = _original_run_chat
     if _original_a_run_chat is not None and hasattr(GroupChat, "a_run"):
         GroupChat.a_run = _original_a_run_chat

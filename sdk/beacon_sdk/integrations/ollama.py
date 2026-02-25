@@ -65,13 +65,13 @@ def _apply_response_attrs(span: Any, response: Any) -> None:
         span.set_attribute("llm.completion", str(response["response"])[:50_000])
 
     # Token counts
-    prompt_tokens = response.get("prompt_eval_count", 0)
-    completion_tokens = response.get("eval_count", 0)
-    if prompt_tokens:
+    prompt_tokens = response.get("prompt_eval_count") or 0
+    completion_tokens = response.get("eval_count") or 0
+    if prompt_tokens > 0:
         span.set_attribute("llm.tokens.input", prompt_tokens)
-    if completion_tokens:
+    if completion_tokens > 0:
         span.set_attribute("llm.tokens.output", completion_tokens)
-    if prompt_tokens or completion_tokens:
+    if prompt_tokens > 0 or completion_tokens > 0:
         span.set_attribute("llm.tokens.total", prompt_tokens + completion_tokens)
 
     # Model name from response (may differ from request)

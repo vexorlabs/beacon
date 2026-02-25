@@ -212,6 +212,43 @@ class TestGenerate:
 
 
 # ---------------------------------------------------------------------------
+# Error paths
+# ---------------------------------------------------------------------------
+
+
+class TestErrors:
+    def test_chat_error_creates_error_span(
+        self, _mock_ollama: Any, exporter: InMemoryExporter
+    ) -> None:
+        ollama_patch.patch()
+        with pytest.raises(RuntimeError, match="Ollama chat failed"):
+            _mock_ollama.chat(model="llama3.2", _should_error=True)
+
+        error_spans = [
+            s
+            for s in exporter.spans
+            if s.name.startswith("ollama.chat") and s.status == SpanStatus.ERROR
+        ]
+        assert len(error_spans) == 1
+        assert "Ollama chat failed" in (error_spans[0].error_message or "")
+
+    def test_generate_error_creates_error_span(
+        self, _mock_ollama: Any, exporter: InMemoryExporter
+    ) -> None:
+        ollama_patch.patch()
+        with pytest.raises(RuntimeError, match="Ollama generate failed"):
+            _mock_ollama.generate(model="llama3.2", _should_error=True)
+
+        error_spans = [
+            s
+            for s in exporter.spans
+            if s.name.startswith("ollama.generate") and s.status == SpanStatus.ERROR
+        ]
+        assert len(error_spans) == 1
+        assert "Ollama generate failed" in (error_spans[0].error_message or "")
+
+
+# ---------------------------------------------------------------------------
 # Async client
 # ---------------------------------------------------------------------------
 
