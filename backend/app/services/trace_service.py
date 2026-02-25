@@ -109,6 +109,7 @@ def get_trace_graph(db: Session, trace_id: str) -> GraphData | None:
             else None
         )
         cost_usd = attrs.get("llm.cost_usd")
+        framework = attrs.get("agent.framework")
 
         nodes.append(GraphNode(
             id=span.span_id,
@@ -121,6 +122,7 @@ def get_trace_graph(db: Session, trace_id: str) -> GraphData | None:
                 duration_ms=duration_ms,
                 cost_usd=cost_usd,
                 sequence=seq,
+                framework=framework,
             ),
             position={"x": 0, "y": 0},
         ))

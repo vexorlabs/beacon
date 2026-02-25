@@ -61,6 +61,7 @@ export interface SpanNodeData {
   duration_ms: number | null;
   cost_usd: number | null;
   sequence: number;
+  framework: string | null;
 }
 
 export interface GraphNode {

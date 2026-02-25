@@ -100,6 +100,7 @@ class GraphNodeData(BaseModel):
     duration_ms: float | None
     cost_usd: float | None
     sequence: int
+    framework: str | None = None
 
 
 class GraphNode(BaseModel):
