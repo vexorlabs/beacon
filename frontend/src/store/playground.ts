@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { playgroundChat, playgroundCompare } from "@/lib/api";
+import { playgroundChat, playgroundCompare, playgroundComparePrompts } from "@/lib/api";
 import type {
   CompareResultItem,
   PlaygroundChatMetrics,
   PlaygroundMessage,
+  PromptCompareResultItem,
 } from "@/lib/types";
 
 export interface ChatMessage extends PlaygroundMessage {
@@ -20,19 +21,29 @@ interface PlaygroundStore {
   isSending: boolean;
   error: string | null;
 
-  // Compare state
+  // Compare (models) state
   compareMode: boolean;
+  compareSubMode: "models" | "prompts";
   compareModels: string[];
   compareResults: CompareResultItem[] | null;
   compareTraceId: string | null;
   isComparing: boolean;
 
+  // Compare (prompts) state
+  promptCompareModel: string;
+  promptCompareResults: PromptCompareResultItem[] | null;
+  promptCompareTraceId: string | null;
+  isComparingPrompts: boolean;
+
   // Actions
   sendMessage: (content: string) => Promise<void>;
   runComparison: (content: string) => Promise<void>;
+  runPromptComparison: (prompts: string[]) => Promise<void>;
   setSelectedModel: (model: string) => void;
   setSystemPrompt: (prompt: string) => void;
   setCompareMode: (enabled: boolean) => void;
+  setCompareSubMode: (mode: "models" | "prompts") => void;
+  setPromptCompareModel: (model: string) => void;
   toggleCompareModel: (model: string) => void;
   clearConversation: () => void;
   clearError: () => void;
@@ -48,10 +59,16 @@ export const usePlaygroundStore = create<PlaygroundStore>((set, get) => ({
   error: null,
 
   compareMode: false,
+  compareSubMode: "models",
   compareModels: ["gpt-4.1", "claude-sonnet-4-6"],
   compareResults: null,
   compareTraceId: null,
   isComparing: false,
+
+  promptCompareModel: "claude-sonnet-4-6",
+  promptCompareResults: null,
+  promptCompareTraceId: null,
+  isComparingPrompts: false,
 
   sendMessage: async (content: string) => {
     const { selectedModel, systemPrompt, messages, conversationId } = get();
@@ -124,12 +141,47 @@ export const usePlaygroundStore = create<PlaygroundStore>((set, get) => ({
     }
   },
 
+  runPromptComparison: async (prompts: string[]) => {
+    const { promptCompareModel, systemPrompt } = get();
+
+    set({
+      isComparingPrompts: true,
+      promptCompareResults: null,
+      promptCompareTraceId: null,
+      error: null,
+    });
+
+    try {
+      const res = await playgroundComparePrompts({
+        model: promptCompareModel,
+        system_prompt: systemPrompt || undefined,
+        prompts,
+      });
+
+      set({
+        promptCompareResults: res.results,
+        promptCompareTraceId: res.trace_id,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "A/B test failed";
+      set({ error: message });
+    } finally {
+      set({ isComparingPrompts: false });
+    }
+  },
+
   setSelectedModel: (model: string) => set({ selectedModel: model }),
 
   setSystemPrompt: (prompt: string) => set({ systemPrompt: prompt }),
 
   setCompareMode: (enabled: boolean) =>
     set({ compareMode: enabled, compareResults: null, compareTraceId: null }),
+
+  setCompareSubMode: (mode: "models" | "prompts") =>
+    set({ compareSubMode: mode }),
+
+  setPromptCompareModel: (model: string) =>
+    set({ promptCompareModel: model }),
 
   toggleCompareModel: (model: string) =>
     set((state) => {
@@ -146,6 +198,8 @@ export const usePlaygroundStore = create<PlaygroundStore>((set, get) => ({
       traceId: null,
       compareResults: null,
       compareTraceId: null,
+      promptCompareResults: null,
+      promptCompareTraceId: null,
       error: null,
     }),
 

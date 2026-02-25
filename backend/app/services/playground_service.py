@@ -19,9 +19,12 @@ from app.schemas import (
     PlaygroundChatMetrics,
     PlaygroundChatRequest,
     PlaygroundChatResponse,
+    PlaygroundComparePromptsRequest,
+    PlaygroundComparePromptsResponse,
     PlaygroundCompareRequest,
     PlaygroundCompareResponse,
     PlaygroundMessage,
+    PromptCompareResultItem,
     SpanCreate,
     SpanStatus,
     SpanType,
@@ -417,3 +420,175 @@ async def compare(
     await _broadcast_span(db, parent_end)
 
     return PlaygroundCompareResponse(trace_id=trace_id, results=results)
+
+
+async def compare_prompts(
+    db: Session,
+    request: PlaygroundComparePromptsRequest,
+) -> PlaygroundComparePromptsResponse:
+    """Send different prompts to the same model in parallel (A/B test)."""
+    if len(request.prompts) < 2:
+        raise ValueError("A/B testing requires at least 2 prompts")
+
+    provider = provider_for_model(request.model)
+    api_key = settings_service.get_api_key(provider)
+    if not api_key:
+        raise ValueError(
+            f"No API key configured for {provider} (needed by {request.model}). "
+            "Add one in Settings."
+        )
+
+    trace_id = str(uuid4())
+    test_id = str(uuid4())
+    now = time.time()
+
+    # Create parent span
+    parent_span_id = str(uuid4())
+    parent_span = SpanCreate(
+        span_id=parent_span_id,
+        trace_id=trace_id,
+        parent_span_id=None,
+        span_type=SpanType.AGENT_STEP,
+        name=f"A/B Test: {request.model}",
+        status=SpanStatus.UNSET,
+        start_time=now,
+        attributes={"playground": True, "playground.ab_test": True},
+    )
+    await _broadcast_trace_created(trace_id, f"A/B Test: {request.model}", now)
+    await _broadcast_span(db, parent_span)
+
+    # Create start spans for each prompt
+    span_ids: list[str] = []
+    messages_per_prompt: list[list[dict[str, str]]] = []
+    for i, prompt_text in enumerate(request.prompts):
+        span_id = str(uuid4())
+        span_ids.append(span_id)
+        msgs = _messages_to_dicts(
+            [PlaygroundMessage(role="user", content=prompt_text)],
+            request.system_prompt,
+        )
+        messages_per_prompt.append(msgs)
+        start_span = SpanCreate(
+            span_id=span_id,
+            trace_id=trace_id,
+            parent_span_id=parent_span_id,
+            span_type=SpanType.LLM_CALL,
+            name=f"{request.model} (Prompt {i + 1})",
+            status=SpanStatus.UNSET,
+            start_time=now,
+            attributes={
+                "llm.provider": provider,
+                "llm.model": request.model,
+                "llm.prompt": json.dumps(msgs),
+                "llm.temperature": 1.0,
+            },
+        )
+        await _broadcast_span(db, start_span)
+
+    # Call model for all prompts in parallel
+    tasks = [
+        _call_model(provider, api_key, request.model, msgs)
+        for msgs in messages_per_prompt
+    ]
+    raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Process results and update spans
+    results: list[PromptCompareResultItem] = []
+    end_time = time.time()
+
+    for i, prompt_text in enumerate(request.prompts):
+        raw = raw_results[i]
+        if isinstance(raw, Exception):
+            error_span = SpanCreate(
+                span_id=span_ids[i],
+                trace_id=trace_id,
+                parent_span_id=parent_span_id,
+                span_type=SpanType.LLM_CALL,
+                name=f"{request.model} (Prompt {i + 1})",
+                status=SpanStatus.ERROR,
+                error_message=str(raw),
+                start_time=now,
+                end_time=end_time,
+                attributes={
+                    "llm.provider": provider,
+                    "llm.model": request.model,
+                    "llm.prompt": json.dumps(messages_per_prompt[i]),
+                },
+            )
+            await _broadcast_span(db, error_span)
+            results.append(
+                PromptCompareResultItem(
+                    prompt=prompt_text,
+                    completion=f"Error: {raw}",
+                    metrics=PlaygroundChatMetrics(
+                        input_tokens=0,
+                        output_tokens=0,
+                        cost_usd=0,
+                        latency_ms=0,
+                    ),
+                )
+            )
+            continue
+
+        completion, in_tok, out_tok, latency_ms = raw
+        cost_usd = estimate_cost(request.model, in_tok, out_tok)
+
+        end_span = SpanCreate(
+            span_id=span_ids[i],
+            trace_id=trace_id,
+            parent_span_id=parent_span_id,
+            span_type=SpanType.LLM_CALL,
+            name=f"{request.model} (Prompt {i + 1})",
+            status=SpanStatus.OK,
+            start_time=now,
+            end_time=end_time,
+            attributes={
+                "llm.provider": provider,
+                "llm.model": request.model,
+                "llm.prompt": json.dumps(messages_per_prompt[i]),
+                "llm.completion": completion,
+                "llm.tokens.input": in_tok,
+                "llm.tokens.output": out_tok,
+                "llm.tokens.total": in_tok + out_tok,
+                "llm.cost_usd": cost_usd,
+                "llm.temperature": 1.0,
+                "llm.finish_reason": "stop",
+            },
+        )
+        await _broadcast_span(db, end_span)
+
+        results.append(
+            PromptCompareResultItem(
+                prompt=prompt_text,
+                completion=completion,
+                metrics=PlaygroundChatMetrics(
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    cost_usd=cost_usd,
+                    latency_ms=round(latency_ms, 1),
+                ),
+            )
+        )
+
+    # Close parent span
+    parent_status = (
+        SpanStatus.ERROR
+        if any(isinstance(r, Exception) for r in raw_results)
+        else SpanStatus.OK
+    )
+    parent_end = SpanCreate(
+        span_id=parent_span_id,
+        trace_id=trace_id,
+        parent_span_id=None,
+        span_type=SpanType.AGENT_STEP,
+        name=f"A/B Test: {request.model}",
+        status=parent_status,
+        start_time=now,
+        end_time=end_time,
+        attributes={"playground": True, "playground.ab_test": True},
+    )
+    await _broadcast_span(db, parent_end)
+
+    return PlaygroundComparePromptsResponse(
+        trace_id=trace_id, test_id=test_id, results=results
+    )

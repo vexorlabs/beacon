@@ -246,6 +246,24 @@ class PlaygroundCompareResponse(BaseModel):
     results: list[CompareResultItem]
 
 
+class PlaygroundComparePromptsRequest(BaseModel):
+    model: str
+    system_prompt: str | None = None
+    prompts: list[str]
+
+
+class PromptCompareResultItem(BaseModel):
+    prompt: str
+    completion: str
+    metrics: PlaygroundChatMetrics
+
+
+class PlaygroundComparePromptsResponse(BaseModel):
+    trace_id: str
+    test_id: str
+    results: list[PromptCompareResultItem]
+
+
 # --- Demo agent schemas ---
 
 

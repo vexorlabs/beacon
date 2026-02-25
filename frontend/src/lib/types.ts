@@ -62,6 +62,7 @@ export interface SpanNodeData {
   cost_usd: number | null;
   sequence: number;
   framework: string | null;
+  isDivergent?: boolean;
 }
 
 export interface GraphNode {
@@ -144,6 +145,18 @@ export interface CompareResultItem {
 export interface PlaygroundCompareResponse {
   trace_id: string;
   results: CompareResultItem[];
+}
+
+export interface PromptCompareResultItem {
+  prompt: string;
+  completion: string;
+  metrics: PlaygroundChatMetrics;
+}
+
+export interface PlaygroundComparePromptsResponse {
+  trace_id: string;
+  test_id: string;
+  results: PromptCompareResultItem[];
 }
 
 // --- Demo agent types ---
@@ -266,6 +279,27 @@ export interface ErrorPattern {
 
 export interface ErrorPatternsResponse {
   patterns: ErrorPattern[];
+}
+
+export interface DivergencePoint {
+  span_a: string | null;
+  span_b: string | null;
+  description: string;
+}
+
+export interface CompareAnalysisMetricDiff {
+  cost_diff_usd: number;
+  duration_diff_ms: number;
+  token_diff: number;
+  span_count_diff: number;
+}
+
+export interface CompareAnalysisResponse {
+  trace_id_a: string;
+  trace_id_b: string;
+  divergence_points: DivergencePoint[];
+  metric_diff: CompareAnalysisMetricDiff;
+  summary: string;
 }
 
 export interface KeyEvent {

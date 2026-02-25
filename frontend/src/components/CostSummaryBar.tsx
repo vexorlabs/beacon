@@ -1,6 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Download,
+  Flag,
+  GitCompareArrows,
   Maximize2,
   Minimize2,
 } from "lucide-react";
@@ -11,7 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTraceStore } from "@/store/trace";
-import { exportTrace } from "@/lib/api";
+import { exportTrace, findBaselineTrace } from "@/lib/api";
+import type { TraceSummary } from "@/lib/types";
 
 export type ViewMode = "graph" | "timeline";
 
@@ -35,7 +39,51 @@ export default function CostSummaryBar({
   expanded,
   onToggleExpand,
 }: CostSummaryBarProps) {
+  const navigate = useNavigate();
   const selectedTrace = useTraceStore((s) => s.selectedTrace);
+  const updateTraceTags = useTraceStore((s) => s.updateTraceTags);
+  const [baselineTrace, setBaselineTrace] = useState<TraceSummary | null>(null);
+  const prevKeyRef = useRef<string | null>(null);
+
+  const isBaseline = selectedTrace?.tags?.baseline === "true";
+  const traceId = selectedTrace?.trace_id ?? null;
+  const lookupKey = traceId && !isBaseline ? traceId : null;
+
+  // Look up the baseline trace when the selected trace changes.
+  // Clear stale results by tracking the lookup key in a ref.
+  useEffect(() => {
+    if (prevKeyRef.current !== lookupKey) {
+      prevKeyRef.current = lookupKey;
+    }
+    if (!lookupKey) {
+      // Clearing is handled by the derived `effectiveBaseline` below.
+      return;
+    }
+    let cancelled = false;
+    void findBaselineTrace(lookupKey).then((result) => {
+      if (!cancelled) setBaselineTrace(result);
+    });
+    return () => { cancelled = true; };
+  }, [lookupKey]);
+
+  // Only show baseline if lookup is still relevant
+  const effectiveBaseline = lookupKey ? baselineTrace : null;
+
+  const handleToggleBaseline = useCallback(() => {
+    if (!selectedTrace) return;
+    const newTags = { ...selectedTrace.tags };
+    if (isBaseline) {
+      delete newTags.baseline;
+    } else {
+      newTags.baseline = "true";
+    }
+    void updateTraceTags(selectedTrace.trace_id, newTags);
+  }, [selectedTrace, isBaseline, updateTraceTags]);
+
+  const handleCompareBaseline = useCallback(() => {
+    if (!selectedTrace || !effectiveBaseline) return;
+    navigate(`/compare/${effectiveBaseline.trace_id}/${selectedTrace.trace_id}`);
+  }, [selectedTrace, effectiveBaseline, navigate]);
 
   const handleExport = useCallback(
     async (format: "json" | "otel" | "csv") => {
@@ -83,31 +131,62 @@ export default function CostSummaryBar({
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
         {selectedTrace && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <>
+            {/* Baseline toggle */}
+            <button
+              type="button"
+              onClick={handleToggleBaseline}
+              title={isBaseline ? "Remove baseline tag" : "Mark as baseline"}
+              className={`flex items-center justify-center gap-1 h-7 rounded-md px-2 text-[11px] transition-colors ${
+                isBaseline
+                  ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+              }`}
+            >
+              <Flag size={12} />
+              {isBaseline ? "Baseline" : ""}
+            </button>
+
+            {/* Compare vs baseline */}
+            {!isBaseline && effectiveBaseline && (
               <button
                 type="button"
-                title="Export trace"
-                className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                onClick={handleCompareBaseline}
+                title={`Compare against baseline: ${effectiveBaseline.name}`}
+                className="flex items-center justify-center gap-1 h-7 rounded-md px-2 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
               >
-                <Download size={14} />
+                <GitCompareArrows size={12} />
+                <span className="hidden xl:inline">vs Baseline</span>
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => void handleExport("json")}>
-                <Download size={13} className="mr-2" />
-                Export JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport("otel")}>
-                <Download size={13} className="mr-2" />
-                Export OTEL JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport("csv")}>
-                <Download size={13} className="mr-2" />
-                Export CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+
+            {/* Export dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  title="Export trace"
+                  className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                >
+                  <Download size={14} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => void handleExport("json")}>
+                  <Download size={13} className="mr-2" />
+                  Export JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleExport("otel")}>
+                  <Download size={13} className="mr-2" />
+                  Export OTEL JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                  <Download size={13} className="mr-2" />
+                  Export CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         )}
         <button
           type="button"

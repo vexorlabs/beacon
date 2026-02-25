@@ -211,6 +211,30 @@ def update_trace_tags(
     return _trace_to_summary(trace)
 
 
+def find_baseline_trace(
+    db: Session, *, exclude_trace_id: str | None = None
+) -> TraceSummary | None:
+    """Find the most recent trace tagged as baseline."""
+    traces = (
+        db.execute(
+            select(models.Trace)
+            .order_by(models.Trace.created_at.desc())
+            .limit(100)
+        )
+        .scalars()
+        .all()
+    )
+    for trace in traces:
+        tags: dict[str, str] = {}
+        if isinstance(trace.tags, str):
+            tags = json.loads(trace.tags)
+        elif isinstance(trace.tags, dict):
+            tags = trace.tags
+        if tags.get("baseline") == "true" and trace.trace_id != exclude_trace_id:
+            return _trace_to_summary(trace)
+    return None
+
+
 def _trace_to_summary(trace: models.Trace) -> TraceSummary:
     duration_ms = (
         (trace.end_time - trace.start_time) * 1000

@@ -30,11 +30,14 @@ export default function SpanNode({ data }: NodeProps<SpanNodeType>) {
   const highlightedSpanIds = useAnalysisStore((s) => s.highlightedSpanIds);
   const isHighlighted = highlightedSpanIds.includes(data.span_id);
   const baseStyle = SPAN_TYPE_STYLES[data.span_type] ?? SPAN_TYPE_STYLES.custom;
+  const isDivergent = data.isDivergent === true;
   const ringClass = isHighlighted
     ? "ring-2 ring-amber-400/80 animate-pulse"
-    : data.status === "error"
-      ? "ring-2 ring-red-500/60"
-      : "";
+    : isDivergent
+      ? "ring-2 ring-orange-400/70 animate-pulse"
+      : data.status === "error"
+        ? "ring-2 ring-red-500/60"
+        : "";
 
   const frameworkBadge = data.framework ? FRAMEWORK_BADGE[data.framework] : null;
 

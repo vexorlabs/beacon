@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback } from "react";
-import { Send, Loader2, Check } from "lucide-react";
+import { Send, Loader2, Check, Columns2, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePlaygroundStore } from "@/store/playground";
 import { MODELS } from "./ModelSelector";
+import ComparePromptsView from "./ComparePromptsView";
 
 function formatCost(usd: number): string {
   if (usd < 0.001) return `$${usd.toFixed(5)}`;
@@ -11,6 +12,55 @@ function formatCost(usd: number): string {
 }
 
 export default function CompareView() {
+  const compareSubMode = usePlaygroundStore((s) => s.compareSubMode);
+  const setCompareSubMode = usePlaygroundStore((s) => s.setCompareSubMode);
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Sub-mode toggle */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
+        <div className="flex items-center border-[0.5px] border-border rounded-md overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setCompareSubMode("models")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
+              compareSubMode === "models"
+                ? "bg-secondary text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Columns2 size={12} />
+            Models
+          </button>
+          <button
+            type="button"
+            onClick={() => setCompareSubMode("prompts")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
+              compareSubMode === "prompts"
+                ? "bg-secondary text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FlaskConical size={12} />
+            Prompts
+          </button>
+        </div>
+        <span className="text-[11px] text-muted-foreground">
+          {compareSubMode === "models"
+            ? "Same prompt, different models"
+            : "Same model, different prompts"}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0">
+        {compareSubMode === "models" ? <CompareModelsContent /> : <ComparePromptsView />}
+      </div>
+    </div>
+  );
+}
+
+function CompareModelsContent() {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const compareModels = usePlaygroundStore((s) => s.compareModels);

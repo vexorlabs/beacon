@@ -10,6 +10,8 @@ from app.database import get_db
 from app.schemas import (
     PlaygroundChatRequest,
     PlaygroundChatResponse,
+    PlaygroundComparePromptsRequest,
+    PlaygroundComparePromptsResponse,
     PlaygroundCompareRequest,
     PlaygroundCompareResponse,
 )
@@ -38,6 +40,19 @@ async def playground_compare(
 ) -> PlaygroundCompareResponse:
     try:
         return await playground_service.compare(db, request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"LLM API call failed: {e}")
+
+
+@router.post("/compare-prompts", response_model=PlaygroundComparePromptsResponse)
+async def playground_compare_prompts(
+    request: PlaygroundComparePromptsRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> PlaygroundComparePromptsResponse:
+    try:
+        return await playground_service.compare_prompts(db, request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except httpx.HTTPError as e:
