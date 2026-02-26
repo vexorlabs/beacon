@@ -8,7 +8,7 @@
 
 ## Purpose
 
-Resolve all BLOCKER and IMPORTANT findings from the review phase. Update the CHANGELOG. Push a clean, ready-to-merge state to the PR branch.
+Resolve all BLOCKER and IMPORTANT findings from the review phase. Update stale documentation. Update the CHANGELOG. Push a clean, ready-to-merge state to the PR branch.
 
 ---
 
@@ -62,7 +62,25 @@ Same process as BLOCKERs. All IMPORTANT findings must be resolved.
 
 Fix minor issues if they are quick and clearly correct. Skip if complex or opinionated.
 
-### Step 5: Update CHANGELOG
+### Step 5: Update stale documentation
+
+Read `doc_gaps` from `.local/review.json`. For each documentation gap:
+
+1. Read the current doc file to understand its structure and tone
+2. Make targeted updates — do not rewrite entire sections, just fix what's inaccurate or missing
+3. Keep the same formatting, heading levels, and conventions the doc already uses
+4. If a doc gap requires information you don't have (e.g., design rationale), add a `<!-- TODO: ... -->` comment rather than guessing
+
+Common documentation updates:
+- Adding a new router/endpoint to the lists in `AGENTS.md` and `docs/backend.md`
+- Adding a new integration to `docs/sdk.md`
+- Updating schema descriptions in `docs/data-model.md`
+- Adding new API endpoints to `docs/api-contracts.md`
+- Updating component lists in `docs/frontend.md`
+
+Note each doc update in `.local/prep.md`.
+
+### Step 6: Update CHANGELOG
 
 ```bash
 # Add an entry under [Unreleased] in CHANGELOG.md
@@ -70,7 +88,7 @@ Fix minor issues if they are quick and clearly correct. Skip if complex or opini
 # Every PR must have at least one CHANGELOG entry
 ```
 
-### Step 6: Verify
+### Step 7: Verify
 
 ```bash
 # Backend
@@ -86,20 +104,24 @@ grep -r "console.log(" frontend/src/ --include="*.ts" --include="*.tsx" || true
 
 All tests must pass before proceeding.
 
-### Step 7: Commit changes
+### Step 8: Commit changes
 
 Use descriptive, Conventional Commit messages. Commit each logical change separately.
 
 ```bash
-# Example
+# Example: code fix
 git add backend/app/routers/spans.py
 git commit -m "fix(backend): handle duplicate span_id gracefully on ingestion"
+
+# Example: doc updates
+git add docs/backend.md AGENTS.md
+git commit -m "docs: update reference docs to reflect new router"
 
 git add CHANGELOG.md
 git commit -m "docs: update changelog for PR #${PR}"
 ```
 
-### Step 8: Push
+### Step 9: Push
 
 ```bash
 # Get the current remote SHA first (safety check)
@@ -110,7 +132,7 @@ echo "Remote SHA: ${REMOTE_SHA}"
 git push origin HEAD
 ```
 
-### Step 9: Produce output
+### Step 10: Produce output
 
 Write `.local/prep.md`:
 ```markdown
@@ -120,6 +142,10 @@ Write `.local/prep.md`:
 - [x] BLOCKER: <description> — fixed in <commit>
 - [x] IMPORTANT: <description> — fixed in <commit>
 - [ ] MINOR: <description> — skipped (reason)
+
+## Documentation Updated
+- [x] <doc file> — <what was updated>
+- [ ] <doc file> — skipped (<reason>)
 
 ## CHANGELOG Updated
 Yes — added entry: "<changelog entry>"
