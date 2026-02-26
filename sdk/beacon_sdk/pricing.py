@@ -65,8 +65,7 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     """
     for prefix, (input_price, output_price) in PRICE_TABLE.items():
         if model.startswith(prefix):
-            return (
-                (input_tokens / 1_000_000) * input_price
-                + (output_tokens / 1_000_000) * output_price
-            )
+            return (input_tokens / 1_000_000) * input_price + (
+                output_tokens / 1_000_000
+            ) * output_price
     return 0.0

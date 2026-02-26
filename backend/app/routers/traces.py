@@ -23,8 +23,8 @@ from app.schemas import (
     TraceDetailResponse,
     TraceExportData,
     TraceImportResponse,
-    TraceSummary,
     TracesResponse,
+    TraceSummary,
 )
 from app.services import export_service, import_service, trace_service
 
@@ -38,9 +38,7 @@ async def list_traces(
     offset: int = Query(default=0, ge=0),
     status: SpanStatus | None = Query(default=None),
 ) -> TracesResponse:
-    return trace_service.list_traces(
-        db, limit=limit, offset=offset, status=status
-    )
+    return trace_service.list_traces(db, limit=limit, offset=offset, status=status)
 
 
 @router.delete("", response_model=DeleteTracesResponse)
@@ -116,9 +114,7 @@ async def import_trace(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(
-            status_code=400, detail=f"Import failed: {exc}"
-        ) from exc
+        raise HTTPException(status_code=400, detail=f"Import failed: {exc}") from exc
     return TraceImportResponse(trace_id=trace_id, span_count=span_count)
 
 

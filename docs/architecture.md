@@ -1,35 +1,37 @@
 # Architecture Overview
 
-Beacon has three local components:
+Beacon has four local components:
 
 1. `beacon-sdk` (Python instrumentation)
-2. `beacon-backend` (FastAPI + SQLite)
-3. `beacon-ui` (React + Vite)
+2. `beacon-sdk` JS/TS (Node.js instrumentation)
+3. `beacon-backend` (FastAPI + SQLite)
+4. `beacon-ui` (React + Vite)
 
 ---
 
 ## System Diagram
 
 ```text
-Developer Agent (Python)
-  ├─ manual spans via @observe
+Developer Agent (Python / JS / TS)
+  ├─ manual spans via @observe / observe()
   ├─ tracer API
-  └─ optional auto-patching (openai/anthropic/playwright/subprocess/file ops)
+  └─ auto-patching (openai/anthropic/gemini/crewai/autogen/llamaindex/ollama/playwright/subprocess/file ops)
             |
-            | POST /v1/spans
+            | POST /v1/spans  (or POST /v1/otlp/traces for OTEL-instrumented apps)
             v
 beacon-backend (FastAPI, port 7474)
   ├─ SQLite persistence (~/.beacon/traces.db)
   ├─ REST API (/v1/*)
+  ├─ AI analysis endpoints (/v1/analysis/*)
   └─ WebSocket stream (/ws/live)
             |
             | REST + WS
             v
 beacon-ui (React, port 5173)
-  ├─ Dashboard
-  ├─ Traces debugger (list + graph + detail + time-travel)
-  ├─ Playground (chat + compare)
-  └─ Settings (API keys + trace data management)
+  ├─ Dashboard (analytics, trends, cost forecasting)
+  ├─ Traces debugger (graph + timeline + detail + time-travel + AI analysis)
+  ├─ Playground (chat + model compare + A/B prompt testing)
+  └─ Settings (API keys + data management)
 ```
 
 ---
@@ -42,7 +44,8 @@ What it does:
 - creates spans via `@observe` and `BeaconTracer`
 - tracks trace/span context with `ContextVar`
 - exports spans to backend (`/v1/spans`) using sync or async batch exporter
-- integrates with OpenAI, Anthropic, Playwright, subprocess, and LangChain callback handler
+- integrates with OpenAI, Anthropic, Google Gemini, CrewAI, AutoGen, LlamaIndex, Ollama, Playwright, subprocess, and LangChain callback handler
+- JS/TS SDK (`sdk-js/`) provides equivalent tracing for Node.js with OpenAI, Anthropic, and Vercel AI SDK integrations
 
 What it does not do:
 - persistent storage

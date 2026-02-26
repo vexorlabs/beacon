@@ -40,7 +40,9 @@ def _safe_str(obj: Any, max_len: int = 50_000) -> str:
 def _make_generate_reply_wrapper(original: Any) -> Any:
     """Create a sync wrapper around ConversableAgent.generate_reply."""
 
-    def wrapper(self: Any, messages: Any = None, sender: Any = None, **kwargs: Any) -> Any:
+    def wrapper(
+        self: Any, messages: Any = None, sender: Any = None, **kwargs: Any
+    ) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
@@ -75,7 +77,9 @@ def _make_generate_reply_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -84,7 +88,9 @@ def _make_generate_reply_wrapper(original: Any) -> Any:
 def _make_async_generate_reply_wrapper(original: Any) -> Any:
     """Create an async wrapper around ConversableAgent.a_generate_reply."""
 
-    async def wrapper(self: Any, messages: Any = None, sender: Any = None, **kwargs: Any) -> Any:
+    async def wrapper(
+        self: Any, messages: Any = None, sender: Any = None, **kwargs: Any
+    ) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
@@ -119,7 +125,9 @@ def _make_async_generate_reply_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -159,7 +167,9 @@ def _make_run_chat_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -199,7 +209,9 @@ def _make_async_run_chat_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -224,7 +236,9 @@ def patch() -> None:
         return
 
     _original_generate_reply = ConversableAgent.generate_reply
-    ConversableAgent.generate_reply = _make_generate_reply_wrapper(_original_generate_reply)
+    ConversableAgent.generate_reply = _make_generate_reply_wrapper(
+        _original_generate_reply
+    )
 
     if hasattr(ConversableAgent, "a_generate_reply"):
         _original_a_generate_reply = ConversableAgent.a_generate_reply
@@ -259,7 +273,9 @@ def unpatch() -> None:
 
     if _original_generate_reply is not None:
         ConversableAgent.generate_reply = _original_generate_reply
-    if _original_a_generate_reply is not None and hasattr(ConversableAgent, "a_generate_reply"):
+    if _original_a_generate_reply is not None and hasattr(
+        ConversableAgent, "a_generate_reply"
+    ):
         ConversableAgent.a_generate_reply = _original_a_generate_reply
     if _original_run_chat is not None and hasattr(GroupChat, "run"):
         GroupChat.run = _original_run_chat

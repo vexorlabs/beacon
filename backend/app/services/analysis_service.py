@@ -179,7 +179,7 @@ def parse_structured_response(raw_text: str, response_model: type[T]) -> T:
         first_newline = text.index("\n") if "\n" in text else len(text)
         text = text[first_newline + 1 :]
         if text.endswith("```"):
-            text = text[: -3]
+            text = text[:-3]
         text = text.strip()
 
     # Try to find JSON object boundaries
@@ -196,9 +196,7 @@ def parse_structured_response(raw_text: str, response_model: type[T]) -> T:
     try:
         return response_model.model_validate(data)
     except ValidationError as exc:
-        raise ValueError(
-            f"LLM response does not match expected schema: {exc}"
-        ) from exc
+        raise ValueError(f"LLM response does not match expected schema: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------

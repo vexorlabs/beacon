@@ -63,13 +63,11 @@ async def get_trends(
             func.coalesce(func.sum(models.Trace.total_cost_usd), 0.0).label(
                 "total_cost"
             ),
-            func.coalesce(func.sum(models.Trace.total_tokens), 0).label(
-                "total_tokens"
-            ),
+            func.coalesce(func.sum(models.Trace.total_tokens), 0).label("total_tokens"),
             func.count(models.Trace.trace_id).label("trace_count"),
-            func.sum(
-                case((models.Trace.status == "error", 1), else_=0)
-            ).label("error_count"),
+            func.sum(case((models.Trace.status == "error", 1), else_=0)).label(
+                "error_count"
+            ),
         )
         .filter(models.Trace.created_at >= cutoff)
         .group_by("bucket_date")
@@ -105,6 +103,7 @@ async def get_trends(
             error_count=0,
             success_rate=1.0,
         )
+
     all_buckets: list[TrendBucket] = []
     if bucket == "hour":
         for i in range(days * 24):
@@ -135,24 +134,18 @@ async def get_top_costs(
             models.Span.span_id,
             models.Span.trace_id,
             models.Span.name,
-            func.json_extract(
-                models.Span.attributes, '$."llm.model"'
-            ).label("model"),
+            func.json_extract(models.Span.attributes, '$."llm.model"').label("model"),
             cost_expr.label("cost"),
             func.coalesce(
                 cast(
-                    func.json_extract(
-                        models.Span.attributes, '$."llm.tokens.input"'
-                    ),
+                    func.json_extract(models.Span.attributes, '$."llm.tokens.input"'),
                     Float,
                 ),
                 0,
             ).label("input_tokens"),
             func.coalesce(
                 cast(
-                    func.json_extract(
-                        models.Span.attributes, '$."llm.tokens.output"'
-                    ),
+                    func.json_extract(models.Span.attributes, '$."llm.tokens.output"'),
                     Float,
                 ),
                 0,

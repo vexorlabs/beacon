@@ -47,9 +47,7 @@ def _apply_response_attributes(span: Any, response: Any, model: str) -> None:
             if hasattr(block, "type") and block.type == "tool_use"
         ]
         if tool_calls:
-            span.set_attribute(
-                "llm.tool_calls", json.dumps(tool_calls, default=str)
-            )
+            span.set_attribute("llm.tool_calls", json.dumps(tool_calls, default=str))
 
     if hasattr(response, "stop_reason"):
         span.set_attribute("llm.finish_reason", response.stop_reason)
@@ -343,9 +341,7 @@ def _patched_async_create_fn(original: Any) -> Any:
         try:
             response = await original(self, *args, **kwargs)
             if is_stream:
-                return AnthropicAsyncStreamWrapper(
-                    response, span, token, tracer, model
-                )
+                return AnthropicAsyncStreamWrapper(response, span, token, tracer, model)
             _apply_response_attributes(span, response, model)
             tracer.end_span(span, token, status=SpanStatus.OK)
             return response

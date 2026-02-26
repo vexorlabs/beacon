@@ -1,6 +1,6 @@
 # Beacon JS/TS SDK
 
-JavaScript/TypeScript SDK for [Beacon](https://github.com/your-org/beacon) — the open-source, local-first debugging platform for AI agents.
+JavaScript/TypeScript SDK for [Beacon](https://github.com/vexorlabs/beacon) — the open-source, local-first debugging platform for AI agents.
 
 ## Quickstart
 

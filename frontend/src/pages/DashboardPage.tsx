@@ -134,8 +134,11 @@ function Overview({
   const [topDuration, setTopDuration] = useState<TopDurationResponse | null>(null);
   const getCachedAnomalies = useTraceStore((s) => s.getCachedAnomalies);
   const setCachedAnomalies = useTraceStore((s) => s.setCachedAnomalies);
-  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
-  const [anomalyLoading, setAnomalyLoading] = useState(false);
+  const initialTraceId = traces.length > 0 ? traces[0].trace_id : null;
+  const initialCachedAnomalies = initialTraceId ? getCachedAnomalies(initialTraceId) : null;
+  const [anomalies, setAnomalies] = useState<Anomaly[]>(initialCachedAnomalies ?? []);
+  const needsAnomalyFetch = initialTraceId !== null && initialCachedAnomalies === null;
+  const [anomalyLoading, setAnomalyLoading] = useState(needsAnomalyFetch);
   const [anomalyError, setAnomalyError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -153,25 +156,18 @@ function Overview({
         // Trends/tables fail silently — stat cards still work
       });
 
-    if (traces.length > 0) {
-      const traceId = traces[0].trace_id;
-      const cached = getCachedAnomalies(traceId);
-      if (cached) {
-        setAnomalies(cached);
-      } else {
-        setAnomalyLoading(true);
-        detectAnomalies(traceId)
-          .then((res) => {
-            setAnomalies(res.anomalies);
-            setCachedAnomalies(traceId, res.anomalies);
-          })
-          .catch((err: unknown) =>
-            setAnomalyError(
-              err instanceof Error ? err.message : "Anomaly detection unavailable",
-            ),
-          )
-          .finally(() => setAnomalyLoading(false));
-      }
+    if (initialTraceId && needsAnomalyFetch) {
+      detectAnomalies(initialTraceId)
+        .then((res) => {
+          setAnomalies(res.anomalies);
+          setCachedAnomalies(initialTraceId, res.anomalies);
+        })
+        .catch((err: unknown) =>
+          setAnomalyError(
+            err instanceof Error ? err.message : "Anomaly detection unavailable",
+          ),
+        )
+        .finally(() => setAnomalyLoading(false));
     }
     // Fetch once on mount. Intentionally excludes `traces` to avoid
     // re-calling the LLM anomaly endpoint on every WebSocket update.

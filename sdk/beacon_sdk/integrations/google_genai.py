@@ -522,9 +522,7 @@ def unpatch() -> None:
     if _original_async_generate_stream is not None and hasattr(
         models_mod, "AsyncModels"
     ):
-        models_mod.AsyncModels.generate_content_stream = (
-            _original_async_generate_stream
-        )
+        models_mod.AsyncModels.generate_content_stream = _original_async_generate_stream
 
     _original_generate = None
     _original_generate_stream = None

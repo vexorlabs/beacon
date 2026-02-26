@@ -22,9 +22,7 @@ _original_async_generate: Any = None
 # ---------------------------------------------------------------------------
 
 
-def _extract_chat_attrs(
-    model: str, messages: Any, kwargs: Any
-) -> dict[str, Any]:
+def _extract_chat_attrs(model: str, messages: Any, kwargs: Any) -> dict[str, Any]:
     """Build span attributes from ollama.chat() arguments."""
     attrs: dict[str, Any] = {
         "llm.provider": "ollama",
@@ -114,7 +112,9 @@ def _make_chat_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -144,7 +144,9 @@ def _make_generate_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -153,7 +155,9 @@ def _make_generate_wrapper(original: Any) -> Any:
 def _make_async_chat_wrapper(original: Any) -> Any:
     """Create an async wrapper around AsyncClient.chat."""
 
-    async def wrapper(self: Any, model: str = "", messages: Any = None, **kwargs: Any) -> Any:
+    async def wrapper(
+        self: Any, model: str = "", messages: Any = None, **kwargs: Any
+    ) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
@@ -174,7 +178,9 @@ def _make_async_chat_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -183,7 +189,9 @@ def _make_async_chat_wrapper(original: Any) -> Any:
 def _make_async_generate_wrapper(original: Any) -> Any:
     """Create an async wrapper around AsyncClient.generate."""
 
-    async def wrapper(self: Any, model: str = "", prompt: str = "", **kwargs: Any) -> Any:
+    async def wrapper(
+        self: Any, model: str = "", prompt: str = "", **kwargs: Any
+    ) -> Any:
         from beacon_sdk import _get_tracer
 
         tracer = _get_tracer()
@@ -204,7 +212,9 @@ def _make_async_generate_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -243,7 +253,9 @@ def patch() -> None:
             async_client.chat = _make_async_chat_wrapper(_original_async_chat)
         if hasattr(async_client, "generate"):
             _original_async_generate = async_client.generate
-            async_client.generate = _make_async_generate_wrapper(_original_async_generate)
+            async_client.generate = _make_async_generate_wrapper(
+                _original_async_generate
+            )
 
     _patched = True
     logger.debug("Beacon: Ollama auto-patch applied")

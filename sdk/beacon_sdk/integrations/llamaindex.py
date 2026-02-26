@@ -96,7 +96,9 @@ def _make_query_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -131,7 +133,9 @@ def _make_aquery_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -176,7 +180,9 @@ def _make_retrieve_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper
@@ -221,7 +227,9 @@ def _make_aretrieve_wrapper(original: Any) -> Any:
             tracer.end_span(span, token, status=SpanStatus.OK)
             return result
         except Exception as exc:
-            tracer.end_span(span, token, status=SpanStatus.ERROR, error_message=str(exc))
+            tracer.end_span(
+                span, token, status=SpanStatus.ERROR, error_message=str(exc)
+            )
             raise
 
     return wrapper

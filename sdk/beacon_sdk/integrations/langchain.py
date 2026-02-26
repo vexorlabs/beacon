@@ -29,6 +29,7 @@ except ImportError:
     class BaseCallbackHandler:  # type: ignore[no-redef]
         """Stub for when langchain_core is not installed."""
 
+
 logger = logging.getLogger(__name__)
 
 

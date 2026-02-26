@@ -34,8 +34,13 @@ Start Beacon (`make dev`) and open `http://localhost:5173`.
 
 | Integration | Behavior |
 |---|---|
-| OpenAI | auto-patched chat completions (sync/async + streaming) |
-| Anthropic | auto-patched messages (sync/async + streaming) |
+| OpenAI | auto-patched chat completions (sync/async + streaming + tool calls) |
+| Anthropic | auto-patched messages (sync/async + streaming + tool use) |
+| Google Gemini | auto-patched generate_content (sync/async + streaming) |
+| CrewAI | auto-patched Crew.kickoff() with callback injection |
+| AutoGen | auto-patched ConversableAgent.generate_reply() and GroupChat.run() |
+| LlamaIndex | auto-patched BaseQueryEngine.query() and BaseRetriever.retrieve() |
+| Ollama | auto-patched chat() and generate() (native client) |
 | Playwright | auto-patched page actions |
 | subprocess | auto-patched `run` and `check_output` |
 | LangChain | callback handler (`BeaconCallbackHandler`) |
