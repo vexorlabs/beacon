@@ -23,6 +23,10 @@ Examples of unacceptable behavior:
 - Publishing others' private information without explicit permission
 - Other conduct which could reasonably be considered inappropriate in a professional setting
 
+## Scope
+
+This Code of Conduct applies within all community spaces — including the GitHub repository, issue tracker, discussions, and pull requests — and when an individual is officially representing the project in public spaces.
+
 ## Enforcement
 
 Instances of unacceptable behavior may be reported to the project team at **security@vexorlabs.com**. All complaints will be reviewed and investigated promptly and fairly.
