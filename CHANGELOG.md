@@ -9,6 +9,12 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- feat: `/verify` skill and slash command for pre-commit verification (tests, typecheck, lint, debug statement scanning)
+- feat: documentation freshness audit in `/review-pr` Step 7 — cross-references PR changes against all reference docs to catch documentation drift
+- feat: documentation update step in `/prepare-pr` Step 5 — fixes stale docs identified during review
+- feat: "Before Declaring Work Complete" section in `AGENTS.md` requiring verification before declaring tasks done
+
 ---
 
 ## [0.1.0] - 2026-02-25
