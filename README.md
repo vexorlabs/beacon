@@ -117,6 +117,7 @@ await myAgent();
 | AutoGen | Agent replies, group chat runs | Yes |
 | LlamaIndex | Query engine, retriever, LLM calls | Yes |
 | Ollama | Chat and generate (native client) | Yes |
+| LiveKit Agents | AgentSession voice lifecycle + key session events | Yes |
 | Playwright | Page actions (goto, click, fill, screenshot) | Yes |
 | subprocess | `run()` and `check_output()` | Yes |
 | File I/O | `open()` read/write/append | Opt-in |

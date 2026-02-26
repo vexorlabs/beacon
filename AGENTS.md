@@ -53,7 +53,7 @@ beacon/
 
 ### Python SDK (`sdk/`)
 - package: `sdk/beacon_sdk`
-- integrations: `openai`, `anthropic`, `google_genai`, `crewai`, `autogen`, `llamaindex`, `ollama`, `playwright`, `subprocess_patch`, `file_patch`, `langchain`
+- integrations: `openai`, `anthropic`, `google_genai`, `crewai`, `autogen`, `llamaindex`, `ollama`, `playwright`, `livekit`, `subprocess_patch`, `file_patch`, `langchain`
 
 ### JS/TS SDK (`sdk-js/`)
 - package: `sdk-js/src/`

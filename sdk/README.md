@@ -41,6 +41,7 @@ Start Beacon (`make dev`) and open `http://localhost:5173`.
 | AutoGen | auto-patched ConversableAgent.generate_reply() and GroupChat.run() |
 | LlamaIndex | auto-patched BaseQueryEngine.query() and BaseRetriever.retrieve() |
 | Ollama | auto-patched chat() and generate() (native client) |
+| LiveKit Agents | auto-patched AgentSession voice lifecycle + key session events |
 | Playwright | auto-patched page actions |
 | subprocess | auto-patched `run` and `check_output` |
 | LangChain | callback handler (`BeaconCallbackHandler`) |
@@ -54,6 +55,7 @@ pip install beacon-sdk
 pip install beacon-sdk[openai]
 pip install beacon-sdk[anthropic]
 pip install beacon-sdk[playwright]
+pip install beacon-sdk[livekit]
 pip install beacon-sdk[all]
 ```
 
