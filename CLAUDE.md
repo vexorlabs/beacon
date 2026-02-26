@@ -9,7 +9,7 @@
 
 **What is this?** An open-source, local-first debugging platform for AI agents. "Chrome DevTools for AI Agents."
 
-**Tech stack:** Python/FastAPI/SQLite backend · Vite/React/TypeScript/React Flow/Monaco frontend · beacon-sdk Python instrumentation package
+**Tech stack:** Python/FastAPI/SQLite backend · Vite/React/TypeScript/React Flow/Monaco frontend · beacon-sdk Python package · beacon-sdk JS/TS package
 
 **Backend port:** 7474 · **Frontend port:** 5173
 

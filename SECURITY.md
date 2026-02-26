@@ -27,9 +27,10 @@ We will acknowledge receipt within 48 hours and aim to provide a fix or mitigati
 ## Scope
 
 ### In Scope
-- The `beacon-sdk` Python package
-- The `beacon-backend` FastAPI service
-- The `beacon-ui` React frontend
+- The `beacon-sdk` Python package (`sdk/`)
+- The `beacon-sdk` JS/TS package (`sdk-js/`)
+- The `beacon-backend` FastAPI service (`backend/`)
+- The `beacon-ui` React frontend (`frontend/`)
 - The pre-commit hooks and CI scripts
 
 ### Out of Scope
@@ -44,7 +45,7 @@ Beacon is a **local-first developer tool**. It is designed to run on a developer
 By design:
 - The backend has **no authentication** — it trusts all connections to `localhost:7474`
 - The backend stores traces in `~/.beacon/traces.db` with filesystem permissions only
-- The backend only calls external LLM APIs (OpenAI, Anthropic) during replay operations, using keys from your environment
+- The backend only calls external LLM APIs (OpenAI, Anthropic, Google) during replay and analysis operations, using keys from your environment
 
 **Do not expose Beacon's backend port (7474) to a public network.** It is designed for localhost only.
 

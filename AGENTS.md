@@ -30,11 +30,14 @@ beacon/
 ├── CLAUDE.md
 ├── README.md
 ├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
 ├── VISION.md
 ├── SECURITY.md
 ├── docs/
 ├── backend/
-├── sdk/
+├── sdk/           # Python SDK
+├── sdk-js/        # JS/TS SDK
 ├── frontend/
 ├── .agents/
 ├── .claude/
@@ -44,13 +47,18 @@ beacon/
 
 ### Backend (`backend/`)
 - FastAPI app in `backend/app/`
-- routers: `spans`, `traces`, `replay`, `settings`, `playground`, `demo`, `stats`, `search`
+- routers: `spans`, `traces`, `replay`, `settings`, `playground`, `demo`, `stats`, `search`, `analysis`, `prompt_versions`
 - services implement business logic
 - WebSocket manager in `backend/app/ws/manager.py`
 
-### SDK (`sdk/`)
+### Python SDK (`sdk/`)
 - package: `sdk/beacon_sdk`
-- integrations: `openai`, `anthropic`, `playwright`, `subprocess_patch`, `file_patch`, `langchain`
+- integrations: `openai`, `anthropic`, `google_genai`, `crewai`, `autogen`, `llamaindex`, `ollama`, `playwright`, `subprocess_patch`, `file_patch`, `langchain`
+
+### JS/TS SDK (`sdk-js/`)
+- package: `sdk-js/src/`
+- integrations: `openai`, `anthropic`, `vercel-ai`
+- zero runtime dependencies, Node.js 18+
 
 ### Frontend (`frontend/`)
 - React Router routes in `src/App.tsx`
@@ -63,7 +71,8 @@ beacon/
 
 | Layer | Technology |
 |---|---|
-| SDK | Python 3.11+ |
+| Python SDK | Python 3.11+ |
+| JS/TS SDK | Node.js 18+, TypeScript |
 | Backend | FastAPI + SQLAlchemy + SQLite |
 | Realtime | FastAPI WebSockets |
 | Frontend | Vite + React 19 + TypeScript |

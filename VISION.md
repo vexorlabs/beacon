@@ -26,15 +26,15 @@ Every feature decision, every architectural choice, every UX detail should be me
 
 - A **local-first developer tool** — runs on your machine, zero cloud dependency
 - A **debugger** — interactive, real-time, step-through
-- **Framework-agnostic** — works with LangChain, CrewAI, custom agents, anything Python
+- **Framework-agnostic** — works with LangChain, CrewAI, AutoGen, LlamaIndex, and any Python or JavaScript agent
 - **Open source** — MIT, free forever for local use
 
 ## What We Are Not (For Now)
 
 - A production monitoring platform (that's LangSmith's job)
 - An evaluation / scoring system (that's Braintrust's job)
-- A team collaboration tool (Phase 2)
-- An enterprise platform (Phase 3)
+- A team collaboration tool (future)
+- An enterprise platform (future)
 
 These are not flaws. They are intentional scope boundaries that keep the MVP focused.
 
@@ -65,27 +65,9 @@ LangSmith is our complement, not our competition. Developers use Beacon during d
 
 ## The Roadmap
 
-### Phase 1 — MVP (Now)
-The ultimate open-source debugging tool for solo developers. Free, local, no account required.
+Phases 1–9 are complete (MVP through AI-powered debugging). See [docs/roadmap.md](docs/roadmap.md) for the full roadmap and current status.
 
-### Phase 2 — Cloud (Month 12–18)
-Hosted Beacon for teams: shared traces, collaboration, production monitoring.
-
-### Phase 3 — Enterprise (Month 18–24)
-Self-hosted with SSO, audit logs, compliance, custom integrations.
-
-## Success Metrics for MVP
+## Success Metrics
 
 - A developer can install `beacon-sdk`, run their agent, and see a trace in the UI in **under 5 minutes**
-- 1,000 GitHub stars within 30 days of launch
-- 100 developers using it actively within 60 days
 - Zero issues filed that say "I couldn't figure out how to set it up"
-
-## Non-Priorities (Do Not Build)
-
-- Authentication / user accounts
-- PostgreSQL (SQLite is intentional)
-- LLM evaluation / scoring
-- Multi-tenancy
-- Mobile support
-- Any cloud service dependency in the local tool
