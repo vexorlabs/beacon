@@ -77,10 +77,47 @@ Read the PR title, description, and all changed files. Understand what the autho
   cd frontend && npm run typecheck 2>&1 | tail -20
   ```
 
-### Step 7: Documentation
+### Step 7: Documentation freshness audit
+
+Check whether the PR's changes have made any reference documentation stale or incomplete. This is not just about adding docs for new features — it's about catching **drift** where existing docs no longer reflect reality.
+
+#### 7a. Standard checks
 - Is `CHANGELOG.md` updated?
 - Are any new environment variables documented in `.env.example`?
-- Are new API endpoints documented in `docs/api-contracts.md`?
+
+#### 7b. Cross-reference against all docs
+
+For each changed file in the PR, consider whether these reference docs need updating:
+
+| If the PR changes… | Check these docs |
+|---|---|
+| Backend routers or endpoints | `AGENTS.md` (repo structure), `docs/backend.md`, `docs/api-contracts.md` |
+| Database models or schema | `docs/data-model.md` |
+| Frontend routes, pages, or stores | `AGENTS.md` (repo structure), `docs/frontend.md` |
+| UI components or design patterns | `docs/design-system.md` |
+| Python SDK integrations or decorators | `AGENTS.md` (repo structure), `docs/sdk.md` |
+| JS/TS SDK integrations | `AGENTS.md` (repo structure), `docs/sdk.md` |
+| New span types or attributes | `docs/data-model.md`, `docs/api-contracts.md` |
+| Code conventions or formatting rules | `docs/conventions.md` |
+| Architecture or system design | `docs/architecture.md` |
+| Run commands or Makefile targets | `AGENTS.md` (run commands section) |
+| Locked-in decisions or tech stack | `AGENTS.md`, `CLAUDE.md` |
+| Dependencies or tooling | `docs/conventions.md`, relevant subsystem doc |
+
+#### 7c. How to check
+
+For each potentially affected doc:
+1. Read the doc
+2. Compare its claims against the PR's changes
+3. Flag any statement that is now inaccurate, incomplete, or missing
+
+#### 7d. Reporting
+
+Add documentation drift findings to the **Findings** table with severity `important` and location pointing to the doc file that needs updating. Also add them to `doc_gaps` in `review.json`.
+
+Example findings:
+- `IMPORTANT | docs/backend.md | PR adds /api/v1/compare endpoint but docs/backend.md router list does not include it`
+- `IMPORTANT | AGENTS.md:56 | New SDK integration "mistral" added but not listed in repo structure`
 
 ### Step 8: Produce output
 

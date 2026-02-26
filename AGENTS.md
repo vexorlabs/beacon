@@ -156,13 +156,45 @@ Backend API docs: `http://localhost:7474/docs`
 
 ---
 
+## Before Declaring Work Complete
+
+Do not tell the user your task is finished until you have verified it actually works. "It looks correct" is not verification — running the commands and seeing them pass is.
+
+### Required checks
+
+Run every check relevant to what you changed:
+
+| What you touched | What to run |
+|---|---|
+| Backend Python code | `cd backend && pytest tests/ -v` |
+| Frontend TypeScript code | `cd frontend && npm run typecheck` |
+| Python SDK code | `cd sdk && pytest tests/ -v` |
+| Any Python file | `cd backend && python -m ruff check app/` or relevant path |
+| Any formatting | `make format` then confirm no unstaged diffs |
+
+If you changed both backend and frontend, run both. If you're unsure what's affected, run `make test`.
+
+### If a check fails
+
+Fix it. Do not report the task as done with a caveat like "tests pass except for one unrelated failure." Investigate whether your change caused it. If it's genuinely pre-existing, note the specific test name and failure so the user can confirm.
+
+### What "done" means
+
+You can tell the user the work is complete when:
+1. All relevant checks above pass
+2. There are no leftover debug `print()` or `console.log()` statements
+3. Your changes match what was requested — not more, not less
+
+---
+
 ## PR Workflow (AI-Assisted)
 
-Use `.agents/skills/` workflows for PR lifecycle tasks:
+Use `.agents/skills/` workflows:
 
-1. `/review-pr` - read-only analysis and findings
-2. `/prepare-pr` - apply fixes and update docs/changelog
-3. `/merge-pr` - squash merge flow
+- `/verify` - pre-commit verification (tests, typecheck, lint, debug statements)
+- `/review-pr` - read-only PR analysis and findings
+- `/prepare-pr` - apply fixes, update stale docs, update changelog
+- `/merge-pr` - squash merge flow
 
 Companion prompt files are in `.claude/commands/`.
 
