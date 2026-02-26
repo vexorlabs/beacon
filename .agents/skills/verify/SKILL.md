@@ -98,8 +98,10 @@ Verdict: READY TO COMMIT | NEEDS FIXES
 Do not just report the failure. Fix the issue, then re-run the failing check to confirm it passes. Only report a failure as pre-existing if you can demonstrate it exists on the base branch too:
 
 ```bash
-# Check if a test failure is pre-existing
-git stash && cd backend && pytest tests/test_specific.py -v && cd .. && git stash pop
+# Check if a test failure is pre-existing using a temporary worktree (never use git stash)
+git worktree add /tmp/beacon-base-check main
+cd /tmp/beacon-base-check/backend && pytest tests/test_specific.py -v
+cd - && git worktree remove /tmp/beacon-base-check
 ```
 
 ---
