@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import patch as mock_patch
@@ -146,13 +147,22 @@ class TestPatchMechanics:
 
     def test_patch_skips_when_not_installed(self) -> None:
         livekit_patch._patched = False
-        with mock_patch.dict("sys.modules", {}, clear=False):
-            import sys
+        original_import = builtins.__import__
 
-            sys.modules.pop("livekit", None)
-            sys.modules.pop("livekit.agents", None)
+        def _import_without_livekit(
+            name: str,
+            globals_: Any = None,
+            locals_: Any = None,
+            fromlist: Any = (),
+            level: int = 0,
+        ) -> Any:
+            if name == "livekit.agents":
+                raise ImportError("No module named 'livekit.agents'")
+            return original_import(name, globals_, locals_, fromlist, level)
+
+        with mock_patch("builtins.__import__", side_effect=_import_without_livekit):
             livekit_patch.patch()
-            assert livekit_patch._patched is False
+        assert livekit_patch._patched is False
 
 
 class TestSessionMethods:
@@ -312,6 +322,22 @@ class TestEventInstrumentation:
         assert span.attributes["tool.name"] == "lookup_weather"
         assert span.attributes["livekit.tool_call_count"] == 1
 
+    def test_speech_created_event_creates_agent_step_span(
+        self, _mock_livekit: Any, exporter: InMemoryExporter
+    ) -> None:
+        livekit_patch.patch()
+        session = FakeAgentSession()
+        event = SimpleNamespace(source="agent", user_initiated=False)
+
+        session.emit("speech_created", event)
+
+        spans = [s for s in exporter.spans if s.name == "livekit.event.speech_created"]
+        assert len(spans) == 1
+        span = spans[0]
+        assert span.span_type == SpanType.AGENT_STEP
+        assert span.attributes["livekit.speech.source"] == "agent"
+        assert span.attributes["livekit.speech.user_initiated"] is False
+
     def test_error_event_creates_error_span(
         self, _mock_livekit: Any, exporter: InMemoryExporter
     ) -> None:
@@ -328,3 +354,22 @@ class TestEventInstrumentation:
         span = spans[0]
         assert span.status == SpanStatus.ERROR
         assert "voice backend down" in (span.error_message or "")
+
+    def test_close_event_with_error_reason_creates_error_span(
+        self, _mock_livekit: Any, exporter: InMemoryExporter
+    ) -> None:
+        livekit_patch.patch()
+        session = FakeAgentSession()
+        event = SimpleNamespace(
+            reason=SimpleNamespace(value="error"),
+            error=RuntimeError("session closed unexpectedly"),
+        )
+
+        session.emit("close", event)
+
+        spans = [s for s in exporter.spans if s.name == "livekit.event.close"]
+        assert len(spans) == 1
+        span = spans[0]
+        assert span.status == SpanStatus.ERROR
+        assert span.attributes["livekit.close.reason"] == "error"
+        assert "session closed unexpectedly" in (span.error_message or "")
