@@ -14,6 +14,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 - feat: documentation freshness audit in `/review-pr` Step 7 — cross-references PR changes against all reference docs to catch documentation drift
 - feat: documentation update step in `/prepare-pr` Step 5 — fixes stale docs identified during review
 - feat: "Before Declaring Work Complete" section in `AGENTS.md` requiring verification before declaring tasks done
+- feat(frontend): dashboard redesign — fix empty state scroll bug, add time range selector (7d/14d/30d), success rate stat card, section headers, skeleton loading placeholders, copy-to-clipboard on setup code blocks, remove demo agents from populated view
 
 ---
 
