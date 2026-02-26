@@ -56,9 +56,7 @@ async def _broadcast_span(db: Session, span_data: SpanCreate) -> None:
         await ws_manager.broadcast_span(span_dict)
 
 
-async def _broadcast_trace_created(
-    trace_id: str, name: str, start: float
-) -> None:
+async def _broadcast_trace_created(trace_id: str, name: str, start: float) -> None:
     await ws_manager.broadcast_trace_created(
         {
             "trace_id": trace_id,
@@ -321,8 +319,14 @@ SCENARIOS["trip_planner"] = ScenarioDef(
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "from_city": {"type": "string", "description": "Departure city"},
-                        "to_city": {"type": "string", "description": "Destination city"},
+                        "from_city": {
+                            "type": "string",
+                            "description": "Departure city",
+                        },
+                        "to_city": {
+                            "type": "string",
+                            "description": "Destination city",
+                        },
                         "dates": {"type": "string", "description": "Travel dates"},
                     },
                     "required": ["from_city", "to_city", "dates"],
@@ -338,8 +342,14 @@ SCENARIOS["trip_planner"] = ScenarioDef(
                     "type": "object",
                     "properties": {
                         "city": {"type": "string", "description": "City to search in"},
-                        "dates": {"type": "string", "description": "Check-in/check-out dates"},
-                        "budget": {"type": "string", "description": "Budget range (e.g. 'moderate')"},
+                        "dates": {
+                            "type": "string",
+                            "description": "Check-in/check-out dates",
+                        },
+                        "budget": {
+                            "type": "string",
+                            "description": "Budget range (e.g. 'moderate')",
+                        },
                     },
                     "required": ["city", "dates"],
                 },
@@ -381,8 +391,7 @@ async def run_agent(db: Session, scenario_key: str) -> DemoRunResponse:
     api_key = settings_service.get_api_key(scenario.provider)
     if not api_key:
         raise ValueError(
-            f"No API key configured for {scenario.provider}. "
-            "Add one in Settings."
+            f"No API key configured for {scenario.provider}. " "Add one in Settings."
         )
 
     trace_id = str(uuid4())
@@ -404,9 +413,7 @@ async def run_agent(db: Session, scenario_key: str) -> DemoRunResponse:
     await _broadcast_span(db, root_span)
 
     # Fire off the agent loop in background
-    asyncio.create_task(
-        _run_agent_loop(trace_id, root_span_id, now, scenario, api_key)
-    )
+    asyncio.create_task(_run_agent_loop(trace_id, root_span_id, now, scenario, api_key))
 
     return DemoRunResponse(trace_id=trace_id)
 
@@ -561,11 +568,13 @@ async def _run_agent_loop(
             # Process tool calls
             if scenario.provider == "openai":
                 # OpenAI: append assistant message with tool_calls, then tool results
-                messages.append({
-                    "role": "assistant",
-                    "content": response.completion or None,
-                    "tool_calls": response.tool_calls,
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": response.completion or None,
+                        "tool_calls": response.tool_calls,
+                    }
+                )
                 for tc in response.tool_calls:
                     tool_name = tc["function"]["name"]
                     tool_args = tc["function"]["arguments"]
@@ -592,18 +601,22 @@ async def _run_agent_loop(
                     )
                     await _broadcast_span(db, tool_span)
 
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": tool_result,
-                    })
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tc["id"],
+                            "content": tool_result,
+                        }
+                    )
 
             elif scenario.provider == "anthropic":
                 # Anthropic: append assistant content blocks, then user with tool_result blocks
-                messages.append({
-                    "role": "assistant",
-                    "content": response.raw_message.get("content", []),
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": response.raw_message.get("content", []),
+                    }
+                )
                 tool_result_blocks: list[dict[str, Any]] = []
                 for tc in response.tool_calls:
                     tool_name = tc["name"]
@@ -631,16 +644,20 @@ async def _run_agent_loop(
                     )
                     await _broadcast_span(db, tool_span)
 
-                    tool_result_blocks.append({
-                        "type": "tool_result",
-                        "tool_use_id": tc["id"],
-                        "content": tool_result,
-                    })
+                    tool_result_blocks.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": tc["id"],
+                            "content": tool_result,
+                        }
+                    )
 
-                messages.append({
-                    "role": "user",
-                    "content": tool_result_blocks,
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": tool_result_blocks,
+                    }
+                )
 
         # Close root span as OK
         root_end = SpanCreate(

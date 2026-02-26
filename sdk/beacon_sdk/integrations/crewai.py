@@ -291,9 +291,7 @@ def patch() -> None:
 
     if hasattr(crewai.Crew, "kickoff_async"):
         _original_kickoff_async = crewai.Crew.kickoff_async
-        crewai.Crew.kickoff_async = _make_async_kickoff_wrapper(
-            _original_kickoff_async
-        )
+        crewai.Crew.kickoff_async = _make_async_kickoff_wrapper(_original_kickoff_async)
 
     _patched = True
     logger.debug("Beacon: CrewAI auto-patch applied")

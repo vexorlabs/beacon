@@ -69,13 +69,9 @@ async def _call_model(
     """Call a model and return (completion, in_tok, out_tok, latency_ms)."""
     start = time.monotonic()
     if provider == "openai":
-        completion, in_tok, out_tok = await call_openai(
-            api_key, model, messages
-        )
+        completion, in_tok, out_tok = await call_openai(api_key, model, messages)
     elif provider == "anthropic":
-        completion, in_tok, out_tok = await call_anthropic(
-            api_key, model, messages
-        )
+        completion, in_tok, out_tok = await call_anthropic(api_key, model, messages)
     else:
         raise ValueError(f"Unsupported provider: {provider}")
     latency_ms = (time.monotonic() - start) * 1000
@@ -104,8 +100,7 @@ async def chat(
     api_key = settings_service.get_api_key(provider)
     if not api_key:
         raise ValueError(
-            f"No API key configured for {provider}. "
-            "Add one in Settings."
+            f"No API key configured for {provider}. " "Add one in Settings."
         )
 
     conversation_id = request.conversation_id or str(uuid4())
@@ -129,9 +124,7 @@ async def chat(
 
     # Broadcast trace_created on first message
     if request.conversation_id is None:
-        await _broadcast_trace_created(
-            trace_id, f"Playground: {request.model}", now
-        )
+        await _broadcast_trace_created(trace_id, f"Playground: {request.model}", now)
 
     await _broadcast_span(db, parent_span)
 

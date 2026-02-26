@@ -80,9 +80,7 @@ def update_span_annotations(
 
 
 def _upsert_trace(db: Session, span: SpanCreate) -> None:
-    stmt = select(models.Trace).where(
-        models.Trace.trace_id == span.trace_id
-    )
+    stmt = select(models.Trace).where(models.Trace.trace_id == span.trace_id)
     trace = db.execute(stmt).scalar_one_or_none()
 
     cost = 0.0
@@ -144,16 +142,11 @@ def _upsert_span(db: Session, span: SpanCreate) -> None:
         existing.attributes = json.dumps(span.attributes)
 
 
-
-def _compute_trace_status(
-    db: Session, trace_id: str, new_span: SpanCreate
-) -> str:
+def _compute_trace_status(db: Session, trace_id: str, new_span: SpanCreate) -> str:
     """Derive trace status: error > unset > ok."""
     if new_span.status.value == "error":
         return "error"
-    stmt = select(models.Span.status).where(
-        models.Span.trace_id == trace_id
-    )
+    stmt = select(models.Span.status).where(models.Span.trace_id == trace_id)
     statuses = [row[0] for row in db.execute(stmt).all()]
     statuses.append(new_span.status.value)
     if "error" in statuses:

@@ -93,7 +93,9 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     if prices is None:
         return 0.0
     input_cost, output_cost = prices
-    return (input_tokens / 1_000_000) * input_cost + (output_tokens / 1_000_000) * output_cost
+    return (input_tokens / 1_000_000) * input_cost + (
+        output_tokens / 1_000_000
+    ) * output_cost
 
 
 def provider_for_model(model: str) -> str:
@@ -142,9 +144,7 @@ async def call_openai(
         )
         if not response.is_success:
             error_body = response.text[:200]  # Truncate to avoid leaking sensitive info
-            raise ValueError(
-                f"OpenAI API error {response.status_code}: {error_body}"
-            )
+            raise ValueError(f"OpenAI API error {response.status_code}: {error_body}")
         data = response.json()
 
     choices = data.get("choices")
@@ -240,10 +240,12 @@ async def call_google(
             system_instruction = msg.get("content", "")
         else:
             role = "user" if msg.get("role") == "user" else "model"
-            contents.append({
-                "role": role,
-                "parts": [{"text": msg.get("content", "")}],
-            })
+            contents.append(
+                {
+                    "role": role,
+                    "parts": [{"text": msg.get("content", "")}],
+                }
+            )
 
     generation_config: dict[str, Any] = {"temperature": temperature}
     if max_tokens is not None:
@@ -254,9 +256,7 @@ async def call_google(
         "generationConfig": generation_config,
     }
     if system_instruction is not None:
-        payload["systemInstruction"] = {
-            "parts": [{"text": system_instruction}]
-        }
+        payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
@@ -271,9 +271,7 @@ async def call_google(
         )
         if not response.is_success:
             error_body = response.text[:200]
-            raise ValueError(
-                f"Google API error {response.status_code}: {error_body}"
-            )
+            raise ValueError(f"Google API error {response.status_code}: {error_body}")
         data = response.json()
 
     candidates = data.get("candidates", [])
@@ -340,9 +338,7 @@ async def call_openai_with_tools(
         )
         if not response.is_success:
             error_body = response.text[:200]
-            raise ValueError(
-                f"OpenAI API error {response.status_code}: {error_body}"
-            )
+            raise ValueError(f"OpenAI API error {response.status_code}: {error_body}")
         data = response.json()
 
     choices = data.get("choices")
@@ -356,14 +352,16 @@ async def call_openai_with_tools(
     raw_tool_calls: list[dict[str, Any]] = message.get("tool_calls") or []
     tool_calls: list[dict[str, Any]] = []
     for tc in raw_tool_calls:
-        tool_calls.append({
-            "id": tc.get("id", ""),
-            "type": "function",
-            "function": {
-                "name": tc.get("function", {}).get("name", ""),
-                "arguments": tc.get("function", {}).get("arguments", "{}"),
-            },
-        })
+        tool_calls.append(
+            {
+                "id": tc.get("id", ""),
+                "type": "function",
+                "function": {
+                    "name": tc.get("function", {}).get("name", ""),
+                    "arguments": tc.get("function", {}).get("arguments", "{}"),
+                },
+            }
+        )
 
     usage = data.get("usage", {})
     return LlmToolResponse(
@@ -435,11 +433,13 @@ async def call_anthropic_with_tools(
         if block.get("type") == "text":
             completion_text += block.get("text", "")
         elif block.get("type") == "tool_use":
-            tool_calls.append({
-                "id": block.get("id", ""),
-                "name": block.get("name", ""),
-                "input": block.get("input", {}),
-            })
+            tool_calls.append(
+                {
+                    "id": block.get("id", ""),
+                    "name": block.get("name", ""),
+                    "input": block.get("input", {}),
+                }
+            )
 
     usage = data.get("usage", {})
     stop_reason: str = data.get("stop_reason", "end_turn")

@@ -97,7 +97,11 @@ def init(
         atexit.register(_shutdown_exporter)
         _atexit_registered = True
 
-    logger.debug("Beacon: initialized (%s exporter), sending spans to %s", exporter_mode, resolved_url)
+    logger.debug(
+        "Beacon: initialized (%s exporter), sending spans to %s",
+        exporter_mode,
+        resolved_url,
+    )
 
     if auto_patch is None:
         env_auto = os.environ.get("BEACON_AUTO_PATCH", "true").lower()

@@ -6,7 +6,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app import models
-from app.schemas import SearchResultItem, SearchResponse
+from app.schemas import SearchResponse, SearchResultItem
 
 MAX_RESULTS = 50
 CONTEXT_LENGTH = 100

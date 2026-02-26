@@ -113,7 +113,11 @@ class OpenAIStreamWrapper:
         if hasattr(chunk, "choices") and chunk.choices:
             choice = chunk.choices[0]
             delta = getattr(choice, "delta", None)
-            if delta is not None and hasattr(delta, "content") and delta.content is not None:
+            if (
+                delta is not None
+                and hasattr(delta, "content")
+                and delta.content is not None
+            ):
                 self._chunks.append(delta.content)
             finish_reason = getattr(choice, "finish_reason", None)
             if finish_reason is not None:
@@ -208,7 +212,11 @@ class OpenAIAsyncStreamWrapper:
         if hasattr(chunk, "choices") and chunk.choices:
             choice = chunk.choices[0]
             delta = getattr(choice, "delta", None)
-            if delta is not None and hasattr(delta, "content") and delta.content is not None:
+            if (
+                delta is not None
+                and hasattr(delta, "content")
+                and delta.content is not None
+            ):
                 self._chunks.append(delta.content)
             finish_reason = getattr(choice, "finish_reason", None)
             if finish_reason is not None:

@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 from app import models
 from app.schemas import (
     SpanResponse,
-    TraceSummary,
     TraceExportData,
+    TraceSummary,
 )
 from app.services.span_service import span_to_response
 from app.services.trace_service import _trace_to_summary
@@ -115,19 +115,21 @@ def export_trace_csv(db: Session, trace_id: str) -> str | None:
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-        "trace_id",
-        "span_id",
-        "parent_span_id",
-        "name",
-        "span_type",
-        "start_time",
-        "end_time",
-        "duration_ms",
-        "status",
-        "cost",
-        "tokens",
-    ])
+    writer.writerow(
+        [
+            "trace_id",
+            "span_id",
+            "parent_span_id",
+            "name",
+            "span_type",
+            "start_time",
+            "end_time",
+            "duration_ms",
+            "status",
+            "cost",
+            "tokens",
+        ]
+    )
 
     for span in spans:
         attrs = json.loads(span.attributes or "{}")
@@ -139,19 +141,21 @@ def export_trace_csv(db: Session, trace_id: str) -> str | None:
         cost = attrs.get("llm.cost_usd", "")
         tokens = attrs.get("llm.tokens.total", "")
 
-        writer.writerow([
-            span.trace_id,
-            span.span_id,
-            span.parent_span_id or "",
-            span.name,
-            span.span_type,
-            span.start_time,
-            span.end_time or "",
-            duration_ms,
-            span.status,
-            cost,
-            tokens,
-        ])
+        writer.writerow(
+            [
+                span.trace_id,
+                span.span_id,
+                span.parent_span_id or "",
+                span.name,
+                span.span_type,
+                span.start_time,
+                span.end_time or "",
+                duration_ms,
+                span.status,
+                cost,
+                tokens,
+            ]
+        )
 
     return output.getvalue()
 

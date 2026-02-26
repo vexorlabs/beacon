@@ -33,9 +33,7 @@ class ConnectionManager:
         """Send span_created to unsubscribed clients + clients watching this trace."""
         trace_id = span_dict.get("trace_id", "")
         targets = self._targets_for_trace(trace_id)
-        await self._send_to(
-            targets, {"event": "span_created", "span": span_dict}
-        )
+        await self._send_to(targets, {"event": "span_created", "span": span_dict})
 
     async def broadcast_span_updated(
         self,
@@ -50,9 +48,7 @@ class ConnectionManager:
             {"event": "span_updated", "span_id": span_id, "updates": updates},
         )
 
-    async def broadcast_trace_created(
-        self, trace_dict: dict[str, Any]
-    ) -> None:
+    async def broadcast_trace_created(self, trace_dict: dict[str, Any]) -> None:
         """Send trace_created to all unfiltered clients."""
         await self._send_to(
             set(self.active_connections),
@@ -65,9 +61,7 @@ class ConnectionManager:
             trace_id, set()
         )
 
-    async def _send_to(
-        self, targets: set[WebSocket], payload: dict[str, Any]
-    ) -> None:
+    async def _send_to(self, targets: set[WebSocket], payload: dict[str, Any]) -> None:
         for ws in list(targets):
             try:
                 await ws.send_json(payload)
@@ -99,15 +93,13 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 trace_id = data.get("trace_id")
                 if trace_id:
                     ws_manager.active_connections.discard(websocket)
-                    ws_manager.trace_subscriptions.setdefault(
-                        trace_id, set()
-                    ).add(websocket)
+                    ws_manager.trace_subscriptions.setdefault(trace_id, set()).add(
+                        websocket
+                    )
             elif action == "unsubscribe_trace":
                 trace_id = data.get("trace_id")
                 if trace_id and trace_id in ws_manager.trace_subscriptions:
-                    ws_manager.trace_subscriptions[trace_id].discard(
-                        websocket
-                    )
+                    ws_manager.trace_subscriptions[trace_id].discard(websocket)
                     ws_manager.active_connections.add(websocket)
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)

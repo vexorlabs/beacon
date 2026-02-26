@@ -14,9 +14,9 @@ from app.schemas import (
     GraphNode,
     GraphNodeData,
     SpanStatus,
-    TraceSummary,
     TraceDetailResponse,
     TracesResponse,
+    TraceSummary,
 )
 from app.services.span_service import span_to_response
 
@@ -47,9 +47,7 @@ def list_traces(
     )
 
 
-def get_trace_detail(
-    db: Session, trace_id: str
-) -> TraceDetailResponse | None:
+def get_trace_detail(db: Session, trace_id: str) -> TraceDetailResponse | None:
     """Return trace with all its spans, or None if not found."""
     trace = db.execute(
         select(models.Trace).where(models.Trace.trace_id == trace_id)
@@ -111,28 +109,32 @@ def get_trace_graph(db: Session, trace_id: str) -> GraphData | None:
         cost_usd = attrs.get("llm.cost_usd")
         framework = attrs.get("agent.framework")
 
-        nodes.append(GraphNode(
-            id=span.span_id,
-            type="spanNode",
-            data=GraphNodeData(
-                span_id=span.span_id,
-                span_type=span.span_type,
-                name=span.name,
-                status=span.status,
-                duration_ms=duration_ms,
-                cost_usd=cost_usd,
-                sequence=seq,
-                framework=framework,
-            ),
-            position={"x": 0, "y": 0},
-        ))
+        nodes.append(
+            GraphNode(
+                id=span.span_id,
+                type="spanNode",
+                data=GraphNodeData(
+                    span_id=span.span_id,
+                    span_type=span.span_type,
+                    name=span.name,
+                    status=span.status,
+                    duration_ms=duration_ms,
+                    cost_usd=cost_usd,
+                    sequence=seq,
+                    framework=framework,
+                ),
+                position={"x": 0, "y": 0},
+            )
+        )
 
         if span.parent_span_id:
-            edges.append(GraphEdge(
-                id=f"edge-{span.parent_span_id}-{span.span_id}",
-                source=span.parent_span_id,
-                target=span.span_id,
-            ))
+            edges.append(
+                GraphEdge(
+                    id=f"edge-{span.parent_span_id}-{span.span_id}",
+                    source=span.parent_span_id,
+                    target=span.span_id,
+                )
+            )
 
     return GraphData(nodes=nodes, edges=edges)
 
@@ -160,13 +162,9 @@ def delete_traces_batch(
 ) -> int:
     """Delete traces in bulk. Returns count of deleted traces."""
     if trace_ids is not None:
-        stmt = select(models.Trace).where(
-            models.Trace.trace_id.in_(trace_ids)
-        )
+        stmt = select(models.Trace).where(models.Trace.trace_id.in_(trace_ids))
     elif older_than is not None:
-        stmt = select(models.Trace).where(
-            models.Trace.created_at < older_than
-        )
+        stmt = select(models.Trace).where(models.Trace.created_at < older_than)
     else:
         stmt = select(models.Trace)
 
@@ -217,9 +215,7 @@ def find_baseline_trace(
     """Find the most recent trace tagged as baseline."""
     traces = (
         db.execute(
-            select(models.Trace)
-            .order_by(models.Trace.created_at.desc())
-            .limit(100)
+            select(models.Trace).order_by(models.Trace.created_at.desc()).limit(100)
         )
         .scalars()
         .all()

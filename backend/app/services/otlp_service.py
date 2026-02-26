@@ -6,7 +6,6 @@ from typing import Any
 
 from app.schemas import SpanCreate, SpanStatus, SpanType
 
-
 # OTEL status codes: 0=UNSET, 1=OK, 2=ERROR
 _OTEL_STATUS_MAP = {
     0: SpanStatus.UNSET,
@@ -106,7 +105,5 @@ def _extract_value(value_obj: dict[str, Any]) -> Any:
     if "boolValue" in value_obj:
         return bool(value_obj["boolValue"])
     if "arrayValue" in value_obj:
-        return [
-            _extract_value(v) for v in value_obj["arrayValue"].get("values", [])
-        ]
+        return [_extract_value(v) for v in value_obj["arrayValue"].get("values", [])]
     return str(value_obj)

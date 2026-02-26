@@ -26,9 +26,7 @@ def import_trace(db: Session, data: TraceExportData) -> tuple[str, int]:
 
     # Check for duplicate trace
     existing = db.execute(
-        select(models.Trace).where(
-            models.Trace.trace_id == trace_data.trace_id
-        )
+        select(models.Trace).where(models.Trace.trace_id == trace_data.trace_id)
     ).scalar_one_or_none()
 
     if existing is not None:
@@ -100,7 +98,5 @@ def import_trace(db: Session, data: TraceExportData) -> tuple[str, int]:
         db.rollback()
         raise
 
-    logger.info(
-        "Imported trace %s with %d spans", trace_data.trace_id, len(spans_data)
-    )
+    logger.info("Imported trace %s with %d spans", trace_data.trace_id, len(spans_data))
     return trace_data.trace_id, len(spans_data)

@@ -16,10 +16,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas import (
     AnalysisRequest,
+    AnomalyDetectionResponse,
     CompareAnalysisRequest,
     CompareAnalysisResponse,
     CostOptimizationResponse,
-    AnomalyDetectionResponse,
     ErrorPatternsResponse,
     MultiTraceAnalysisRequest,
     PromptSuggestionsResponse,
@@ -187,8 +187,7 @@ async def anomaly_detection(
             "Respond ONLY with the JSON object, no other text."
         )
         user_prompt = (
-            f"Current trace:\n{context}\n\n"
-            f"Historical baselines:\n{baseline_text}"
+            f"Current trace:\n{context}\n\n" f"Historical baselines:\n{baseline_text}"
         )
 
         raw = await analysis_service.call_analysis_llm(system_prompt, user_prompt)
@@ -241,9 +240,7 @@ async def error_patterns(
         user_prompt = f"Analyze these traces for error patterns:\n\n{context}"
 
         raw = await analysis_service.call_analysis_llm(system_prompt, user_prompt)
-        result = analysis_service.parse_structured_response(
-            raw, ErrorPatternsResponse
-        )
+        result = analysis_service.parse_structured_response(raw, ErrorPatternsResponse)
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
