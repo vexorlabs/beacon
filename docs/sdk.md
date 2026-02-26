@@ -34,6 +34,7 @@ sdk/
 │       ├── openai.py
 │       ├── anthropic.py
 │       ├── playwright.py
+│       ├── livekit.py
 │       ├── subprocess_patch.py
 │       ├── file_patch.py
 │       └── langchain.py
@@ -130,6 +131,11 @@ When `auto_patch=True`, SDK attempts to patch installed libraries.
 - patches sync/async `Page` actions (`goto`, `click`, `fill`, `type`, `screenshot`, `wait_for_selector`)
 - emits `browser_action` spans
 
+### LiveKit Agents
+- patches `livekit.agents.AgentSession` lifecycle methods: `start`, `run`, `say`, `generate_reply`, `interrupt`
+- records key voice events from `AgentSession.emit`: `user_input_transcribed`, `speech_created`, `function_tools_executed`, `error`, `close`
+- emits `agent_step`/`tool_use`/`custom` spans with `agent.framework: "livekit"`
+
 ### subprocess
 - patches `subprocess.run` and `subprocess.check_output`
 - emits `shell_command` spans (`shell.command`, `shell.returncode`, stdout/stderr)
@@ -189,6 +195,7 @@ pip install beacon-sdk
 pip install beacon-sdk[openai]
 pip install beacon-sdk[anthropic]
 pip install beacon-sdk[playwright]
+pip install beacon-sdk[livekit]
 pip install beacon-sdk[all]
 ```
 

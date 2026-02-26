@@ -165,6 +165,7 @@ def _apply_auto_patches() -> None:
     from beacon_sdk.integrations import autogen as _autogen_patch
     from beacon_sdk.integrations import crewai as _crewai_patch
     from beacon_sdk.integrations import google_genai as _google_genai_patch
+    from beacon_sdk.integrations import livekit as _livekit_patch
     from beacon_sdk.integrations import llamaindex as _llamaindex_patch
     from beacon_sdk.integrations import ollama as _ollama_patch
     from beacon_sdk.integrations import openai as _openai_patch
@@ -178,6 +179,7 @@ def _apply_auto_patches() -> None:
         _crewai_patch,
         _autogen_patch,
         _llamaindex_patch,
+        _livekit_patch,
         _ollama_patch,
         _playwright_patch,
         _subprocess_patch,
