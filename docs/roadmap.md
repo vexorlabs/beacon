@@ -1,6 +1,6 @@
 # Implementation Roadmap
 
-Product roadmap from MVP through enterprise. Each phase has a clear goal, specific tasks, and a done condition. Phases 1–5 (MVP) are complete. Phases 6–11 define the path from open-source adoption to enterprise offering and developer workflow integration.
+Product roadmap from MVP through enterprise. Each phase has a clear goal, specific tasks, and a done condition. Phases 1–9 are complete. Phase 8.5 (E2E integration testing) and Phases 10–11 define the path from open-source adoption to enterprise offering and developer workflow integration.
 
 **North Star:** Every decision should answer — "Does this make it easier and faster for a developer to debug their AI agent?"
 
@@ -142,7 +142,7 @@ Run a LangChain agent → open `http://localhost:5173` → see the trace appear 
 - [x] Write `docs/contributing.md` (development setup, PR guidelines)
 - [x] Create `sdk/examples/` folder with 3 working examples
 - [ ] Record a 2-minute demo video (screen recording)
-- [ ] Publish `beacon-sdk` to PyPI
+- [x] Publish `beacon-sdk` to PyPI
 - [ ] Push everything to GitHub with a proper Release tag
 - [ ] Post on Hacker News (Show HN), Reddit (r/LangChain, r/AI_Agents), Twitter
 
@@ -343,12 +343,12 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 ### Tasks
 
 **SDK: Google Gemini Support**
-- [ ] Create `sdk/beacon_sdk/integrations/google_genai.py` — patch `google.generativeai.GenerativeModel.generate_content` (sync + async), creating `llm_call` spans with `llm.provider: "google"`, prompt, completion, tokens, cost
-- [ ] Add Gemini models to `sdk/beacon_sdk/pricing.py` (gemini-2.0-flash, gemini-2.5-pro, etc.)
-- [ ] Add Gemini to `_apply_auto_patches()` in `sdk/beacon_sdk/__init__.py`
-- [ ] In `backend/app/services/llm_client.py`, add Google/Gemini models to `PRICE_TABLE` and add `call_google()` for replay support
-- [ ] Add `sdk/tests/test_integrations_google.py` with mocked responses
-- [ ] Create `sdk/examples/google_agent.py`
+- [x] Create `sdk/beacon_sdk/integrations/google_genai.py` — patch `google.generativeai.GenerativeModel.generate_content` (sync + async), creating `llm_call` spans with `llm.provider: "google"`, prompt, completion, tokens, cost
+- [x] Add Gemini models to `sdk/beacon_sdk/pricing.py` (gemini-2.0-flash, gemini-2.5-pro, etc.)
+- [x] Add Gemini to `_apply_auto_patches()` in `sdk/beacon_sdk/__init__.py`
+- [x] In `backend/app/services/llm_client.py`, add Google/Gemini models to `PRICE_TABLE` and add `call_google()` for replay support
+- [x] Add `sdk/tests/test_integrations_google.py` with mocked responses
+- [x] Create `sdk/examples/google_agent.py`
 
 **SDK: CrewAI Integration**
 - [x] Create `sdk/beacon_sdk/integrations/crewai.py` — patch `Crew.kickoff()` to create a root `agent_step` span, hook into CrewAI's callback system for individual agent steps and tool uses
@@ -392,7 +392,7 @@ A developer can: (1) deep-link to `localhost:5173/traces/abc-123/span-456` and l
 
 **Backend: Multi-SDK Support**
 - [x] In `backend/app/schemas.py`, add optional `sdk_language` field to `SpanCreate` (`"python"` | `"javascript"` | `"unknown"`) for analytics
-- [ ] In `backend/app/services/llm_client.py`, add Gemini models to the replay service
+- [x] In `backend/app/services/llm_client.py`, add Gemini models to the replay service
 
 **Frontend: Framework Badges**
 - [x] In `frontend/src/components/TraceGraph/SpanNode.tsx`, add framework icon/badge (LangChain, CrewAI, AutoGen, LlamaIndex) based on `agent.framework` attribute
@@ -462,78 +462,78 @@ Running `make test-e2e-free` passes with zero skips (subprocess + file ops alway
 ### Tasks
 
 **Backend: Analysis Infrastructure**
-- [ ] Create `backend/app/services/analysis_service.py` — shared infrastructure for AI-powered analysis: accepts trace span data, constructs a prompt, calls an LLM via `llm_client.py`, returns structured analysis
-- [ ] Add Pydantic schemas: `AnalysisRequest`, `AnalysisResponse`, `RootCauseAnalysis`, `CostOptimization`, `PromptSuggestion`, `AnomalyReport`, `TraceSummary`
-- [ ] Create `backend/app/routers/analysis.py` with router prefix `/v1/analysis`
-- [ ] Register the analysis router in `backend/app/main.py`
+- [x] Create `backend/app/services/analysis_service.py` — shared infrastructure for AI-powered analysis: accepts trace span data, constructs a prompt, calls an LLM via `llm_client.py`, returns structured analysis
+- [x] Add Pydantic schemas: `AnalysisRequest`, `AnalysisResponse`, `RootCauseAnalysis`, `CostOptimization`, `PromptSuggestion`, `AnomalyReport`, `TraceSummary`
+- [x] Create `backend/app/routers/analysis.py` with router prefix `/v1/analysis`
+- [x] Register the analysis router in `backend/app/main.py`
 
 **Backend: Root Cause Analysis**
-- [ ] Add `POST /v1/analysis/root-cause` accepting `{ trace_id }` — retrieves all spans, constructs a prompt with the execution graph and error context, asks the LLM to identify root cause, affected components, and suggested fix
-- [ ] Return `{ trace_id, root_cause, affected_spans, confidence, suggested_fix }`
-- [ ] Add tests with a mock trace containing a known error pattern
+- [x] Add `POST /v1/analysis/root-cause` accepting `{ trace_id }` — retrieves all spans, constructs a prompt with the execution graph and error context, asks the LLM to identify root cause, affected components, and suggested fix
+- [x] Return `{ trace_id, root_cause, affected_spans, confidence, suggested_fix }`
+- [x] Add tests with a mock trace containing a known error pattern
 
 **Backend: Cost Optimization Analysis**
-- [ ] Add `POST /v1/analysis/cost-optimization` accepting `{ trace_ids }` — analyzes LLM call patterns and identifies: redundant calls (same prompt repeated), expensive models used for simple tasks, cacheable calls, token waste from overly long prompts
-- [ ] Return `{ suggestions: [{ type, description, estimated_savings_usd, affected_spans }] }`
+- [x] Add `POST /v1/analysis/cost-optimization` accepting `{ trace_ids }` — analyzes LLM call patterns and identifies: redundant calls (same prompt repeated), expensive models used for simple tasks, cacheable calls, token waste from overly long prompts
+- [x] Return `{ suggestions: [{ type, description, estimated_savings_usd, affected_spans }] }`
 
 **Backend: Prompt Improvement Suggestions**
-- [ ] Add `POST /v1/analysis/prompt-suggestions` accepting `{ span_id }` — analyzes a single LLM call's prompt and suggests improvements (clarity, specificity, format instructions, few-shot examples)
-- [ ] Return `{ original_prompt, suggestions: [{ category, description, improved_prompt_snippet }] }`
+- [x] Add `POST /v1/analysis/prompt-suggestions` accepting `{ span_id }` — analyzes a single LLM call's prompt and suggests improvements (clarity, specificity, format instructions, few-shot examples)
+- [x] Return `{ original_prompt, suggestions: [{ category, description, improved_prompt_snippet }] }`
 
 **Backend: Anomaly Detection**
-- [ ] Add `POST /v1/analysis/anomalies` accepting `{ trace_id }` — compares trace against historical baselines (last 50 traces of the same name) and flags: cost spikes (>2x mean), latency spikes, unusual error patterns, missing expected spans
-- [ ] Return `{ anomalies: [{ type, severity, description, trace_id, span_id }] }`
+- [x] Add `POST /v1/analysis/anomalies` accepting `{ trace_id }` — compares trace against historical baselines (last 50 traces of the same name) and flags: cost spikes (>2x mean), latency spikes, unusual error patterns, missing expected spans
+- [x] Return `{ anomalies: [{ type, severity, description, trace_id, span_id }] }`
 
 **Backend: Error Pattern Recognition**
-- [ ] Add `POST /v1/analysis/error-patterns` accepting `{ trace_ids }` (or defaults to last 50 error traces) — clusters similar failures by error message, failing span name, and execution structure
-- [ ] Return `{ patterns: [{ pattern_name, count, example_trace_ids, common_root_cause, category }] }`
-- [ ] Detect common anti-patterns: infinite loops (repeated identical spans), repeated tool failures (same tool failing 3+ times), context window overflow (token count approaching model limit)
-- [ ] Auto-tag traces with failure categories (timeout, rate_limit, context_overflow, tool_failure, hallucination) via `PUT /v1/traces/{trace_id}/tags`
+- [x] Add `POST /v1/analysis/error-patterns` accepting `{ trace_ids }` (or defaults to last 50 error traces) — clusters similar failures by error message, failing span name, and execution structure
+- [x] Return `{ patterns: [{ pattern_name, count, example_trace_ids, common_root_cause, category }] }`
+- [x] Detect common anti-patterns: infinite loops (repeated identical spans), repeated tool failures (same tool failing 3+ times), context window overflow (token count approaching model limit)
+- [x] Auto-tag traces with failure categories (timeout, rate_limit, context_overflow, tool_failure, hallucination) via `PUT /v1/traces/{trace_id}/tags`
 
 **Backend: AI-Powered Trace Comparison**
-- [ ] Add `POST /v1/analysis/compare` accepting `{ trace_id_a, trace_id_b }` — uses AI to identify structural divergence points (where execution paths differ), semantic differences in prompts/completions, and metric deltas
-- [ ] Return `{ divergence_points: [{ span_a, span_b, description }], metric_diff, summary }`
-- [ ] Support "Golden Baseline" concept: compare a trace against the most recent trace tagged `baseline`
+- [x] Add `POST /v1/analysis/compare` accepting `{ trace_id_a, trace_id_b }` — uses AI to identify structural divergence points (where execution paths differ), semantic differences in prompts/completions, and metric deltas
+- [x] Return `{ divergence_points: [{ span_a, span_b, description }], metric_diff, summary }`
+- [x] Support "Golden Baseline" concept: compare a trace against the most recent trace tagged `baseline`
 
 **Backend: Trace Summarization**
-- [ ] Add `POST /v1/analysis/summarize` accepting `{ trace_id }` — generates a natural language summary of what the agent did (e.g., "The agent received a request to book a flight. It called GPT-4o 3 times, searched for flights, encountered a rate limit, retried, and returned results in 12.4s at $0.023.")
-- [ ] Return `{ trace_id, summary, key_events }`
+- [x] Add `POST /v1/analysis/summarize` accepting `{ trace_id }` — generates a natural language summary of what the agent did (e.g., "The agent received a request to book a flight. It called GPT-4o 3 times, searched for flights, encountered a rate limit, retried, and returned results in 12.4s at $0.023.")
+- [x] Return `{ trace_id, summary, key_events }`
 
 **Frontend: Analysis Panel**
-- [ ] Create `frontend/src/components/Analysis/RootCausePanel.tsx` — shows root cause, affected spans (highlighted in graph), and suggested fix
-- [ ] Create `CostOptimizationPanel.tsx` — shows suggestions with estimated savings, links to affected spans
-- [ ] Create `PromptSuggestionsPanel.tsx` — shows prompt improvements with before/after diffs
-- [ ] Create `AnomalyBanner.tsx` — dismissible banner at top of trace detail when anomalies are detected
-- [ ] Create `TraceSummaryCard.tsx` — natural language summary at top of trace detail, generated on demand
+- [x] Create `frontend/src/components/Analysis/RootCausePanel.tsx` — shows root cause, affected spans (highlighted in graph), and suggested fix
+- [x] Create `CostOptimizationPanel.tsx` — shows suggestions with estimated savings, links to affected spans
+- [x] Create `PromptSuggestionsPanel.tsx` — shows prompt improvements with before/after diffs
+- [x] Create `AnomalyBanner.tsx` — dismissible banner at top of trace detail when anomalies are detected
+- [x] Create `TraceSummaryCard.tsx` — natural language summary at top of trace detail, generated on demand
 
 **Frontend: Analysis Integration**
-- [ ] Add "Analyze" button (sparkle icon) to trace detail header — dropdown with: "Root Cause Analysis", "Cost Optimization", "Prompt Suggestions", "Summarize"
-- [ ] Add analysis API functions to `frontend/src/lib/api.ts`
-- [ ] Create `frontend/src/store/analysis.ts` Zustand store for analysis state
-- [ ] When root cause analysis highlights affected spans, pulse/highlight those nodes in the React Flow graph
+- [x] Add "Analyze" button (sparkle icon) to trace detail header — dropdown with: "Root Cause Analysis", "Cost Optimization", "Prompt Suggestions", "Summarize"
+- [x] Add analysis API functions to `frontend/src/lib/api.ts`
+- [x] Create `frontend/src/store/analysis.ts` Zustand store for analysis state
+- [x] When root cause analysis highlights affected spans, pulse/highlight those nodes in the React Flow graph
 
 **Frontend: Error Pattern Recognition**
-- [ ] Create `ErrorPatternsPanel.tsx` showing clustered failure groups with counts and links to example traces
-- [ ] Add "Error Patterns" option to the "Analyze" dropdown
-- [ ] When viewing a pattern, highlight all matching traces in the trace list
+- [x] Create `ErrorPatternsPanel.tsx` showing clustered failure groups with counts and links to example traces
+- [x] Add "Error Patterns" option to the "Analyze" dropdown
+- [x] When viewing a pattern, highlight all matching traces in the trace list
 
 **Frontend: Trace Comparison Enhancements**
-- [ ] In `ComparePage.tsx`, highlight AI-detected divergence points in the side-by-side graph view with distinct markers
-- [ ] Add "Mark as Baseline" button in trace detail header (stores `baseline` tag)
-- [ ] Add "Compare Against Baseline" action in trace detail that auto-selects the most recent baseline trace
+- [x] In `ComparePage.tsx`, highlight AI-detected divergence points in the side-by-side graph view with distinct markers
+- [x] Add "Mark as Baseline" button in trace detail header (stores `baseline` tag)
+- [x] Add "Compare Against Baseline" action in trace detail that auto-selects the most recent baseline trace
 
 **Frontend: A/B Prompt Testing**
-- [ ] In the Playground's CompareView, add mode toggle: "Compare Models" (existing) vs "Compare Prompts" (new)
-- [ ] "Compare Prompts" mode: two prompt editors side by side, same model, run both and show results with diff
-- [ ] Track A/B test results in a simple `ab_tests` table for historical comparison
+- [x] In the Playground's CompareView, add mode toggle: "Compare Models" (existing) vs "Compare Prompts" (new)
+- [x] "Compare Prompts" mode: two prompt editors side by side, same model, run both and show results with diff
+- [x] Track A/B test results in a simple `ab_tests` table for historical comparison
 
 **Dashboard: Analytics Upgrade**
-- [ ] In `frontend/src/pages/DashboardPage.tsx`, replace 4-stat-card layout with: trend charts (cost over time, tokens over time, trace count, error rate, success/failure rate) using recharts, most expensive traces table, anomaly alerts section
-- [ ] Add `GET /v1/stats/trends` backend endpoint returning time-bucketed aggregates (daily cost, tokens, traces, errors) for the last 30 days
-- [ ] Add "Most Expensive Prompts" table (top 10 LLM calls by cost across all traces)
-- [ ] Add "Most Expensive Tools" table (top 10 tool calls by duration)
-- [ ] Add cost forecasting widget: project next 30 days cost based on trailing 30-day trend
-- [ ] Add trace clustering visualization: group traces by structural similarity, render as a scatter plot or treemap
+- [x] In `frontend/src/pages/DashboardPage.tsx`, replace 4-stat-card layout with: trend charts (cost over time, tokens over time, trace count, error rate, success/failure rate) using recharts, most expensive traces table, anomaly alerts section
+- [x] Add `GET /v1/stats/trends` backend endpoint returning time-bucketed aggregates (daily cost, tokens, traces, errors) for the last 30 days
+- [x] Add "Most Expensive Prompts" table (top 10 LLM calls by cost across all traces)
+- [x] Add "Most Expensive Tools" table (top 10 tool calls by duration)
+- [x] Add cost forecasting widget: project next 30 days cost based on trailing 30-day trend
+- [x] Add trace clustering visualization: group traces by structural similarity, render as a scatter plot or treemap
 
 ### Done Condition
 A developer clicks "Analyze" on a failed trace and receives: (1) a plain-English root cause explanation with highlighted spans, (2) cost optimization suggestions, (3) prompt improvement recommendations, (4) error pattern clusters showing similar failures across traces. The developer can mark a trace as "baseline" and compare new traces against it with AI-detected divergence points. The Playground supports A/B prompt testing. The dashboard shows trend charts, cost forecasting, most expensive prompts/tools, and trace clustering.
