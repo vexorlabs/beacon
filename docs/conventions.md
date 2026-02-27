@@ -77,6 +77,12 @@ fix(backend): handle unknown provider
 docs(frontend): update router docs
 ```
 
+### Release Tags
+
+For publishing SDK packages, use semantic versioning tags:
+- Python SDK: `sdk-v{major}.{minor}.{patch}` (e.g., `sdk-v0.2.0`)
+- Tags trigger automated publish workflows in `.github/workflows/`
+
 ---
 
 ## Do Not Commit
