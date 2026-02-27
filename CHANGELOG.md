@@ -10,6 +10,7 @@ Beacon uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- feat(sdk): PyPI publishing workflow and metadata — `beacon-sdk` published to PyPI on `sdk-v*` tags via trusted publishing (OIDC)
 - feat: `/verify` skill and slash command for pre-commit verification (tests, typecheck, lint, debug statement scanning)
 - feat: documentation freshness audit in `/review-pr` Step 7 — cross-references PR changes against all reference docs to catch documentation drift
 - feat: documentation update step in `/prepare-pr` Step 5 — fixes stale docs identified during review

@@ -203,6 +203,20 @@ For LangChain integration, install LangChain packages separately and use `Beacon
 
 ---
 
+## Publishing
+
+`beacon-sdk` is published to PyPI via GitHub Actions.
+
+**Release process:**
+1. Update `version` in `sdk/pyproject.toml`
+2. Commit and merge to `main`
+3. Tag: `git tag sdk-v<version>` (e.g., `sdk-v0.2.0`)
+4. Push tag: `git push origin sdk-v<version>`
+
+The workflow (`.github/workflows/publish-sdk.yml`) runs SDK tests, builds the package, and publishes to PyPI using OIDC trusted publishing — no API tokens stored.
+
+---
+
 ## Minimal Example
 
 ```python
