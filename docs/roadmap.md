@@ -403,6 +403,58 @@ A developer using CrewAI, AutoGen, LlamaIndex, Google Gemini, Ollama, or the JS/
 
 ---
 
+## Phase 8.5: E2E Integration Testing
+
+**Goal:** Prove every SDK integration works against real services, end-to-end. Every existing integration test uses mocks — a breaking change in `openai==5.0.0` would pass all tests but silently break for real users. This phase adds tests that actually hit live APIs and verify the full trace pipeline. Every test file also doubles as a copy-pasteable reference example for users integrating Beacon.
+
+### Tasks
+
+**E2E Test Infrastructure**
+- [ ] Create `tests/e2e/` directory with shared `conftest.py` providing `InMemoryExporter` (captures spans in memory), `require_env()` (skips test if API key env var is missing), and `require_service()` (skips test if a local service like Ollama is unreachable) — tests skip gracefully, never fail from missing dependencies
+- [ ] Create `tests/e2e/sdk/conftest.py` with SDK initialization fixture that uses real auto-patching (`_apply_auto_patches()`) against real installed libraries but captures spans in `InMemoryExporter` — no backend dependency for SDK-level tests
+- [ ] Create `tests/e2e/fullstack/conftest.py` with FastAPI TestClient fixture (in-memory SQLite, same pattern as `backend/tests/conftest.py`) and a `TestClientExporter` that bridges SDK span export to the TestClient — proves the full pipeline (SDK → HTTP → ingestion → SQLite → API query) without starting a real server process
+- [ ] Add Makefile targets: `test-e2e` (all), `test-e2e-free` (no API keys needed), `test-e2e-sdk` (SDK-level only), `test-e2e-fullstack` (full pipeline only) — existing `make test` is NOT changed, e2e is always opt-in
+
+**SDK E2E: LLM Provider Tests (real API calls, InMemoryExporter)**
+- [ ] Create `tests/e2e/sdk/test_openai.py` — real OpenAI call (gpt-4o-mini, max_tokens=5), verify `llm_call` span with correct provider, model, prompt, completion, token counts, cost estimate, and timing; include streaming and async variants; cost ~$0.0003/run
+- [ ] Create `tests/e2e/sdk/test_anthropic.py` — real Anthropic call (claude-3-5-haiku-latest), verify same span attributes as OpenAI test; include streaming variant; cost ~$0.0002/run
+- [ ] Create `tests/e2e/sdk/test_google_gemini.py` — real Gemini call (gemini-2.0-flash), verify span attributes; cost ~$0.0001/run
+- [ ] Create `tests/e2e/sdk/test_ollama.py` — real Ollama call using native client (not OpenAI-compat), verify `ollama.chat` and `ollama.generate` span attributes including duration; skips if Ollama not running locally; cost $0
+
+**SDK E2E: Always-Free Tests (no API key, no external service)**
+- [ ] Create `tests/e2e/sdk/test_subprocess.py` — `subprocess.run(["echo", "hello"])`, verify `shell_command` span with correct command, returncode, stdout attributes; also test error path with a failing command producing an error span
+- [ ] Create `tests/e2e/sdk/test_file_ops.py` — write and read temp files with `BEACON_PATCH_FILE_OPS=true`, verify `file_operation` spans with path, operation, and content attributes
+
+**SDK E2E: Framework Tests (real API + framework)**
+- [ ] Create `tests/e2e/frameworks/test_crewai.py` — minimal 1-agent 1-task CrewAI crew, verify parent-child span hierarchy (`agent_step` → `llm_call`), `agent.framework: "crewai"` attribute; requires `OPENAI_API_KEY` + `crewai` package installed
+- [ ] Create `tests/e2e/frameworks/test_langchain.py` — simple LLM chain with tool use, verify `chain` and `llm_call` spans with correct parent-child relationships; requires `OPENAI_API_KEY` + `langchain-openai` package installed
+
+**Full-Stack E2E (SDK → backend → SQLite → API query)**
+- [ ] Create `tests/e2e/fullstack/test_subprocess_fullstack.py` — `subprocess.run` → `beacon_sdk.flush()` → query `GET /v1/traces` and `GET /v1/spans/{id}` via TestClient → verify span persisted with correct attributes in SQLite; always runnable, no API key needed, good CI baseline
+- [ ] Create `tests/e2e/fullstack/test_openai_fullstack.py` — real OpenAI call → flush → verify trace appears via API with correct `span_count`, `total_tokens`, `total_cost_usd`; verify all span attributes survive the serialization round-trip (SDK `Span.to_dict()` → JSON → backend `SpanCreate` schema → SQLite → API response)
+
+**CI Integration**
+- [ ] Add `e2e-free` job to `.github/workflows/ci.yml` — runs subprocess + file ops e2e tests on every PR (free, fast, no secrets needed, catches backend ingestion regressions)
+- [ ] Add `e2e-paid` job to `.github/workflows/ci.yml` — runs full e2e suite on pushes to `main` only, with API keys from GitHub Secrets; uses `pytest-timeout` to prevent hanging tests from blocking CI
+
+**JS/TS SDK E2E**
+- [ ] Create `tests/e2e-js/` with Vitest config, `InMemoryExporter` helper, and `describe.skipIf(!process.env.KEY)` skip pattern
+- [ ] Create `tests/e2e-js/test_openai.test.ts` — real OpenAI call via JS SDK, verify span type, provider, model, tokens, cost
+- [ ] Create `tests/e2e-js/test_anthropic.test.ts` — real Anthropic call via JS SDK, verify span attributes
+- [ ] Add `test-e2e-js` Makefile target
+
+### Design Decisions
+1. **Two-level architecture**: SDK E2E (real API + InMemoryExporter) for most integrations; Full-Stack E2E (real API + FastAPI TestClient + SQLite) for pipeline verification on a few representative integrations
+2. **Tests = examples**: Every test file has a module docstring with prerequisites, cost, and what it demonstrates — designed to be copy-pasted by users as a reference
+3. **Cheapest models**: gpt-4o-mini ($0.15/$0.60 per 1M), claude-3-5-haiku ($0.80/$4.00 per 1M), gemini-2.0-flash — total suite cost < $0.01 per run
+4. **Skip, never fail**: Missing API keys or services trigger `pytest.skip()`, not `pytest.fail()` — running `pytest tests/e2e/` with zero config still passes (everything skips except subprocess/file tests)
+5. **FastAPI TestClient over subprocess**: Full-stack tests use in-process TestClient (fast, deterministic, no port conflicts) rather than spawning a real uvicorn server
+
+### Done Condition
+Running `make test-e2e-free` passes with zero skips (subprocess + file ops always work). With `OPENAI_API_KEY` set, `make test-e2e` runs OpenAI tests end-to-end and skips others gracefully. With all API keys set, the full suite runs in under 60 seconds and costs less than $0.01. Each test file is readable as a standalone integration example. CI runs free e2e tests on every PR.
+
+---
+
 ## Phase 9: AI-Powered Debugging
 
 **Goal:** The viral "wow" features. AI analyzes traces and provides actionable debugging insights. This is the screenshot-worthy moment that gets shared on social media.
